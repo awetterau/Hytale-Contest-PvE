@@ -1,0 +1,8 @@
+/.gradle
+/.idea
+/build
+devserver/auth.enc
+/devserver/logs
+/src/.idea
+/devserver/universe
+/devserver
