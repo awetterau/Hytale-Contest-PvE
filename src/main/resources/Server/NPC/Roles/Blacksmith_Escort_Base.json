@@ -1,0 +1,73 @@
+{
+  "Type": "Generic",
+  "StartState": "Idle",
+  "Appearance": "Tuluk_Fisherman",
+  "DefaultPlayerAttitude": "Neutral",
+  "MaxHealth": 100,
+  "MotionControllerList": [
+    {
+      "Type": "Walk",
+      "MaxWalkSpeed": 7,
+      "MinWalkSpeed": 0,
+      "Gravity": 10,
+      "MaxFallSpeed": 20,
+      "MaxRotationSpeed": 360,
+      "Acceleration": 10
+    }
+  ],
+  "Instructions": [
+    {
+      "Instructions": [
+        {
+          "Sensor": {
+            "Type": "State",
+            "State": "Idle"
+          },
+          "Instructions": [
+            {
+              "Sensor": {
+                "Type": "Any"
+              },
+              "HeadMotion": {
+                "Type": "Observe",
+                "AngleRange": [
+                  -8,
+                  8
+                ],
+                "PickRandomAngle": true
+              },
+              "BodyMotion": {
+                "Type": "Timer",
+                "Time": [
+                  2,
+                  5
+                ],
+                "Motion": {
+                  "Type": "Wander",
+                  "MaxHeadingChange": 35,
+                  "RelativeSpeed": 0.22
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "InteractionInstruction": {
+    "Instructions": [
+      {
+        "Sensor": {
+          "Type": "Any"
+        },
+        "Actions": [
+          {
+            "Type": "SetInteractable",
+            "Interactable": false
+          }
+        ]
+      }
+    ]
+  },
+  "NameTranslationKey": "server.npcRoles.Blacksmith_Escort_Base.name"
+}

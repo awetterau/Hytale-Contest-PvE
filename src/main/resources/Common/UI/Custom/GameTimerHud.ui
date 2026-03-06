@@ -1,0 +1,7 @@
+// GameTimerHud.ui - Custom UI for displaying the game timer
+
+Group #GameTimerHud {
+  Anchor: (Top: 35, Width: 150, Height: 30);
+  Padding: (Full: 8);
+  LayoutMode: Middle;
+}

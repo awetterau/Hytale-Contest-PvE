@@ -12,8 +12,10 @@
     ],
     "Website": "https://your-plugin-website.com",
     "DisabledByDefault": false,
-    "IncludesAssetPack": false,
-    "Dependencies": {},
+    "IncludesAssetPack": true,
+    "Dependencies": {
+        "Hytale:NPC": "*"
+    },
     "OptionalDependencies": {},
     "ServerVersion": "*",
     "Main": "dev.hytalemodding.ExamplePlugin"

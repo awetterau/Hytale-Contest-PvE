@@ -28,8 +28,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class NpcSpawnCommand extends AbstractPlayerCommand {
-    private static final String DEFAULT_ROLE = "Crimson_Escort_Companion";
-    private static final String FALLBACK_ROLE = "Test_Interaction_Follow";
+    private static final String DEFAULT_ROLE = "Blacksmith_Escort_Base";
     @Nonnull
     private final OptionalArg<String> roleArg = this.withOptionalArg("role", "Optional NPC role name", ArgTypes.STRING);
 
@@ -47,7 +46,7 @@ public class NpcSpawnCommand extends AbstractPlayerCommand {
             @Nonnull World world
     ) {
         NPCPlugin npcPlugin = NPCPlugin.get();
-        String requestedRole = this.roleArg.provided(context) ? this.roleArg.get(context) : pickDefaultRole(npcPlugin);
+        String requestedRole = this.roleArg.provided(context) ? this.roleArg.get(context) : DEFAULT_ROLE;
         if (requestedRole == null || requestedRole.isEmpty()) {
             context.sendMessage(Message.raw("Default NPC role is unavailable: " + DEFAULT_ROLE));
             return;
@@ -93,17 +92,5 @@ public class NpcSpawnCommand extends AbstractPlayerCommand {
         }
 
         context.sendMessage(Message.raw("Spawned companion role '" + requestedRole + "' at " + spawnPos + ". Press F to toggle follow."));
-    }
-
-    @Nullable
-    private static String pickDefaultRole(@Nonnull NPCPlugin npcPlugin) {
-        for (String roleName : new String[]{DEFAULT_ROLE, FALLBACK_ROLE}) {
-            int roleIndex = npcPlugin.getIndex(roleName);
-            BuilderInfo roleInfo = npcPlugin.getRoleBuilderInfo(roleIndex);
-            if (roleInfo != null && roleInfo.getBuilder().isSpawnable()) {
-                return roleName;
-            }
-        }
-        return null;
     }
 }
