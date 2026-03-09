@@ -31,7 +31,12 @@ public class SetBaseSpawnCommand extends AbstractPlayerCommand {
     ) {
         Transform transform = playerRef.getTransform();
         Transform spawn = new Transform(new Vector3d(transform.getPosition()), new Vector3f(transform.getRotation()));
-        GameFlowConfigManager.get().setBaseSpawn(world.getWorldConfig().getUuid(), spawn);
+        GameFlowConfigManager config = GameFlowConfigManager.get();
+        config.setBaseSpawn(spawn);
+        String hubWorldName = config.getHubWorldName();
+        if (!hubWorldName.equalsIgnoreCase(world.getName())) {
+            context.sendMessage(Message.raw("Base spawn saved from world '" + world.getName() + "' (hub world is '" + hubWorldName + "')."));
+        }
         context.sendMessage(Message.raw("Base spawn set at: " + spawn.getPosition()));
     }
 }

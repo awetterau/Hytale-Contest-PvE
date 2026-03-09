@@ -38,7 +38,7 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
         long remainingMs = Math.max(0L, snapshot.runEndsAtEpochMillis() - System.currentTimeMillis());
         updateRunWorldTimerHud(worldId, remainingMs);
 
-        if (snapshot.phase() == GameSessionManager.RunPhase.EXPLORATION && GameSessionManager.get().shouldActivateCrimson()) {
+        if (snapshot.crimsonEnabled() && snapshot.phase() == GameSessionManager.RunPhase.EXPLORATION && GameSessionManager.get().shouldActivateCrimson()) {
             if (RedWaveManager.getActiveWave(worldId) == null) {
                 Vector3i pos1 = snapshot.crimsonPos1();
                 Vector3i pos2 = snapshot.crimsonPos2();

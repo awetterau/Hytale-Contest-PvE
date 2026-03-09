@@ -12,12 +12,14 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.server.npc.entities.NPCEntity;
 
 import javax.annotation.Nonnull;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class RescueInteractionPacketWatcher implements PacketWatcher {
+    private static final String BASE_RESCUED_ROLE = "Blacksmith_Escort_Base";
     private static final long COOLDOWN_MS = 250L;
     private final ConcurrentHashMap<UUID, Long> cooldownByPlayer = new ConcurrentHashMap<>();
 
@@ -73,6 +75,11 @@ public final class RescueInteractionPacketWatcher implements PacketWatcher {
             }
             Ref<EntityStore> targetRef = entityStore.getRefFromNetworkId(chain.data.entityId);
             if (targetRef == null || !targetRef.isValid()) {
+                continue;
+            }
+            NPCEntity npc = targetRef.getStore().getComponent(targetRef, NPCEntity.getComponentType());
+            if (npc != null && BASE_RESCUED_ROLE.equals(npc.getRoleName())) {
+                BlacksmithDialogueManager.get().openDialogue(playerRef, targetRef);
                 continue;
             }
             RescueObjectiveManager.get().markFollowingFromNpcRef(playerRef, targetRef, chain.interactionType);

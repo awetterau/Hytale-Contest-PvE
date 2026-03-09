@@ -1,8 +1,17 @@
 {
   "Type": "Generic",
   "StartState": "Idle",
-  "Appearance": "Tuluk_Fisherman",
+  "BusyStates": [
+    "Dialogue"
+  ],
+  "Appearance": "Blacksmith_Escort",
   "DefaultPlayerAttitude": "Neutral",
+  "Invulnerable": true,
+  "DisableDamageGroups": [
+    "Player",
+    "Self"
+  ],
+  "KnockbackScale": 0,
   "MaxHealth": 100,
   "MotionControllerList": [
     {
@@ -37,17 +46,36 @@
                 "PickRandomAngle": true
               },
               "BodyMotion": {
-                "Type": "Timer",
-                "Time": [
-                  2,
-                  5
-                ],
-                "Motion": {
-                  "Type": "Wander",
-                  "MaxHeadingChange": 35,
-                  "RelativeSpeed": 0.22
-                }
+                "Type": "WanderInCircle",
+                "Radius": 2.5,
+                "RelativeSpeed": 0.65
               }
+            }
+          ]
+        },
+        {
+          "Sensor": {
+            "Type": "State",
+            "State": "Dialogue"
+          },
+          "Instructions": [
+            {
+              "Sensor": {
+                "Type": "Any"
+              },
+              "HeadMotion": {
+                "Type": "Nothing"
+              },
+              "BodyMotion": {
+                "Type": "Nothing"
+              },
+              "Actions": [
+                {
+                  "Type": "PlayAnimation",
+                  "Slot": "Status",
+                  "Animation": "Idle"
+                }
+              ]
             }
           ]
         }
@@ -57,13 +85,25 @@
   "InteractionInstruction": {
     "Instructions": [
       {
+        "Continue": true,
         "Sensor": {
           "Type": "Any"
         },
         "Actions": [
           {
             "Type": "SetInteractable",
-            "Interactable": false
+            "Interactable": true
+          }
+        ]
+      },
+      {
+        "Sensor": {
+          "Type": "HasInteracted"
+        },
+        "Actions": [
+          {
+            "Type": "State",
+            "State": "Dialogue"
           }
         ]
       }

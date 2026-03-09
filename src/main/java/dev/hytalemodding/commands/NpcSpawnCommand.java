@@ -1,21 +1,14 @@
 package dev.hytalemodding.commands;
-import com.hypixel.hytale.common.util.RandomUtil;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.function.consumer.TriConsumer;
 import com.hypixel.hytale.math.vector.Transform;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
-import com.hypixel.hytale.protocol.PlayerSkin;
 import com.hypixel.hytale.server.core.Message;
-import com.hypixel.hytale.server.core.asset.type.model.config.Model;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.arguments.system.OptionalArg;
 import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
-import com.hypixel.hytale.server.core.cosmetics.CosmeticsModule;
-import com.hypixel.hytale.server.core.modules.entity.player.ApplyRandomSkinPersistedComponent;
-import com.hypixel.hytale.server.core.modules.entity.player.PlayerSkinComponent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -25,7 +18,6 @@ import com.hypixel.hytale.server.npc.entities.NPCEntity;
 import it.unimi.dsi.fastutil.Pair;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 public class NpcSpawnCommand extends AbstractPlayerCommand {
     private static final String DEFAULT_ROLE = "Blacksmith_Escort_Base";
@@ -66,24 +58,14 @@ public class NpcSpawnCommand extends AbstractPlayerCommand {
         Transform playerTransform = playerRef.getTransform();
         Vector3d spawnPos = new Vector3d(playerTransform.getPosition());
         Vector3f spawnRot = new Vector3f(playerTransform.getRotation());
-        PlayerSkin randomSkin = CosmeticsModule.get().generateRandomSkin(RandomUtil.getSecureRandom());
-        Model playerModel = CosmeticsModule.get().createModel(randomSkin);
-        TriConsumer<NPCEntity, Ref<EntityStore>, Store<EntityStore>> postSpawn = (npcEntity, npcRef, entityStore) -> {
-            entityStore.putComponent(npcRef, PlayerSkinComponent.getComponentType(), new PlayerSkinComponent(randomSkin));
-            entityStore.putComponent(
-                    npcRef,
-                    ApplyRandomSkinPersistedComponent.getComponentType(),
-                    ApplyRandomSkinPersistedComponent.INSTANCE
-            );
-        };
 
         Pair<Ref<EntityStore>, NPCEntity> npcPair = npcPlugin.spawnEntity(
                 store,
                 roleIndex,
                 spawnPos,
                 spawnRot,
-                playerModel,
-                postSpawn
+                null,
+                null
         );
 
         if (npcPair == null || npcPair.first() == null || !npcPair.first().isValid()) {

@@ -1,0 +1,64 @@
+Group #BlacksmithDialogueRoot {
+  Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0);
+  LayoutMode: Bottom;
+  Padding: (Bottom: 30);
+
+  Group #DialoguePanel {
+    Anchor: (Width: 980, Height: 200);
+    Background: (Color: #0b0f16(0.94));
+    OutlineColor: #60738f;
+    OutlineSize: 1;
+    Padding: (Left: 22, Right: 22, Top: 18, Bottom: 16);
+    LayoutMode: Top;
+
+    Label #NpcName {
+      Text: "Blacksmith";
+      Anchor: (Height: 30, Bottom: 8);
+      Style: (
+        FontSize: 22,
+        TextColor: #f0c57b,
+        RenderBold: true,
+        HorizontalAlignment: Start,
+        VerticalAlignment: Center
+      );
+    }
+
+    Label #DialogueText {
+      Text: "HI";
+      Anchor: (Bottom: 14);
+      Style: (
+        FontSize: 20,
+        TextColor: #e6edf8,
+        Wrap: true,
+        HorizontalAlignment: Start,
+        VerticalAlignment: Start
+      );
+      FlexWeight: 1;
+    }
+
+    Group {
+      LayoutMode: Right;
+      Anchor: (Height: 42);
+
+      Button #CloseButton {
+        Anchor: (Width: 126, Height: 38);
+        Style: (
+          Default: (Background: (Color: #2f3f54)),
+          Hovered: (Background: (Color: #3e536d)),
+          Pressed: (Background: (Color: #263448))
+        );
+
+        Label {
+          Text: "Close";
+          Style: (
+            FontSize: 16,
+            TextColor: #f0f4ff,
+            RenderBold: true,
+            HorizontalAlignment: Center,
+            VerticalAlignment: Center
+          );
+        }
+      }
+    }
+  }
+}

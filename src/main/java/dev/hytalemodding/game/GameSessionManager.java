@@ -74,17 +74,22 @@ public final class GameSessionManager {
             Path runWorldPath = Universe.get().getPath().resolve("worlds").resolve(runWorldName);
 
             RedWaveManager.Selection selection = RedWaveManager.getSelection(starter.getUuid());
-            if (selection == null || !selection.isComplete() || !templateWorld.getWorldConfig().getUuid().equals(selection.worldId())) {
-                return CompletableFuture.failedFuture(
-                        new IllegalStateException("Set crimson bounds in template world with /redpos1 and /redpos2 before /gamestart.")
-                );
-            }
-            Vector3i pos1 = selection.pos1();
-            Vector3i pos2 = selection.pos2();
-            if (pos1 == null || pos2 == null) {
-                return CompletableFuture.failedFuture(
-                        new IllegalStateException("Crimson bounds are incomplete. Use /redpos1 and /redpos2.")
-                );
+            boolean crimsonEnabled = selection != null
+                    && selection.isComplete()
+                    && templateWorld.getWorldConfig().getUuid().equals(selection.worldId());
+            Vector3i pos1;
+            Vector3i pos2;
+            if (crimsonEnabled) {
+                pos1 = selection.pos1();
+                pos2 = selection.pos2();
+                if (pos1 == null || pos2 == null) {
+                    crimsonEnabled = false;
+                    pos1 = new Vector3i(0, 0, 0);
+                    pos2 = new Vector3i(0, 0, 0);
+                }
+            } else {
+                pos1 = new Vector3i(0, 0, 0);
+                pos2 = new Vector3i(0, 0, 0);
             }
 
             this.activeSession = new ActiveSession(
@@ -95,6 +100,7 @@ public final class GameSessionManager {
                     new Vector3i(pos1),
                     new Vector3i(pos2),
                     DEFAULT_CRIMSON_SPREAD_SECONDS,
+                    crimsonEnabled,
                     copyTransformOrNull(runSpawnTransform),
                     copyTransformOrNull(returnSpawnTransform)
             );
@@ -107,7 +113,10 @@ public final class GameSessionManager {
 
         return CompletableFuture.runAsync(() -> copyDirectory(templatePath, session.runWorldPath))
                 .thenCompose(ignored -> loadAndInstantiateRunWorld(universe, session))
-                .thenCompose(runWorld -> movePlayerToWorld(starter, templateWorld, runWorld, session.runSpawnTransform).thenApply(x -> runWorld))
+                .thenCompose(runWorld -> {
+                    World sourceWorld = resolvePlayerWorld(starter, universe, templateWorld);
+                    return movePlayerToWorld(starter, sourceWorld, runWorld, session.runSpawnTransform).thenApply(x -> runWorld);
+                })
                 .thenApply(runWorld -> {
                     synchronized (this) {
                         if (this.activeSession == session) {
@@ -135,11 +144,19 @@ public final class GameSessionManager {
 
     @Nonnull
     public CompletableFuture<EndSessionResult> endSession() {
-        return endSession(null);
+        return endSession(null, null);
     }
 
     @Nonnull
     public CompletableFuture<EndSessionResult> endSession(@Nullable Transform returnSpawnOverride) {
+        return endSession(returnSpawnOverride, null);
+    }
+
+    @Nonnull
+    public CompletableFuture<EndSessionResult> endSession(
+            @Nullable Transform returnSpawnOverride,
+            @Nullable World returnWorldOverride
+    ) {
         final ActiveSession session;
         synchronized (this) {
             if (this.activeSession == null || this.activeSession.phase == RunPhase.IDLE) {
@@ -151,7 +168,7 @@ public final class GameSessionManager {
 
         Universe universe = Universe.get();
         World runWorld = universe.getWorld(session.runWorldName);
-        World fallbackWorld = universe.getWorld(session.templateWorldName);
+        World fallbackWorld = returnWorldOverride != null ? returnWorldOverride : universe.getWorld(session.templateWorldName);
         if (fallbackWorld == null) {
             fallbackWorld = universe.getDefaultWorld();
         }
@@ -198,6 +215,9 @@ public final class GameSessionManager {
 
     public synchronized boolean shouldActivateCrimson() {
         if (this.activeSession == null || this.activeSession.phase != RunPhase.EXPLORATION) {
+            return false;
+        }
+        if (!this.activeSession.crimsonEnabled) {
             return false;
         }
         return System.currentTimeMillis() >= this.activeSession.crimsonStartAtEpochMillis;
@@ -304,6 +324,18 @@ public final class GameSessionManager {
                 });
     }
 
+    @Nonnull
+    private static World resolvePlayerWorld(@Nonnull PlayerRef playerRef, @Nonnull Universe universe, @Nonnull World fallback) {
+        UUID playerWorldUuid = playerRef.getWorldUuid();
+        if (playerWorldUuid != null) {
+            World actual = universe.getWorld(playerWorldUuid);
+            if (actual != null) {
+                return actual;
+            }
+        }
+        return fallback;
+    }
+
     private static void copyDirectory(@Nonnull Path source, @Nonnull Path target) {
         if (!Files.isDirectory(source)) {
             throw new IllegalArgumentException("Template world path does not exist: " + source);
@@ -391,6 +423,7 @@ public final class GameSessionManager {
         @Nonnull
         private final Vector3i crimsonPos2;
         private final float crimsonSpreadSeconds;
+        private final boolean crimsonEnabled;
         @Nullable
         private final Transform runSpawnTransform;
         @Nullable
@@ -411,6 +444,7 @@ public final class GameSessionManager {
                 @Nonnull Vector3i crimsonPos1,
                 @Nonnull Vector3i crimsonPos2,
                 float crimsonSpreadSeconds,
+                boolean crimsonEnabled,
                 @Nullable Transform runSpawnTransform,
                 @Nullable Transform returnSpawnTransform
         ) {
@@ -421,6 +455,7 @@ public final class GameSessionManager {
             this.crimsonPos1 = crimsonPos1;
             this.crimsonPos2 = crimsonPos2;
             this.crimsonSpreadSeconds = crimsonSpreadSeconds;
+            this.crimsonEnabled = crimsonEnabled;
             this.runSpawnTransform = runSpawnTransform;
             this.returnSpawnTransform = returnSpawnTransform;
         }
@@ -438,7 +473,8 @@ public final class GameSessionManager {
                     this.crimsonStartAtEpochMillis,
                     new Vector3i(this.crimsonPos1),
                     new Vector3i(this.crimsonPos2),
-                    this.crimsonSpreadSeconds
+                    this.crimsonSpreadSeconds,
+                    this.crimsonEnabled
             );
         }
     }
@@ -471,7 +507,8 @@ public final class GameSessionManager {
             long crimsonStartAtEpochMillis,
             @Nonnull Vector3i crimsonPos1,
             @Nonnull Vector3i crimsonPos2,
-            float crimsonSpreadSeconds
+            float crimsonSpreadSeconds,
+            boolean crimsonEnabled
     ) {
     }
 }

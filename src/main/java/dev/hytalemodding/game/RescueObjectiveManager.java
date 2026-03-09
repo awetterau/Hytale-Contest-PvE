@@ -34,6 +34,7 @@ public final class RescueObjectiveManager {
 
     private final ConcurrentHashMap<UUID, RescueObjective> objectives = new ConcurrentHashMap<>();
     private volatile boolean blacksmithRescued;
+    private volatile boolean rescuedStateLoaded;
     private volatile boolean pendingBaseSpawn;
     private volatile boolean baseSpawnInProgress;
 
@@ -46,6 +47,7 @@ public final class RescueObjectiveManager {
     }
 
     public void tick(@Nonnull Store<EntityStore> store) {
+        ensureRescuedStateLoaded();
         GameSessionManager.ActiveSessionSnapshot session = GameSessionManager.get().getActiveSession();
         if (session == null || session.runWorldUuid() == null) {
             this.objectives.clear();
@@ -99,7 +101,57 @@ public final class RescueObjectiveManager {
     }
 
     public boolean isBlacksmithRescued() {
+        ensureRescuedStateLoaded();
         return this.blacksmithRescued;
+    }
+
+    public boolean isPendingBaseSpawn() {
+        return this.pendingBaseSpawn;
+    }
+
+    public boolean isBaseSpawnInProgress() {
+        return this.baseSpawnInProgress;
+    }
+
+    public boolean hasObjectiveNpc(@Nonnull UUID worldUuid) {
+        RescueObjective objective = this.objectives.get(worldUuid);
+        return objective != null && objective.npcRef != null && objective.npcRef.isValid();
+    }
+
+    public synchronized void setBlacksmithRescued(boolean rescued) {
+        this.blacksmithRescued = rescued;
+        this.rescuedStateLoaded = true;
+        if (rescued) {
+            this.pendingBaseSpawn = false;
+            this.baseSpawnInProgress = false;
+        }
+        GameFlowConfigManager.get().setBlacksmithRescued(rescued);
+    }
+
+    public synchronized void resetRuntimeStatePreserveRescued() {
+        ensureRescuedStateLoaded();
+        this.objectives.clear();
+        this.pendingBaseSpawn = false;
+        this.baseSpawnInProgress = false;
+    }
+
+    public synchronized void resetBlacksmithProgress() {
+        this.objectives.clear();
+        this.pendingBaseSpawn = false;
+        this.baseSpawnInProgress = false;
+        setBlacksmithRescued(false);
+    }
+
+    public boolean spawnBaseBlacksmithNow(@Nonnull World destinationWorld, @Nonnull Transform destinationTransform) {
+        ensureRescuedStateLoaded();
+        if (this.blacksmithRescued) {
+            return false;
+        }
+        boolean success = spawnBaseBlacksmith(destinationWorld, destinationTransform);
+        if (success) {
+            setBlacksmithRescued(true);
+        }
+        return success;
     }
 
     public void onPlayerInteract(@Nonnull PlayerInteractEvent event) {
@@ -110,7 +162,11 @@ public final class RescueObjectiveManager {
         Ref<EntityStore> targetRef = event.getTargetRef();
         Store<EntityStore> targetStore = targetRef.getStore();
         NPCEntity npc = targetStore.getComponent(targetRef, NPCEntity.getComponentType());
-        if (npc == null || !RUN_RESCUE_ROLE.equals(npc.getRoleName())) {
+        if (npc == null) {
+            return;
+        }
+        String roleName = npc.getRoleName();
+        if (!RUN_RESCUE_ROLE.equals(roleName) && !BASE_RESCUED_ROLE.equals(roleName)) {
             return;
         }
 
@@ -122,6 +178,16 @@ public final class RescueObjectiveManager {
             playerRef = Universe.get().getPlayer(event.getPlayer().getUuid());
         }
         if (playerRef == null || playerRef.getWorldUuid() == null) {
+            return;
+        }
+
+        if (BASE_RESCUED_ROLE.equals(roleName)) {
+            InteractionType interactionType = event.getActionType();
+            if (interactionType == InteractionType.Use
+                    || interactionType == InteractionType.Primary
+                    || interactionType == InteractionType.Secondary) {
+                BlacksmithDialogueManager.get().openDialogue(playerRef, targetRef);
+            }
             return;
         }
 
@@ -174,6 +240,7 @@ public final class RescueObjectiveManager {
     }
 
     public boolean queueRescueForExtraction(@Nullable UUID runWorldId, @Nonnull UUID extractingPlayerId) {
+        ensureRescuedStateLoaded();
         if (runWorldId == null || this.blacksmithRescued || this.pendingBaseSpawn) {
             return false;
         }
@@ -182,15 +249,9 @@ public final class RescueObjectiveManager {
         if (objective == null) {
             return false;
         }
-        if (!objective.starterPlayerId.equals(extractingPlayerId)) {
-            return false;
-        }
-        long now = System.currentTimeMillis();
-        boolean following = objective.state == RescueState.FOLLOWING
-                || isNpcFollowingNow(objective)
-                || (now - objective.lastFollowingAtMs) <= FOLLOW_GRACE_MS;
+        boolean following = objective.state == RescueState.FOLLOWING || isNpcFollowingNow(objective);
         if (!following) {
-            System.out.println("[RescueDebug] queue rejected: npc not following");
+            System.out.println("[RescueDebug] queue rejected: npc is not actively following");
             return false;
         }
 
@@ -206,6 +267,7 @@ public final class RescueObjectiveManager {
             @Nonnull World destinationWorld,
             @Nonnull Transform destinationTransform
     ) {
+        ensureRescuedStateLoaded();
         synchronized (this) {
             if (!this.pendingBaseSpawn || this.blacksmithRescued || this.baseSpawnInProgress) {
                 return CompletableFuture.completedFuture(false);
@@ -218,8 +280,18 @@ public final class RescueObjectiveManager {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
         destinationWorld.execute(() -> {
             boolean success = spawnBaseBlacksmith(destinationWorld, destinationTransform);
+            if (!success) {
+                Ref<EntityStore> existingBase = findExistingNpcRefByRole(
+                        destinationWorld.getEntityStore().getStore(),
+                        BASE_RESCUED_ROLE
+                );
+                if (existingBase != null && existingBase.isValid()) {
+                    success = true;
+                    System.out.println("[RescueDebug] base spawn fallback success: existing base blacksmith found");
+                }
+            }
             if (success) {
-                this.blacksmithRescued = true;
+                setBlacksmithRescued(true);
                 System.out.println("[RescueDebug] base spawn success in world=" + destinationWorld.getName());
             } else {
                 System.out.println("[RescueDebug] base spawn failed in world=" + destinationWorld.getName());
@@ -231,7 +303,14 @@ public final class RescueObjectiveManager {
     }
 
     private boolean spawnBaseBlacksmith(@Nonnull World destinationWorld, @Nonnull Transform destinationTransform) {
-        return spawnNpcAt(destinationWorld, destinationTransform, BASE_RESCUED_ROLE, false);
+        Ref<EntityStore> existingBase = findExistingNpcRefByRole(
+                destinationWorld.getEntityStore().getStore(),
+                BASE_RESCUED_ROLE
+        );
+        if (existingBase != null && existingBase.isValid()) {
+            return true;
+        }
+        return spawnNpcAt(destinationWorld, destinationTransform, BASE_RESCUED_ROLE, true);
     }
 
     private boolean spawnNpcAt(
@@ -276,6 +355,7 @@ public final class RescueObjectiveManager {
             @Nonnull GameSessionManager.ActiveSessionSnapshot session,
             @Nonnull RescueObjective objective
     ) {
+        ensureRescuedStateLoaded();
         if (this.blacksmithRescued || this.pendingBaseSpawn) {
             objective.state = RescueState.SAFE;
             return;
@@ -345,6 +425,7 @@ public final class RescueObjectiveManager {
     }
 
     public void spawnRescueOnRunStart(@Nonnull World runWorld, @Nonnull GameSessionManager.ActiveSessionSnapshot session) {
+        ensureRescuedStateLoaded();
         if (this.blacksmithRescued || this.pendingBaseSpawn || session.runWorldUuid() == null) {
             return;
         }
@@ -365,11 +446,7 @@ public final class RescueObjectiveManager {
 
     @Nullable
     private Transform getConfiguredRunRescueSpawn(@Nonnull String templateWorldName) {
-        World templateWorld = Universe.get().getWorld(templateWorldName);
-        if (templateWorld == null) {
-            return null;
-        }
-        return GameFlowConfigManager.get().getRescueRunSpawn(templateWorld.getWorldConfig().getUuid());
+        return GameFlowConfigManager.get().getRescueRunSpawn();
     }
 
     private boolean isNpcFollowingNow(@Nonnull RescueObjective objective) {
@@ -388,6 +465,11 @@ public final class RescueObjectiveManager {
 
     @Nullable
     private Ref<EntityStore> findExistingRunObjectiveNpcRef(@Nonnull Store<EntityStore> store) {
+        return findExistingNpcRefByRole(store, RUN_RESCUE_ROLE);
+    }
+
+    @Nullable
+    private Ref<EntityStore> findExistingNpcRefByRole(@Nonnull Store<EntityStore> store, @Nonnull String roleName) {
         final Ref<EntityStore>[] found = new Ref[]{null};
         store.forEachChunk(NPCEntity.getComponentType(), (chunk, buffer) -> {
             if (found[0] != null) {
@@ -399,7 +481,7 @@ public final class RescueObjectiveManager {
                 if (npc == null) {
                     continue;
                 }
-                if (RUN_RESCUE_ROLE.equals(npc.getRoleName())) {
+                if (roleName.equals(npc.getRoleName())) {
                     Ref<EntityStore> ref = chunk.getReferenceTo(i);
                     if (ref != null && ref.isValid()) {
                         found[0] = ref;
@@ -416,6 +498,14 @@ public final class RescueObjectiveManager {
             return false;
         }
         return FOLLOW_STATE.equalsIgnoreCase(stateName) || stateName.startsWith("$Interaction");
+    }
+
+    private synchronized void ensureRescuedStateLoaded() {
+        if (this.rescuedStateLoaded) {
+            return;
+        }
+        this.blacksmithRescued = GameFlowConfigManager.get().isBlacksmithRescued();
+        this.rescuedStateLoaded = true;
     }
 
     private static void sendRunWorldMessage(@Nonnull UUID runWorldId, @Nonnull String text) {

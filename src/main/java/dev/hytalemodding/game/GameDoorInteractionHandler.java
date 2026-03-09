@@ -85,23 +85,38 @@ public final class GameDoorInteractionHandler {
     }
 
     private static void tryStartFromDoor(@Nonnull PlayerRef playerRef, @Nonnull World templateWorld) {
-        UUID templateWorldId = templateWorld.getWorldConfig().getUuid();
-        boolean hasRunSpawn = GameFlowConfigManager.get().hasRunSpawn(templateWorldId);
-        boolean hasBaseSpawn = GameFlowConfigManager.get().hasBaseSpawn(templateWorldId);
+        GameFlowConfigManager config = GameFlowConfigManager.get();
+        String hubWorldName = config.getHubWorldName();
+        if (!hubWorldName.equalsIgnoreCase(templateWorld.getName())) {
+            playerRef.sendMessage(Message.raw("Use the game door from hub world '" + hubWorldName + "'."));
+            System.out.println("[GameDoorDebug] start rejected: wrong world " + templateWorld.getName() + " expected " + hubWorldName);
+            return;
+        }
+
+        String templateWorldName = config.getTemplateWorldName();
+        World runTemplateWorld = Universe.get().getWorld(templateWorldName);
+        if (runTemplateWorld == null) {
+            playerRef.sendMessage(Message.raw("Run template world not loaded: " + templateWorldName));
+            System.out.println("[GameDoorDebug] start rejected: template world missing " + templateWorldName);
+            return;
+        }
+
+        boolean hasRunSpawn = config.hasRunSpawn();
+        boolean hasBaseSpawn = config.hasBaseSpawn();
         if (!hasRunSpawn || !hasBaseSpawn) {
             String missing = (hasRunSpawn ? "" : "/setrunspawn")
                     + ((!hasRunSpawn && !hasBaseSpawn) ? " and " : "")
                     + (hasBaseSpawn ? "" : "/setbasespawn");
             playerRef.sendMessage(Message.raw("Setup missing: " + missing));
-            System.out.println("[GameDoorDebug] start rejected: missing config template=" + templateWorld.getName());
+            System.out.println("[GameDoorDebug] start rejected: missing config");
             return;
         }
 
-        Transform runSpawn = GameFlowConfigManager.get().getRunSpawn(templateWorldId);
-        Transform baseSpawn = GameFlowConfigManager.get().getBaseSpawn(templateWorldId);
-        System.out.println("[GameDoorDebug] start requested by=" + playerRef.getUuid() + " template=" + templateWorld.getName());
+        Transform runSpawn = config.getRunSpawn();
+        Transform baseSpawn = config.getBaseSpawn();
+        System.out.println("[GameDoorDebug] start requested by=" + playerRef.getUuid() + " template=" + runTemplateWorld.getName());
 
-        GameSessionManager.get().startSession(playerRef, templateWorld, runSpawn, baseSpawn).whenComplete((result, throwable) -> {
+        GameSessionManager.get().startSession(playerRef, runTemplateWorld, runSpawn, baseSpawn).whenComplete((result, throwable) -> {
             if (throwable != null) {
                 String reason = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
                 playerRef.sendMessage(Message.raw("Failed to start run: " + reason));
@@ -117,22 +132,26 @@ public final class GameDoorInteractionHandler {
             @Nonnull PlayerRef playerRef,
             @Nonnull GameSessionManager.ActiveSessionSnapshot session
     ) {
-        World templateWorld = Universe.get().getWorld(session.templateWorldName());
-        if (templateWorld == null) {
-            playerRef.sendMessage(Message.raw("Template world is unavailable."));
-            System.out.println("[GameDoorDebug] extract rejected: template world missing " + session.templateWorldName());
+        GameFlowConfigManager config = GameFlowConfigManager.get();
+        String hubWorldName = config.getHubWorldName();
+        World hubWorld = Universe.get().getWorld(hubWorldName);
+        if (hubWorld == null) {
+            playerRef.sendMessage(Message.raw("Hub world is unavailable: " + hubWorldName));
+            System.out.println("[GameDoorDebug] extract rejected: hub world missing " + hubWorldName);
             return;
         }
 
-        UUID templateWorldId = templateWorld.getWorldConfig().getUuid();
-        Transform baseSpawn = nullableOrDefault(GameFlowConfigManager.get().getBaseSpawn(templateWorldId), playerRef.getTransform());
+        Transform baseSpawn = nullableOrDefault(config.getBaseSpawn(), playerRef.getTransform());
         boolean queuedRescue = RescueObjectiveManager.get().queueRescueForExtraction(
                 session.runWorldUuid(),
                 playerRef.getUuid()
         );
+        if (!queuedRescue) {
+            playerRef.sendMessage(Message.raw("Rescue transfer not queued (already rescued or objective not ready)."));
+        }
         System.out.println("[GameDoorDebug] extract requested by=" + playerRef.getUuid() + " runWorld=" + session.runWorldName() + " queuedRescue=" + queuedRescue);
 
-        GameSessionManager.get().endSession(baseSpawn).whenComplete((result, throwable) -> {
+        GameSessionManager.get().endSession(baseSpawn, hubWorld).whenComplete((result, throwable) -> {
             if (throwable != null) {
                 String reason = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
                 playerRef.sendMessage(Message.raw("Failed to extract: " + reason));
@@ -142,11 +161,14 @@ public final class GameDoorInteractionHandler {
             System.out.println("[GameDoorDebug] extract success: " + result.message());
             playerRef.sendMessage(Message.raw("Extraction complete."));
             if (queuedRescue) {
-                RescueObjectiveManager.get().spawnQueuedRescueInBase(templateWorld, baseSpawn).whenComplete((spawned, spawnErr) -> {
+                RescueObjectiveManager.get().spawnQueuedRescueInBase(hubWorld, baseSpawn).whenComplete((spawned, spawnErr) -> {
+                    // Rescue completion is tied to successful extraction while following.
+                    // Base transfer spawn can fail independently; preserve rescued progression anyway.
+                    RescueObjectiveManager.get().setBlacksmithRescued(true);
                     if (spawnErr != null || Boolean.FALSE.equals(spawned)) {
                         String reason = spawnErr != null ? spawnErr.getMessage() : "spawn returned false";
-                        playerRef.sendMessage(Message.raw("Rescue transfer failed: " + reason));
-                        System.out.println("[GameDoorDebug] rescue transfer failed: " + reason);
+                        playerRef.sendMessage(Message.raw("Blacksmith marked rescued, but base transfer failed: " + reason));
+                        System.out.println("[GameDoorDebug] rescue transfer failed (rescued preserved): " + reason);
                         return;
                     }
                     playerRef.sendMessage(Message.raw("Blacksmith rescued and added to base."));

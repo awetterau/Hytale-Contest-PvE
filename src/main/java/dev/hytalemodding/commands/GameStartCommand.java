@@ -11,6 +11,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import dev.hytalemodding.game.GameFlowConfigManager;
 import dev.hytalemodding.game.GameSessionManager;
 
 import javax.annotation.Nonnull;
@@ -32,7 +33,9 @@ public class GameStartCommand extends AbstractPlayerCommand {
             @Nonnull PlayerRef playerRef,
             @Nonnull World world
     ) {
-        String templateWorldName = this.templateWorldArg.provided(context) ? this.templateWorldArg.get(context) : world.getName();
+        String templateWorldName = this.templateWorldArg.provided(context)
+                ? this.templateWorldArg.get(context)
+                : GameFlowConfigManager.get().getTemplateWorldName();
         World templateWorld = Universe.get().getWorld(templateWorldName);
         if (templateWorld == null) {
             context.sendMessage(Message.raw("Template world not loaded: " + templateWorldName));

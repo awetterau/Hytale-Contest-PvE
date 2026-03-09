@@ -31,7 +31,7 @@ public class SetRescueSpawnCommand extends AbstractPlayerCommand {
     ) {
         Transform transform = playerRef.getTransform();
         Transform spawn = new Transform(new Vector3d(transform.getPosition()), new Vector3f(transform.getRotation()));
-        GameFlowConfigManager.get().setRescueRunSpawn(world.getWorldConfig().getUuid(), spawn);
+        GameFlowConfigManager.get().setRescueRunSpawn(spawn);
         context.sendMessage(Message.raw("Rescue run spawn set at: " + spawn.getPosition()));
     }
 }
