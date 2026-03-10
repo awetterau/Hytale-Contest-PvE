@@ -4,7 +4,7 @@ This plugin currently has 4 main systems:
 - Run session flow (start run, timer, extract/end run world)
 - Rescue objective (escort blacksmith in run -> transfer to base on extraction)
 - Crimson wave (area spread + undo)
-- Base housing plots (assign rescued NPCs to plot markers)
+- Base housing plots (profession-locked plots + auto-assignment + workshop state flow)
 
 ## Quick smoke test (recommended)
 1. Make sure your worlds exist and are loaded:
@@ -18,7 +18,7 @@ This plugin currently has 4 main systems:
 4. Press `F` on `Game_Start_Door` in hub to start a run.
 5. In run world, interact with the rescue blacksmith NPC so they follow.
 6. Return to the run door and press `F` to extract.
-7. Confirm you return to hub and blacksmith is marked rescued (and spawned in base).
+7. Confirm you return to hub with your inventory preserved and blacksmith is marked rescued.
 8. Run `/blacksmith status` to verify state.
 
 ## System behavior details
@@ -30,12 +30,19 @@ This plugin currently has 4 main systems:
   - In run world: extracts and ends the run world.
 - Run duration is 5 minutes with a timer HUD in the run world.
 - If crimson selection exists for the starter in the template world, crimson auto-starts during the run.
+- Death behavior in run:
+  - If starter dies during an active run, the run is ended.
+  - Player is returned to hub/base spawn.
+  - Inventory is wiped on death return.
+- Extraction behavior in run:
+  - If starter extracts via door, run ends and return keeps inventory.
 
 ### Rescue objective flow
 - Run objective role: `Blacksmith_Escort_Objective`
 - Base resident role: `Blacksmith_Escort_Base`
 - Rescue transfer only queues on extraction if the objective NPC is actively following.
 - Base blacksmith interaction opens blacksmith dialogue UI.
+- If player dies in run, escorted NPC is not transferred to hub and runtime rescue state is reset.
 
 ### Base housing plots
 - Marker block id: `Base_Plot_Marker`
@@ -43,8 +50,17 @@ This plugin currently has 4 main systems:
 - `home` = where the NPC stands/lives after assignment
 - Interacting a marker:
   - If marker is not registered as a plot: opens plot terminal UI.
-  - If marker matches a plot: opens assignment UI for that plot.
-- Assigning blacksmith to a plot builds a house at the marker and ensures blacksmith is placed at plot home.
+  - If marker matches a plot: opens plot purchase/management UI for that fixed plot.
+- Plot data includes:
+  - `plotType` (profession key this plot accepts, e.g. `blacksmith`)
+  - `purchased`
+  - `assignedNPC`
+  - `buildingLevel`
+- Purchase flow:
+  - Purchasing a plot auto-assigns matching rescued NPC (if available).
+  - NPC moves to workshop/home and enters working state.
+- Rule:
+  - One NPC per profession. The blacksmith profession has one working blacksmith.
 
 ## Command reference
 
@@ -101,10 +117,38 @@ This plugin currently has 4 main systems:
   - Deletes a plot.
 - `/baseplot sethome <id>`
   - Set NPC home for this plot to your current position and facing direction.
+- `/baseplot settype <id> <plotType>`
+  - Sets which profession this plot is reserved for (example: `blacksmith`).
 - `/baseplot clearassign <id>`
   - Clears plot assignment.
 - `/baseplot resetall`
   - Clears all plots/assignments and rescue runtime (rescued flag is preserved).
+
+### Dev/testing commands
+- `/devpanel`
+  - Opens the in-game Dev Admin Panel for step-by-step flow testing.
+- `/npcdev hud [on|off]`
+  - Toggle or set live NPC debug HUD.
+- `/npcdev state <profession> <wandering|moving|working>`
+  - Force an NPC state for testing.
+- `/npcdev assign <profession> <plotId>`
+  - Force-assign NPC to plot.
+- `/npcdev unassign <profession|plotId>`
+  - Clear assignment.
+- `/npcdev dump`
+  - Print current NPC data.
+- `/npcdev reset`
+  - Reset NPC dev state.
+- `/plotdev purchase <plotId>`
+  - Mark plot purchased (dev shortcut).
+- `/plotdev unpurchase <plotId>`
+  - Mark plot unpurchased.
+- `/plotdev settype <plotId> <plotType>`
+  - Set plot profession type.
+- `/plotdev setlevel <plotId> <level>`
+  - Force building level.
+- `/plotdev dump`
+  - Print current plot data.
 
 ### Crimson commands
 - `/redpos1 [x y z]`
@@ -131,12 +175,33 @@ This plugin currently has 4 main systems:
 ### Test base plot assignment
 1. Place `Base_Plot_Marker` blocks where desired.
 2. Register one with `/baseplot add smithPlot`.
-3. Ensure blacksmith is rescued (`/blacksmith rescued true` for fast test).
-4. Interact marker and assign blacksmith in UI.
-5. Confirm house is built and blacksmith appears at plot home.
+3. Reserve the plot for blacksmith with `/baseplot settype smithPlot blacksmith`.
+4. Ensure blacksmith is rescued (`/blacksmith rescued true` for fast test).
+5. Interact marker and purchase the plot.
+6. Confirm house is built and blacksmith appears at plot home/workshop.
+
+### Fast dev flow (recommended)
+1. Run `/devpanel`.
+2. Use panel buttons in order:
+   - Reset Flow
+   - Setup Plot Here
+   - Rescued TRUE
+   - Purchase Plot
+3. Confirm NPC state transitions to `WORKING`.
+4. Interact blacksmith and verify workshop/quest pages only appear when plot is assigned.
+
+### Test run death behavior
+1. Start a run from hub door.
+2. Die in the run world.
+3. Confirm:
+   - You are returned to hub/base spawn.
+   - Active run world is ended/cleaned up.
+   - Inventory is wiped.
+   - Escorted rescue NPC does not transfer and returns to hub wandering behavior.
 
 ## Persistence notes
 - Run sessions are temporary and cleaned up when ended.
 - Some config/state is persisted under universe plugin config:
   - `game-flow.properties` (world names, spawns, rescued flag)
-  - `base-housing.properties` (plot metadata/assignments)
+  - `base-housing.properties` (plot metadata, type, purchase, assignment, level)
+  - `hub-npcs.properties` (hub NPC state/data)

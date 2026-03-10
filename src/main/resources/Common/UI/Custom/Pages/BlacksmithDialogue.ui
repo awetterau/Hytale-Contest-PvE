@@ -24,7 +24,7 @@ Group #BlacksmithDialogueRoot {
     }
 
     Label #DialogueText {
-      Text: "HI";
+      Text: "Workshop is running. What do you need?";
       Anchor: (Bottom: 14);
       Style: (
         FontSize: 20,
@@ -36,12 +36,69 @@ Group #BlacksmithDialogueRoot {
       FlexWeight: 1;
     }
 
-    Group {
+    Group #ActionRow {
       LayoutMode: Right;
-      Anchor: (Height: 42);
+      Anchor: (Height: 42, Bottom: 8);
+
+      Button #CraftButton {
+        Anchor: (Width: 128, Height: 38, Right: 8);
+        Style: (
+          Default: (Background: (Color: #425d7c)),
+          Hovered: (Background: (Color: #4f7196)),
+          Pressed: (Background: (Color: #364d68))
+        );
+        Label {
+          Text: "Craft";
+          Style: (
+            FontSize: 16,
+            TextColor: #f0f4ff,
+            RenderBold: true,
+            HorizontalAlignment: Center,
+            VerticalAlignment: Center
+          );
+        }
+      }
+
+      Button #UpgradesButton {
+        Anchor: (Width: 128, Height: 38, Right: 8);
+        Style: (
+          Default: (Background: (Color: #4d5f30)),
+          Hovered: (Background: (Color: #5e7640)),
+          Pressed: (Background: (Color: #414f29))
+        );
+        Label {
+          Text: "Upgrades";
+          Style: (
+            FontSize: 16,
+            TextColor: #f0f4ff,
+            RenderBold: true,
+            HorizontalAlignment: Center,
+            VerticalAlignment: Center
+          );
+        }
+      }
+
+      Button #QuestsButton {
+        Anchor: (Width: 128, Height: 38, Right: 8);
+        Style: (
+          Default: (Background: (Color: #73563a)),
+          Hovered: (Background: (Color: #8a6846)),
+          Pressed: (Background: (Color: #5f4730))
+        );
+        Label {
+          Text: "Quests";
+          Style: (
+            FontSize: 16,
+            TextColor: #f0f4ff,
+            RenderBold: true,
+            HorizontalAlignment: Center,
+            VerticalAlignment: Center
+          );
+        }
+      }
 
       Button #CloseButton {
-        Anchor: (Width: 126, Height: 38);
+        Anchor: (Width: 110, Height: 38);
         Style: (
           Default: (Background: (Color: #2f3f54)),
           Hovered: (Background: (Color: #3e536d)),

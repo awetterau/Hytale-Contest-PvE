@@ -62,7 +62,7 @@ Group #BasePlotAssignRoot {
       LayoutMode: Right;
       Anchor: (Height: 42);
 
-      Button #ConfirmBtn {
+      Button #PurchaseBtn {
         Anchor: (Width: 160, Height: 40, Right: 8);
         Visible: false;
         Style: (
@@ -70,8 +70,28 @@ Group #BasePlotAssignRoot {
           Hovered: (Background: (Color: #398447)),
           Pressed: (Background: (Color: #275730))
         );
-        Label {
-          Text: "Build Home";
+        Label #PurchaseBtnText {
+          Text: "Purchase Plot";
+          Style: (
+            FontSize: 15,
+            TextColor: #eaffee,
+            RenderBold: true,
+            HorizontalAlignment: Center,
+            VerticalAlignment: Center
+          );
+        }
+      }
+
+      Button #AssignBtn {
+        Anchor: (Width: 160, Height: 40, Right: 8);
+        Visible: false;
+        Style: (
+          Default: (Background: (Color: #72501f)),
+          Hovered: (Background: (Color: #8a6326)),
+          Pressed: (Background: (Color: #5f431a))
+        );
+        Label #AssignBtnText {
+          Text: "Assign NPC";
           Style: (
             FontSize: 15,
             TextColor: #eaffee,

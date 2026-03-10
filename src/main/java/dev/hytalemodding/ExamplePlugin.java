@@ -12,11 +12,13 @@ import dev.hytalemodding.game.GameDoorInteractionHandler;
 import dev.hytalemodding.game.GameRunDirectorSystem;
 import dev.hytalemodding.game.GameDoorUseInteraction;
 import dev.hytalemodding.game.BaseHousingSystem;
+import dev.hytalemodding.game.DevDebugHudSystem;
 import dev.hytalemodding.game.BasePlotInteractionHandler;
 import dev.hytalemodding.game.BasePlotUseInteraction;
 import dev.hytalemodding.game.RescueInteractionPacketWatcher;
 import dev.hytalemodding.game.RescueObjectiveManager;
 import dev.hytalemodding.game.RescueObjectiveSystem;
+import dev.hytalemodding.game.RunDeathHandler;
 import dev.hytalemodding.redwave.RedWaveBlockSweepSystem;
 import dev.hytalemodding.redwave.RedWoolNpcDamageSystem;
 import dev.hytalemodding.redwave.RedWoolDamageSystem;
@@ -49,6 +51,9 @@ public class ExamplePlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new RedStartCommand());
         this.getCommandRegistry().registerCommand(new RedUndoCommand());
         this.getCommandRegistry().registerCommand(new NpcSpawnCommand());
+        this.getCommandRegistry().registerCommand(new NpcDevCommand());
+        this.getCommandRegistry().registerCommand(new PlotDevCommand());
+        this.getCommandRegistry().registerCommand(new DevPanelCommand());
         this.getCommandRegistry().registerCommand(new ExampleCommand("example", "An example command"));
         this.getCodecRegistry(Interaction.CODEC).register(
                 "game_door_use_interaction",
@@ -73,10 +78,12 @@ public class ExamplePlugin extends JavaPlugin {
         this.rescueInteractionPacketWatcher.register();
         this.getEntityStoreRegistry().registerSystem(new GameRunDirectorSystem());
         this.getEntityStoreRegistry().registerSystem(new RescueObjectiveSystem());
+        this.getEntityStoreRegistry().registerSystem(new RunDeathHandler());
         this.getEntityStoreRegistry().registerSystem(new BaseHousingSystem());
         this.getEntityStoreRegistry().registerSystem(new RedWaveBlockSweepSystem());
         this.getEntityStoreRegistry().registerSystem(new RedWoolDamageSystem());
         this.getEntityStoreRegistry().registerSystem(new RedWoolNpcDamageSystem());
+        this.getEntityStoreRegistry().registerSystem(new DevDebugHudSystem());
     }
 
 }

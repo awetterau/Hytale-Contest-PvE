@@ -15,16 +15,13 @@ import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.game.BaseHousingManager;
+import dev.hytalemodding.game.HubNpcManager;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.List;
 
 public class BasePlotAssignPage extends InteractiveCustomUIPage<BasePlotAssignPage.PageData> {
     @Nonnull
     private final String plotId;
-    @Nullable
-    private String selectedNpc;
 
     public static class PageData {
         public String action;
@@ -42,7 +39,6 @@ public class BasePlotAssignPage extends InteractiveCustomUIPage<BasePlotAssignPa
     public void build(@Nonnull Ref<EntityStore> ref, @Nonnull UICommandBuilder ui, @Nonnull UIEventBuilder events, @Nonnull Store<EntityStore> store) {
         BaseHousingManager manager = BaseHousingManager.get();
         BaseHousingManager.PlotData plot = manager.getPlot(this.plotId);
-        List<String> eligible = manager.getEligibleNpcKeysForPlot(this.plotId);
 
         ui.append("Pages/BasePlotAssign.ui");
         ui.set("#PlotTitle.Text", "Plot: " + this.plotId);
@@ -50,60 +46,40 @@ public class BasePlotAssignPage extends InteractiveCustomUIPage<BasePlotAssignPa
         if (plot == null) {
             ui.set("#StatusText.Text", "Plot not found.");
             ui.set("#BlacksmithBtn.Visible", false);
-            ui.set("#ConfirmBtn.Visible", false);
-            ui.set("#CloseBtn.Visible", true);
-            events.addEventBinding(CustomUIEventBindingType.Activating, "#CloseBtn", EventData.of("Action", "close"), false);
-            return;
-        }
-        if (plot.assignedNpcKey != null) {
-            ui.set("#StatusText.Text", "This plot is occupied by " + plot.assignedNpcKey + ".");
-            ui.set("#BlacksmithBtn.Visible", false);
-            ui.set("#ConfirmBtn.Visible", false);
+            ui.set("#PurchaseBtn.Visible", false);
+            ui.set("#AssignBtn.Visible", false);
             ui.set("#CloseBtn.Visible", true);
             events.addEventBinding(CustomUIEventBindingType.Activating, "#CloseBtn", EventData.of("Action", "close"), false);
             return;
         }
 
-        boolean blacksmithEligible = eligible.contains("blacksmith");
-        ui.set("#BlacksmithBtn.Visible", blacksmithEligible);
-        ui.set("#BlacksmithBtn.Disabled", !blacksmithEligible);
+        ui.set("#BlacksmithBtn.Visible", false);
+        ui.set("#BlacksmithBtn.Disabled", true);
+        ui.set("#PurchaseBtn.Visible", !plot.purchased);
+        ui.set("#PurchaseBtn.Disabled", false);
+        ui.set("#AssignBtn.Visible", false);
 
-        if (this.selectedNpc == null) {
-            if (blacksmithEligible) {
-                ui.set("#StatusText.Text", "Select a rescued NPC with no home.");
-            } else {
-                ui.set("#StatusText.Text", "No rescued unassigned NPCs available.");
-            }
-            ui.set("#ConfirmBtn.Visible", false);
+        if (!plot.purchased) {
+            ui.set("#StatusText.Text", "Purchase this " + plot.plotType + " plot to build its workshop.");
+        } else if (plot.assignedNpcKey != null) {
+            HubNpcManager.HubNpcState state = manager.getNpcState(plot.assignedNpcKey);
+            ui.set("#StatusText.Text", "Assigned: " + plot.assignedNpcKey + " (" + state.name() + ").");
         } else {
-            ui.set("#StatusText.Text", "Build blacksmith home on this plot?");
-            ui.set("#ConfirmBtn.Visible", true);
-            ui.set("#ConfirmBtn.Disabled", false);
+            ui.set("#StatusText.Text", "Waiting for rescued " + plot.plotType + " to auto-assign.");
         }
 
         ui.set("#CloseBtn.Visible", true);
-        events.addEventBinding(CustomUIEventBindingType.Activating, "#BlacksmithBtn", EventData.of("Action", "select:blacksmith"), false);
-        events.addEventBinding(CustomUIEventBindingType.Activating, "#ConfirmBtn", EventData.of("Action", "confirm"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#PurchaseBtn", EventData.of("Action", "purchase"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#CloseBtn", EventData.of("Action", "close"), false);
     }
 
     @Override
     public void handleDataEvent(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull PageData data) {
         String action = data.action == null ? "" : data.action.trim().toLowerCase();
-        if (action.startsWith("select:")) {
-            this.selectedNpc = action.substring("select:".length());
-            refresh(ref, store);
-            return;
-        }
-        if ("confirm".equals(action)) {
-            if (this.selectedNpc == null || this.selectedNpc.isBlank()) {
-                this.playerRef.sendMessage(Message.raw("No NPC selected."));
-                refresh(ref, store);
-                return;
-            }
-            BaseHousingManager.AssignmentResult result = BaseHousingManager.get().assignNpcToPlot(this.plotId, this.selectedNpc);
+        if ("purchase".equals(action)) {
+            BaseHousingManager.AssignmentResult result = BaseHousingManager.get().purchasePlot(this.plotId);
             this.playerRef.sendMessage(Message.raw(result.message));
-            close();
+            refresh(ref, store);
             return;
         }
         close();

@@ -1,11 +1,18 @@
 package dev.hytalemodding.game;
 
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.vector.Transform;
 import com.hypixel.hytale.math.vector.Vector3i;
+import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.entity.effect.EffectControllerComponent;
+import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
+import com.hypixel.hytale.server.core.modules.entitystats.asset.DefaultEntityStatTypes;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.WorldConfig;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.redwave.RedWaveManager;
 
 import javax.annotation.Nonnull;
@@ -115,7 +122,7 @@ public final class GameSessionManager {
                 .thenCompose(ignored -> loadAndInstantiateRunWorld(universe, session))
                 .thenCompose(runWorld -> {
                     World sourceWorld = resolvePlayerWorld(starter, universe, templateWorld);
-                    return movePlayerToWorld(starter, sourceWorld, runWorld, session.runSpawnTransform).thenApply(x -> runWorld);
+                    return movePlayerToWorld(starter, sourceWorld, runWorld, session.runSpawnTransform, false).thenApply(x -> runWorld);
                 })
                 .thenApply(runWorld -> {
                     synchronized (this) {
@@ -144,18 +151,35 @@ public final class GameSessionManager {
 
     @Nonnull
     public CompletableFuture<EndSessionResult> endSession() {
-        return endSession(null, null);
+        return endSession(null, null, false);
     }
 
     @Nonnull
     public CompletableFuture<EndSessionResult> endSession(@Nullable Transform returnSpawnOverride) {
-        return endSession(returnSpawnOverride, null);
+        return endSession(returnSpawnOverride, null, false);
     }
 
     @Nonnull
     public CompletableFuture<EndSessionResult> endSession(
             @Nullable Transform returnSpawnOverride,
             @Nullable World returnWorldOverride
+    ) {
+        return endSession(returnSpawnOverride, returnWorldOverride, false);
+    }
+
+    @Nonnull
+    public CompletableFuture<EndSessionResult> endSessionAndWipeInventory(
+            @Nullable Transform returnSpawnOverride,
+            @Nullable World returnWorldOverride
+    ) {
+        return endSession(returnSpawnOverride, returnWorldOverride, true);
+    }
+
+    @Nonnull
+    private CompletableFuture<EndSessionResult> endSession(
+            @Nullable Transform returnSpawnOverride,
+            @Nullable World returnWorldOverride,
+            boolean wipeInventoryOnReturn
     ) {
         final ActiveSession session;
         synchronized (this) {
@@ -178,7 +202,7 @@ public final class GameSessionManager {
             Transform returnSpawn = returnSpawnOverride != null
                     ? copyTransformOrNull(returnSpawnOverride)
                     : copyTransformOrNull(session.returnSpawnTransform);
-            transferFuture = movePlayersFromWorld(runWorld, fallbackWorld, returnSpawn);
+            transferFuture = movePlayersFromWorld(runWorld, fallbackWorld, returnSpawn, wipeInventoryOnReturn);
         } else {
             transferFuture = CompletableFuture.completedFuture(null);
         }
@@ -284,14 +308,19 @@ public final class GameSessionManager {
     }
 
     @Nonnull
-    private static CompletableFuture<Void> movePlayersFromWorld(@Nonnull World fromWorld, @Nonnull World toWorld, @Nullable Transform targetSpawn) {
+    private static CompletableFuture<Void> movePlayersFromWorld(
+            @Nonnull World fromWorld,
+            @Nonnull World toWorld,
+            @Nullable Transform targetSpawn,
+            boolean wipeInventoryAfterMove
+    ) {
         UUID fromWorldId = fromWorld.getWorldConfig().getUuid();
         List<CompletableFuture<Void>> transfers = new ArrayList<>();
 
         for (PlayerRef playerRef : Universe.get().getPlayers()) {
             UUID playerWorld = playerRef.getWorldUuid();
             if (playerWorld != null && playerWorld.equals(fromWorldId)) {
-                transfers.add(movePlayerToWorld(playerRef, fromWorld, toWorld, targetSpawn));
+                transfers.add(movePlayerToWorld(playerRef, fromWorld, toWorld, targetSpawn, wipeInventoryAfterMove));
             }
         }
 
@@ -307,7 +336,8 @@ public final class GameSessionManager {
             @Nonnull PlayerRef playerRef,
             @Nonnull World fromWorld,
             @Nonnull World toWorld,
-            @Nullable Transform targetSpawn
+            @Nullable Transform targetSpawn,
+            boolean wipeInventoryAfterMove
     ) {
         return CompletableFuture.runAsync(playerRef::removeFromStore, fromWorld)
                 .thenCompose(ignored -> {
@@ -320,8 +350,57 @@ public final class GameSessionManager {
                     if (addFuture == null) {
                         return CompletableFuture.failedFuture(new IllegalStateException("Player add returned null (inactive connection?)."));
                     }
-                    return addFuture.thenApply(added -> null);
+                    return addFuture.thenApply(added -> {
+                        restoreHealth(added);
+                        clearEffects(added);
+                        if (wipeInventoryAfterMove) {
+                            clearInventory(added);
+                        }
+                        return null;
+                    });
                 });
+    }
+
+    private static void clearEffects(@Nonnull PlayerRef playerRef) {
+        Ref<EntityStore> ref = playerRef.getReference();
+        if (ref == null || !ref.isValid()) {
+            return;
+        }
+        Store<EntityStore> store = ref.getStore();
+        EffectControllerComponent effects = store.getComponent(ref, EffectControllerComponent.getComponentType());
+        if (effects == null) {
+            return;
+        }
+        effects.clearEffects(ref, store);
+        store.putComponent(ref, EffectControllerComponent.getComponentType(), effects);
+    }
+
+    private static void clearInventory(@Nonnull PlayerRef playerRef) {
+        Ref<EntityStore> ref = playerRef.getReference();
+        if (ref == null || !ref.isValid()) {
+            return;
+        }
+        Store<EntityStore> store = ref.getStore();
+        Player player = store.getComponent(ref, Player.getComponentType());
+        if (player == null || player.getInventory() == null) {
+            return;
+        }
+        player.getInventory().clear();
+        player.sendInventory();
+    }
+
+    private static void restoreHealth(@Nonnull PlayerRef playerRef) {
+        Ref<EntityStore> ref = playerRef.getReference();
+        if (ref == null || !ref.isValid()) {
+            return;
+        }
+        Store<EntityStore> store = ref.getStore();
+        EntityStatMap stats = store.getComponent(ref, EntityStatMap.getComponentType());
+        if (stats == null) {
+            return;
+        }
+        stats.maximizeStatValue(DefaultEntityStatTypes.getHealth());
+        store.putComponent(ref, EntityStatMap.getComponentType(), stats);
     }
 
     @Nonnull

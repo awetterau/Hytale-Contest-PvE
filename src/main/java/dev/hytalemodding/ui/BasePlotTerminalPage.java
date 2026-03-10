@@ -55,9 +55,14 @@ public class BasePlotTerminalPage extends InteractiveCustomUIPage<BasePlotTermin
             String btn = "#PlotBtn" + (i + 1);
             if (i < this.currentPlotIds.size()) {
                 String plotId = this.currentPlotIds.get(i);
+                BaseHousingManager.PlotData plot = BaseHousingManager.get().getPlot(plotId);
+                String label = plotId;
+                if (plot != null) {
+                    label = plotId + (plot.purchased ? " [Purchased]" : " [For Sale]");
+                }
                 ui.set(btn + ".Visible", true);
                 ui.set(btn + ".Disabled", false);
-                ui.set("#PlotBtn" + (i + 1) + "Text.Text", plotId);
+                ui.set("#PlotBtn" + (i + 1) + "Text.Text", label);
                 events.addEventBinding(CustomUIEventBindingType.Activating, btn, EventData.of("Action", "plot:" + i), false);
             } else {
                 ui.set(btn + ".Visible", false);

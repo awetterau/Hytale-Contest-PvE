@@ -1,0 +1,17 @@
+Group #DevDebugHud {
+  Anchor: (Top: 10, Left: 10, Width: 560, Height: 220);
+  Background: (Color: #0a1018(0.85));
+  OutlineColor: #58708f;
+  OutlineSize: 1;
+  Padding: (Full: 8);
+  LayoutMode: Top;
+
+  Label #Line1 { Text: ""; Anchor: (Height: 24); Style: (FontSize: 14, TextColor: #dce7f7, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center); }
+  Label #Line2 { Text: ""; Anchor: (Height: 24); Style: (FontSize: 13, TextColor: #dce7f7, HorizontalAlignment: Start, VerticalAlignment: Center); }
+  Label #Line3 { Text: ""; Anchor: (Height: 24); Style: (FontSize: 13, TextColor: #dce7f7, HorizontalAlignment: Start, VerticalAlignment: Center); }
+  Label #Line4 { Text: ""; Anchor: (Height: 24); Style: (FontSize: 13, TextColor: #dce7f7, HorizontalAlignment: Start, VerticalAlignment: Center); }
+  Label #Line5 { Text: ""; Anchor: (Height: 24); Style: (FontSize: 13, TextColor: #dce7f7, HorizontalAlignment: Start, VerticalAlignment: Center); }
+  Label #Line6 { Text: ""; Anchor: (Height: 24); Style: (FontSize: 13, TextColor: #dce7f7, HorizontalAlignment: Start, VerticalAlignment: Center); }
+  Label #Line7 { Text: ""; Anchor: (Height: 24); Style: (FontSize: 13, TextColor: #dce7f7, HorizontalAlignment: Start, VerticalAlignment: Center); }
+  Label #Line8 { Text: ""; Anchor: (Height: 24); Style: (FontSize: 13, TextColor: #dce7f7, HorizontalAlignment: Start, VerticalAlignment: Center); }
+}

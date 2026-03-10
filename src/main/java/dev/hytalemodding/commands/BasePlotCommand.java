@@ -24,7 +24,7 @@ import java.util.List;
 
 public class BasePlotCommand extends AbstractPlayerCommand {
     @Nonnull
-    private final OptionalArg<String> actionArg = this.withOptionalArg("action", "list|add|remove|sethome|clearassign|resetall", ArgTypes.STRING);
+    private final OptionalArg<String> actionArg = this.withOptionalArg("action", "list|add|remove|sethome|settype|clearassign|resetall", ArgTypes.STRING);
     @Nonnull
     private final OptionalArg<String> idArg = this.withOptionalArg("id", "Plot id", ArgTypes.STRING);
     @Nonnull
@@ -99,6 +99,16 @@ public class BasePlotCommand extends AbstractPlayerCommand {
                 boolean ok = manager.setPlotHome(id.trim(), home);
                 context.sendMessage(Message.raw(ok ? "Home set for plot '" + id + "'." : "Plot not found: " + id));
             }
+            case "settype" -> {
+                String id = this.idArg.provided(context) ? this.idArg.get(context) : (positional.size() > 1 ? positional.get(1) : null);
+                String plotType = positional.size() > 2 ? positional.get(2) : null;
+                if (id == null || id.isBlank() || plotType == null || plotType.isBlank()) {
+                    context.sendMessage(Message.raw("Usage: /baseplot settype <id> <plotType>"));
+                    return;
+                }
+                BaseHousingManager.AssignmentResult result = manager.setPlotType(id.trim(), plotType.trim());
+                context.sendMessage(Message.raw(result.message));
+            }
             case "clearassign" -> {
                 String id = this.idArg.provided(context) ? this.idArg.get(context) : (positional.size() > 1 ? positional.get(1) : null);
                 if (id == null || id.isBlank()) {
@@ -113,7 +123,7 @@ public class BasePlotCommand extends AbstractPlayerCommand {
                 RescueObjectiveManager.get().resetRuntimeStatePreserveRescued();
                 context.sendMessage(Message.raw("Reset complete: cleared plots/assignments and transient rescue runtime state. Rescued status was preserved."));
             }
-            default -> context.sendMessage(Message.raw("Usage: /baseplot <list|add|remove|sethome|clearassign|resetall> ..."));
+            default -> context.sendMessage(Message.raw("Usage: /baseplot <list|add|remove|sethome|settype|clearassign|resetall> ..."));
         }
     }
 

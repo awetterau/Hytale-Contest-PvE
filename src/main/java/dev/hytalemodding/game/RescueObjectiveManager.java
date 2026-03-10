@@ -186,7 +186,12 @@ public final class RescueObjectiveManager {
             if (interactionType == InteractionType.Use
                     || interactionType == InteractionType.Primary
                     || interactionType == InteractionType.Secondary) {
-                BlacksmithDialogueManager.get().openDialogue(playerRef, targetRef);
+                if (BaseHousingManager.get().isNpcWorking("blacksmith")) {
+                    BlacksmithDialogueManager.get().openDialogue(playerRef, targetRef);
+                } else {
+                    HubNpcManager.HubNpcState state = BaseHousingManager.get().getNpcState("blacksmith");
+                    playerRef.sendMessage(Message.raw("Blacksmith is currently " + state.name() + "."));
+                }
             }
             return;
         }
