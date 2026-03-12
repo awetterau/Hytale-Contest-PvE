@@ -150,15 +150,27 @@ This plugin currently has 4 main systems:
 - `/plotdev dump`
   - Print current plot data.
 
-### Crimson commands
-- `/redpos1 [x y z]`
-  - Sets crimson selection corner 1 (current feet block if omitted).
-- `/redpos2 [x y z]`
-  - Sets crimson selection corner 2 (current feet block if omitted).
-- `/redstart <seconds>`
-  - Starts crimson spread over selected region in current world.
-- `/redundo`
-  - Restores blocks from last crimson conversion in current world.
+## Crimson infection commands
+- `/redui`  
+  Opens/closes the Red control page.
+
+- `/redcore`  
+  Places a `Crimson_Core` under the player and sets it as current selection.
+- `/redradius <blocks>`  
+  Sets expansion radius for the current selected core.
+- `/redstart <seconds>`  
+  Starts crimson spread from the selected core over total duration.
+- `/redundo`  
+  Reverts previous crimson conversions (chunk batches).
+
+## Crimson multi-core workflow (UI)
+1. Run `/redui` to open the panel.
+2. Press **Set Core** at each location where you want a new `Crimson_Core`.
+3. Use left/right side buttons to switch active core.
+4. Radius and start seconds in the panel apply to the currently selected core only.
+5. **Start Wave** starts spread only for the selected core.
+6. **Undo** reverts only the selected core history.
+7. **Global Undo** reverts crimson conversions for all cores and blocks new wave starts until it finishes.
 
 ### Misc command
 - `/example`
