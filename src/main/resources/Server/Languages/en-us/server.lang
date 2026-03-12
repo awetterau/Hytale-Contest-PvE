@@ -7,3 +7,7 @@ server.items.Game_Start_Door.name=Run Gate Door
 server.items.Game_Start_Door.description=Use this door block to start and extract from runs.
 server.items.Base_Plot_Marker.name=Base Plot Marker
 server.items.Base_Plot_Marker.description=Use this marker to assign a rescued NPC to this plot.
+
+
+items.Crimson_Core.name=Crimson Core
+items.Crimson_Core.description=A fleshy, viscous mass of unknown origin.
