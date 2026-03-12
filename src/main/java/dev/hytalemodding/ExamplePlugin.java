@@ -19,10 +19,11 @@ import dev.hytalemodding.game.RescueInteractionPacketWatcher;
 import dev.hytalemodding.game.RescueObjectiveManager;
 import dev.hytalemodding.game.RescueObjectiveSystem;
 import dev.hytalemodding.game.RunDeathHandler;
+
+import dev.hytalemodding.redwave.CrimsonCoreDetectionSystem;
 import dev.hytalemodding.redwave.RedWaveBlockSweepSystem;
 import dev.hytalemodding.redwave.RedWoolNpcDamageSystem;
 import dev.hytalemodding.redwave.RedWoolDamageSystem;
-
 
 import javax.annotation.Nonnull;
 
@@ -46,10 +47,6 @@ public class ExamplePlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new BlacksmithCommand());
         this.getCommandRegistry().registerCommand(new SpawnBlacksmithCommand());
         this.getCommandRegistry().registerCommand(new NpcRolesCommand());
-        this.getCommandRegistry().registerCommand(new RedPos1Command());
-        this.getCommandRegistry().registerCommand(new RedPos2Command());
-        this.getCommandRegistry().registerCommand(new RedStartCommand());
-        this.getCommandRegistry().registerCommand(new RedUndoCommand());
         this.getCommandRegistry().registerCommand(new NpcSpawnCommand());
         this.getCommandRegistry().registerCommand(new NpcDevCommand());
         this.getCommandRegistry().registerCommand(new PlotDevCommand());
@@ -70,6 +67,13 @@ public class ExamplePlugin extends JavaPlugin {
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, BasePlotInteractionHandler::onPlayerInteract);
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, RescueObjectiveManager.get()::onPlayerInteract);
         this.getEventRegistry().registerGlobal(PlayerMouseButtonEvent.class, GameDoorInteractionHandler::onPlayerMouseButton);
+		
+		
+		this.getCommandRegistry().registerCommand(new RedCoreCommand());
+        this.getCommandRegistry().registerCommand(new RedRadiusCommand());
+        this.getCommandRegistry().registerCommand(new RedStartCommand());
+        this.getCommandRegistry().registerCommand(new RedUndoCommand());
+        this.getCommandRegistry().registerCommand(new RedUiCommand());
     }
 
     @Override
@@ -80,10 +84,16 @@ public class ExamplePlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new RescueObjectiveSystem());
         this.getEntityStoreRegistry().registerSystem(new RunDeathHandler());
         this.getEntityStoreRegistry().registerSystem(new BaseHousingSystem());
+        this.getEntityStoreRegistry().registerSystem(new DevDebugHudSystem());
+		
+		try {
+            this.getChunkStoreRegistry().registerSystem(new CrimsonCoreDetectionSystem());
+        } catch (Throwable ignored) {
+            // Keep plugin startup and command registration alive even when chunk-store APIs/components are unavailable.
+        }
         this.getEntityStoreRegistry().registerSystem(new RedWaveBlockSweepSystem());
         this.getEntityStoreRegistry().registerSystem(new RedWoolDamageSystem());
         this.getEntityStoreRegistry().registerSystem(new RedWoolNpcDamageSystem());
-        this.getEntityStoreRegistry().registerSystem(new DevDebugHudSystem());
     }
 
 }
