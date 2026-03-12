@@ -15,7 +15,7 @@ import java.util.UUID;
 
 public class RedUndoCommand extends AbstractPlayerCommand {
     public RedUndoCommand() {
-        super("redundo", "Undo the last crimson conversion in this world.");
+        super("redundo", "Undo the last crimson conversion in this world (chunk batches every 0.5s).");
         this.setPermissionGroup(null);
     }
 
@@ -29,6 +29,14 @@ public class RedUndoCommand extends AbstractPlayerCommand {
     ) {
         UUID worldId = world.getWorldConfig().getUuid();
 
+        RedWaveManager.UndoProcessStatus running = RedWaveManager.getUndoProcessStatus(worldId);
+        if (running != null && !running.done()) {
+            context.sendMessage(Message.raw(
+                    "Undo already running: " + running.restoredChunks() + "/" + running.totalChunks() + " chunks restored."
+            ));
+            return;
+        }
+
         RedWaveManager.clearWave(worldId);
         RedWaveManager.UndoSession undo = RedWaveManager.takeUndoSession(worldId);
         if (undo == null || undo.size() == 0) {
@@ -36,12 +44,15 @@ public class RedUndoCommand extends AbstractPlayerCommand {
             return;
         }
 
-        int restored = 0;
-        for (RedWaveManager.UndoEntry entry : undo.entries()) {
-            world.setBlock(entry.position().x, entry.position().y, entry.position().z, entry.blockId());
-            restored++;
+        boolean started = RedWaveManager.beginUndoProcess(worldId, undo);
+        if (!started) {
+            context.sendMessage(Message.raw("Nothing to undo in this world."));
+            return;
         }
 
-        context.sendMessage(Message.raw("Restored " + restored + " blocks from the last crimson spread."));
+        context.sendMessage(Message.raw(
+                "Chunk undo started: " + undo.chunkCount() + " chunks, " + undo.size()
+                        + " blocks. Processing 1 chunk every 0.5s."
+        ));
     }
 }

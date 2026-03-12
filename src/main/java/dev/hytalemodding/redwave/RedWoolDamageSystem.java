@@ -27,8 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class RedWoolDamageSystem extends EntityTickingSystem<EntityStore> {
     private static final float DAMAGE_INTERVAL_SECONDS = 0.5f;
     private static final float DAMAGE_PER_TICK = 5.0f;
-    private static final String OPTIONAL_CRIMSON_VOID_DAMAGE_BLOCK_ID = "Crimson_Void_Damage";
-
+    
     private static final ComponentType<EntityStore, Player> PLAYER = Player.getComponentType();
     private static final ComponentType<EntityStore, TransformComponent> TRANSFORM = TransformComponent.getComponentType();
 
@@ -115,6 +114,6 @@ public class RedWoolDamageSystem extends EntityTickingSystem<EntityStore> {
             return false;
         }
         String id = blockType.getId();
-        return RedWaveManager.TARGET_BLOCK_ID.equals(id) || OPTIONAL_CRIMSON_VOID_DAMAGE_BLOCK_ID.equals(id);
+        return RedWaveConfig.CRIMSON_BLOCK_ID.equals(id) || RedWaveConfig.OPTIONAL_CRIMSON_VOID_DAMAGE_BLOCK_ID.equals(id);
     }
 }
