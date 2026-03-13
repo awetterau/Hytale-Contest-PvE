@@ -40,10 +40,10 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
 
         if (snapshot.crimsonEnabled() && snapshot.phase() == GameSessionManager.RunPhase.EXPLORATION && GameSessionManager.get().shouldActivateCrimson()) {
             if (RedWaveManager.getActiveWave(worldId) == null) {
-                Vector3i pos1 = snapshot.crimsonPos1();
-                Vector3i pos2 = snapshot.crimsonPos2();
+                Vector3i corePos = snapshot.crimsonCorePos();
+                int radius = snapshot.crimsonRadiusBlocks();
                 RedWaveManager.beginUndoSession(worldId);
-                RedWaveManager.startWave(worldId, pos1, pos2, snapshot.crimsonSpreadSeconds());
+                RedWaveManager.startWave(worldId, corePos, radius, snapshot.crimsonSpreadSeconds());
                 sendRunWorldMessage(worldId, "Crimson infection is spreading. Return to base.");
             }
             GameSessionManager.get().markCrimsonActive();
