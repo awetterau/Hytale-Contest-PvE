@@ -22,6 +22,8 @@ import dev.hytalemodding.game.HubNpcManager;
 import javax.annotation.Nonnull;
 
 public class BlacksmithDialoguePage extends InteractiveCustomUIPage<BlacksmithDialoguePage.Data> {
+    private boolean internalNavigation;
+
     public static class Data {
         public String action;
 
@@ -41,6 +43,9 @@ public class BlacksmithDialoguePage extends InteractiveCustomUIPage<BlacksmithDi
             @Nonnull UIEventBuilder eventBuilder,
             @Nonnull Store<EntityStore> store
     ) {
+        BlacksmithDialogueManager.get().keepDialogueActive(this.playerRef);
+        BlacksmithDialogueManager.get().setTalkAnimation(this.playerRef, false);
+
         HubNpcManager.NpcData npcData = BaseHousingManager.get().getNpcData("blacksmith");
         boolean hasAssignedPlot = npcData.assignedPlotId != null;
         commandBuilder.append("Pages/BlacksmithDialogue.ui");
@@ -50,9 +55,11 @@ public class BlacksmithDialoguePage extends InteractiveCustomUIPage<BlacksmithDi
         commandBuilder.set("#CraftButton.Visible", hasAssignedPlot);
         commandBuilder.set("#UpgradesButton.Visible", hasAssignedPlot);
         commandBuilder.set("#QuestsButton.Visible", hasAssignedPlot);
+        commandBuilder.set("#TalkButton.Visible", true);
         eventBuilder.addEventBinding(CustomUIEventBindingType.Activating, "#CraftButton", EventData.of("Action", "craft"), false);
         eventBuilder.addEventBinding(CustomUIEventBindingType.Activating, "#UpgradesButton", EventData.of("Action", "upgrades"), false);
         eventBuilder.addEventBinding(CustomUIEventBindingType.Activating, "#QuestsButton", EventData.of("Action", "quests"), false);
+        eventBuilder.addEventBinding(CustomUIEventBindingType.Activating, "#TalkButton", EventData.of("Action", "talk"), false);
         eventBuilder.addEventBinding(CustomUIEventBindingType.Activating, "#CloseButton", EventData.of("Action", "close"), false);
     }
 
@@ -66,15 +73,23 @@ public class BlacksmithDialoguePage extends InteractiveCustomUIPage<BlacksmithDi
             return;
         }
         if ("craft".equals(action)) {
+            this.internalNavigation = true;
             openPage(ref, store, new BlacksmithWorkshopPage(this.playerRef));
             return;
         }
         if ("upgrades".equals(action)) {
+            this.internalNavigation = true;
             openPage(ref, store, new BlacksmithUpgradesPage(this.playerRef));
             return;
         }
         if ("quests".equals(action)) {
+            this.internalNavigation = true;
             openPage(ref, store, new BlacksmithQuestPage(this.playerRef));
+            return;
+        }
+        if ("talk".equals(action)) {
+            this.internalNavigation = true;
+            openPage(ref, store, new BlacksmithTalkPage(this.playerRef, 1));
             return;
         }
         BlacksmithDialogueManager.get().closeDialogue(this.playerRef);
@@ -83,7 +98,9 @@ public class BlacksmithDialoguePage extends InteractiveCustomUIPage<BlacksmithDi
 
     @Override
     public void onDismiss(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
-        BlacksmithDialogueManager.get().closeDialogue(this.playerRef);
+        if (!this.internalNavigation) {
+            BlacksmithDialogueManager.get().closeDialogue(this.playerRef);
+        }
     }
 
     private static void openPage(

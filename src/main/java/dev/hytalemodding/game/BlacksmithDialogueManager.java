@@ -20,6 +20,8 @@ import dev.hytalemodding.ui.BlacksmithDialoguePage;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -79,6 +81,38 @@ public final class BlacksmithDialogueManager {
         NPCEntity npc = npcStore.getComponent(npcRef, NPCEntity.getComponentType());
         if (npc != null && npc.getRole() != null && npc.getRole().getStateSupport() != null) {
             npc.onFlockSetState(npcRef, "Idle", null, npcStore);
+        }
+    }
+
+    public void keepDialogueActive(@Nonnull PlayerRef playerRef) {
+        UUID playerId = playerRef.getUuid();
+        Ref<EntityStore> npcRef = this.activeNpcByPlayer.get(playerId);
+        if (npcRef == null || !npcRef.isValid()) {
+            npcRef = findDialogueNpcInPlayerStore(playerRef);
+            if (npcRef == null || !npcRef.isValid()) {
+                return;
+            }
+            this.activeNpcByPlayer.put(playerId, npcRef);
+        }
+
+        Store<EntityStore> npcStore = npcRef.getStore();
+        enterDialoguePose(npcStore, npcRef, playerRef);
+    }
+
+    public void setTalkAnimation(@Nonnull PlayerRef playerRef, boolean talking) {
+        Ref<EntityStore> npcRef = this.activeNpcByPlayer.get(playerRef.getUuid());
+        if (npcRef == null || !npcRef.isValid()) {
+            npcRef = findDialogueNpcInPlayerStore(playerRef);
+            if (npcRef == null || !npcRef.isValid()) {
+                return;
+            }
+            this.activeNpcByPlayer.put(playerRef.getUuid(), npcRef);
+        }
+
+        Store<EntityStore> npcStore = npcRef.getStore();
+        NPCEntity npc = npcStore.getComponent(npcRef, NPCEntity.getComponentType());
+        if (npc != null && npc.getRole() != null && npc.getRole().getStateSupport() != null) {
+            npc.onFlockSetState(npcRef, talking ? "Talk" : DIALOGUE_STATE, null, npcStore);
         }
     }
 
@@ -149,5 +183,36 @@ public final class BlacksmithDialogueManager {
 
     private static void restoreDefaultCamera(@Nonnull PlayerRef playerRef) {
         playerRef.getPacketHandler().writeNoCache(new SetServerCamera(ClientCameraView.FirstPerson, false, null));
+    }
+
+    @Nullable
+    private static Ref<EntityStore> findDialogueNpcInPlayerStore(@Nonnull PlayerRef playerRef) {
+        Ref<EntityStore> playerEntityRef = playerRef.getReference();
+        if (playerEntityRef == null || !playerEntityRef.isValid()) {
+            return null;
+        }
+        Store<EntityStore> store = playerEntityRef.getStore();
+        Collection<Ref<EntityStore>> found = new ArrayList<>(1);
+        store.forEachChunk(NPCEntity.getComponentType(), (chunk, buffer) -> {
+            if (!found.isEmpty()) {
+                return;
+            }
+            int size = chunk.size();
+            for (int i = 0; i < size; i++) {
+                NPCEntity npc = chunk.getComponent(i, NPCEntity.getComponentType());
+                if (npc == null || !BASE_RESCUED_ROLE.equals(npc.getRoleName())) {
+                    continue;
+                }
+                Ref<EntityStore> ref = chunk.getReferenceTo(i);
+                if (ref != null && ref.isValid()) {
+                    found.add(ref);
+                    return;
+                }
+            }
+        });
+        if (found.isEmpty()) {
+            return null;
+        }
+        return found.iterator().next();
     }
 }

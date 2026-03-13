@@ -69,7 +69,7 @@
       "Animations": [
         {
           "Animation": "NPC/intelligent/Blacksmith/Animations/interaction.blockyanim",
-          "Looping": false
+          "Looping": true
         }
       ]
     }

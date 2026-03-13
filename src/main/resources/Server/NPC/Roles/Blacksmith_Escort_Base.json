@@ -2,7 +2,8 @@
   "Type": "Generic",
   "StartState": "Idle",
   "BusyStates": [
-    "Dialogue"
+    "Dialogue",
+    "Talk"
   ],
   "Appearance": "Blacksmith_Escort",
   "DefaultPlayerAttitude": "Neutral",
@@ -78,6 +79,32 @@
               ]
             }
           ]
+        },
+        {
+          "Sensor": {
+            "Type": "State",
+            "State": "Talk"
+          },
+          "Instructions": [
+            {
+              "Sensor": {
+                "Type": "Any"
+              },
+              "HeadMotion": {
+                "Type": "Nothing"
+              },
+              "BodyMotion": {
+                "Type": "Nothing"
+              },
+              "Actions": [
+                {
+                  "Type": "PlayAnimation",
+                  "Slot": "Status",
+                  "Animation": "Alerted"
+                }
+              ]
+            }
+          ]
         }
       ]
     }
@@ -93,6 +120,19 @@
           {
             "Type": "SetInteractable",
             "Interactable": true
+          }
+        ]
+      },
+      {
+        "Continue": true,
+        "Sensor": {
+          "Type": "State",
+          "State": "Talk"
+        },
+        "Actions": [
+          {
+            "Type": "State",
+            "State": "Talk"
           }
         ]
       },

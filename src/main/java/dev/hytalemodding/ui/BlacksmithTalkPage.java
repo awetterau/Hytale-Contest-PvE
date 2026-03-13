@@ -7,7 +7,6 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
-import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
@@ -19,7 +18,7 @@ import dev.hytalemodding.game.BlacksmithDialogueManager;
 
 import javax.annotation.Nonnull;
 
-public class BlacksmithQuestPage extends InteractiveCustomUIPage<BlacksmithQuestPage.Data> {
+public class BlacksmithTalkPage extends InteractiveCustomUIPage<BlacksmithTalkPage.Data> {
     private boolean internalNavigation;
 
     public static class Data {
@@ -29,29 +28,40 @@ public class BlacksmithQuestPage extends InteractiveCustomUIPage<BlacksmithQuest
                 .build();
     }
 
-    public BlacksmithQuestPage(@Nonnull PlayerRef playerRef) {
+    private final int step;
+
+    public BlacksmithTalkPage(@Nonnull PlayerRef playerRef, int step) {
         super(playerRef, CustomPageLifetime.CanDismissOrCloseThroughInteraction, Data.CODEC);
+        this.step = Math.max(1, Math.min(2, step));
     }
 
     @Override
     public void build(@Nonnull Ref<EntityStore> ref, @Nonnull UICommandBuilder ui, @Nonnull UIEventBuilder events, @Nonnull Store<EntityStore> store) {
         BlacksmithDialogueManager.get().keepDialogueActive(this.playerRef);
-        BlacksmithDialogueManager.get().setTalkAnimation(this.playerRef, false);
-        ui.append("Pages/BlacksmithQuest.ui");
-        events.addEventBinding(CustomUIEventBindingType.Activating, "#AcceptQuestBtn", EventData.of("Action", "accept"), false);
-        events.addEventBinding(CustomUIEventBindingType.Activating, "#TrackQuestBtn", EventData.of("Action", "track"), false);
-        events.addEventBinding(CustomUIEventBindingType.Activating, "#BackBtn", EventData.of("Action", "back"), false);
+        BlacksmithDialogueManager.get().setTalkAnimation(this.playerRef, true);
+
+        ui.append("Pages/BlacksmithTalk.ui");
+        if (this.step == 1) {
+            ui.set("#DialogueText.Text", "You hear that ring? Means the forge is happy. Keep the bellows fed and your blade stays true.");
+            ui.set("#PromptText.Text", "Click continue.");
+            ui.set("#NextBtn.Visible", true);
+            ui.set("#ReturnBtn.Visible", false);
+            events.addEventBinding(CustomUIEventBindingType.Activating, "#NextBtn", EventData.of("Action", "next"), false);
+        } else {
+            ui.set("#DialogueText.Text", "Bring me clean ore and I will turn it into gear that survives the wilds. No rust, no excuses.");
+            ui.set("#PromptText.Text", "Click to return.");
+            ui.set("#NextBtn.Visible", false);
+            ui.set("#ReturnBtn.Visible", true);
+            events.addEventBinding(CustomUIEventBindingType.Activating, "#ReturnBtn", EventData.of("Action", "return"), false);
+        }
     }
 
     @Override
     public void handleDataEvent(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull Data data) {
         String action = data.action == null ? "" : data.action.trim().toLowerCase();
-        if ("accept".equals(action)) {
-            this.playerRef.sendMessage(Message.raw("Quest accepted: Ember Core Hunt."));
-            return;
-        }
-        if ("track".equals(action)) {
-            this.playerRef.sendMessage(Message.raw("Tracking quest: Ember Core Hunt."));
+        if (this.step == 1 && "next".equals(action)) {
+            this.internalNavigation = true;
+            openPage(ref, store, new BlacksmithTalkPage(this.playerRef, 2));
             return;
         }
         this.internalNavigation = true;

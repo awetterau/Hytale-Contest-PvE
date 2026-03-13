@@ -97,6 +97,25 @@ Group #BlacksmithDialogueRoot {
         }
       }
 
+      Button #TalkButton {
+        Anchor: (Width: 128, Height: 38, Right: 8);
+        Style: (
+          Default: (Background: (Color: #3f4b62)),
+          Hovered: (Background: (Color: #4b5a75)),
+          Pressed: (Background: (Color: #333d51))
+        );
+        Label {
+          Text: "Talk";
+          Style: (
+            FontSize: 16,
+            TextColor: #f0f4ff,
+            RenderBold: true,
+            HorizontalAlignment: Center,
+            VerticalAlignment: Center
+          );
+        }
+      }
+
       Button #CloseButton {
         Anchor: (Width: 110, Height: 38);
         Style: (
