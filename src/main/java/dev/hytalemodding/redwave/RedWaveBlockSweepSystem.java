@@ -77,3 +77,4 @@ public class RedWaveBlockSweepSystem extends TickingSystem<EntityStore> {
                 || (blockType.getDrawType() != DrawType.Cube && blockType.getDrawType() != DrawType.GizmoCube);
     }
 }
+

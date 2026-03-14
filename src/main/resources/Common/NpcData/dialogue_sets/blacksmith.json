@@ -1,0 +1,21 @@
+{
+  "dialogueSetId": "blacksmith",
+  "entries": [
+    {
+      "id": "wander_intro",
+      "priority": 50,
+      "conditions": {
+        "stateIn": ["RESCUED_UNASSIGNED"]
+      },
+      "text": "I can do more than wander. Find me a proper place to work."
+    },
+    {
+      "id": "active_default",
+      "priority": 40,
+      "conditions": {
+        "stateIn": ["ACTIVE_AT_HOME"]
+      },
+      "text": "The forge is hot. What are we making today?"
+    }
+  ]
+}

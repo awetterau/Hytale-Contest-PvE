@@ -6,6 +6,24 @@ This plugin currently has 4 main systems:
 - Crimson wave (area spread + undo)
 - Base housing plots (profession-locked plots + auto-assignment + workshop state flow)
 
+## Code layout (current)
+- `src/main/java/dev/hytalemodding/state/run`
+  - Run-world state logic (session, run door flow, run rescue objective, run death handling).
+- `src/main/java/dev/hytalemodding/state/hub`
+  - Hub-world state logic (plot interaction handlers, hub watcher systems).
+- `src/main/java/dev/hytalemodding/state/transition`
+  - Run <-> hub transfer/config orchestration (shared flow state + transfer helpers).
+- `src/main/java/dev/hytalemodding/domain/housing`
+  - Shared housing domain logic (plots, assignment, workshop placement/spawn sync).
+- `src/main/java/dev/hytalemodding/npc`
+  - NPC domain (archetypes, role mapping, dialogue manager, progression unlocks).
+- `src/main/java/dev/hytalemodding/quest`
+  - Quest domain (definitions, progress, flags, reward application).
+- `src/main/java/dev/hytalemodding/ui/hub`, `ui/dev`, `ui/npc`
+  - Active UI pages grouped by use.
+- `src/main/java/dev/hytalemodding/commands/run|hub|npc|quest|dev|redwave`
+  - Command groups by subsystem.
+
 ## Quick smoke test (recommended)
 1. Make sure your worlds exist and are loaded:
    - Hub world name (default): `hub`
@@ -43,6 +61,9 @@ This plugin currently has 4 main systems:
 - Rescue transfer only queues on extraction if the objective NPC is actively following.
 - Base blacksmith interaction opens blacksmith dialogue UI.
 - If player dies in run, escorted NPC is not transferred to hub and runtime rescue state is reset.
+- Rescue NPC registration/spawn is data-driven via:
+  - `src/main/resources/Common/NpcData/npc-archetypes.properties` (roles/service metadata)
+  - `src/main/resources/Common/NpcData/run-rescue-spawns.properties` (run spawn registration/points)
 
 ### Base housing plots
 - Marker block id: `Base_Plot_Marker`
@@ -129,6 +150,8 @@ This plugin currently has 4 main systems:
   - Opens the in-game Dev Admin Panel for step-by-step flow testing.
 - `/npcdev hud [on|off]`
   - Toggle or set live NPC debug HUD.
+- `/npcdev rescue <npcKey> <true|false>`
+  - Set rescued state for any NPC key.
 - `/npcdev state <profession> <wandering|moving|working>`
   - Force an NPC state for testing.
 - `/npcdev assign <profession> <plotId>`
@@ -139,6 +162,18 @@ This plugin currently has 4 main systems:
   - Print current NPC data.
 - `/npcdev reset`
   - Reset NPC dev state.
+- `/questdev list`
+  - Print all registered quests with accept/complete state.
+- `/questdev accept <questId>`
+  - Mark a quest as accepted.
+- `/questdev complete <questId>`
+  - Mark a quest complete and apply reward effects (flags/unlocks/next quest).
+- `/questdev reset <questId>`
+  - Reset one quest progress entry.
+- `/questdev reload`
+  - Reload quest definitions (current implementation note: restart may still be required for full live refresh).
+- `/questdev flags`
+  - Print active quest flags.
 - `/plotdev purchase <plotId>`
   - Mark plot purchased (dev shortcut).
 - `/plotdev unpurchase <plotId>`
@@ -202,6 +237,13 @@ This plugin currently has 4 main systems:
 3. Confirm NPC state transitions to `WORKING`.
 4. Interact blacksmith and verify workshop/quest pages only appear when plot is assigned.
 
+### Quest + NPC unlock smoke test
+1. Run `/npcdev rescue blacksmith true`.
+2. Run `/questdev accept ember_core_hunt`.
+3. Run `/questdev complete ember_core_hunt`.
+4. Interact blacksmith and confirm new craft/trade unlocks are available in NPC UI.
+5. Run `/questdev flags` and confirm `blacksmith_tempered_unlocked` is present.
+
 ### Test run death behavior
 1. Start a run from hub door.
 2. Die in the run world.
@@ -214,6 +256,9 @@ This plugin currently has 4 main systems:
 ## Persistence notes
 - Run sessions are temporary and cleaned up when ended.
 - Some config/state is persisted under universe plugin config:
-  - `game-flow.properties` (world names, spawns, rescued flag)
+  - `game-flow.properties` (world names, spawns, rescued NPC keys)
   - `base-housing.properties` (plot metadata, type, purchase, assignment, level)
   - `hub-npcs.properties` (hub NPC state/data)
+  - `npc-progress.properties` (rescued/progression + unlocks by NPC key)
+  - `quest-progress.properties` (quest accepted/completed state)
+  - `quest-flags.properties` (global quest flags)

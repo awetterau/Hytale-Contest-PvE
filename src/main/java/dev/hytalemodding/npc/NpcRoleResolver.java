@@ -35,3 +35,5 @@ public final class NpcRoleResolver {
         return null;
     }
 }
+
+

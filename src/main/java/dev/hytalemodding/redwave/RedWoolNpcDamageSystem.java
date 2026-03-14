@@ -62,3 +62,5 @@ public class RedWoolNpcDamageSystem extends EntityTickingSystem<EntityStore> {
         this.elapsedOnHazard.put(entityId, elapsed);
     }
 }
+
+

@@ -40,3 +40,4 @@ public class CrimsonCoreStateComponent implements Component<ChunkStore> {
         return copy;
     }
 }
+

@@ -87,3 +87,4 @@ public class CrimsonCoreDetectionSystem extends RefSystem<ChunkStore> {
         RedCoreRegistry.register(worldId, pos);
     }
 }
+

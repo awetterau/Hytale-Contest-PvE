@@ -1,0 +1,69 @@
+Group #NpcDialogueRoot {
+  Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0);
+  LayoutMode: Bottom;
+  Padding: (Bottom: 30);
+
+  Group #DialoguePanel {
+    Anchor: (Width: 1040, Height: 220);
+    Background: (Color: #0b0f16(0.94));
+    OutlineColor: #60738f;
+    OutlineSize: 1;
+    Padding: (Left: 22, Right: 22, Top: 18, Bottom: 16);
+    LayoutMode: Top;
+
+    Label #NpcName {
+      Text: "NPC";
+      Anchor: (Height: 30, Bottom: 8);
+      Style: (
+        FontSize: 22,
+        TextColor: #f0c57b,
+        RenderBold: true,
+        HorizontalAlignment: Start,
+        VerticalAlignment: Center
+      );
+    }
+
+    Label #DialogueText {
+      Text: "How can I help?";
+      Anchor: (Bottom: 14);
+      Style: (
+        FontSize: 20,
+        TextColor: #e6edf8,
+        Wrap: true,
+        HorizontalAlignment: Start,
+        VerticalAlignment: Start
+      );
+      FlexWeight: 1;
+    }
+
+    Group #ActionRow {
+      LayoutMode: Right;
+      Anchor: (Height: 42, Bottom: 8);
+
+      Button #CraftButton {
+        Anchor: (Width: 110, Height: 38, Right: 6);
+        Label { Text: "Craft"; Style: (FontSize: 16, TextColor: #f0f4ff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); }
+      }
+      Button #TradeButton {
+        Anchor: (Width: 110, Height: 38, Right: 6);
+        Label { Text: "Trade"; Style: (FontSize: 16, TextColor: #f0f4ff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); }
+      }
+      Button #UpgradesButton {
+        Anchor: (Width: 120, Height: 38, Right: 6);
+        Label { Text: "Upgrades"; Style: (FontSize: 16, TextColor: #f0f4ff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); }
+      }
+      Button #QuestsButton {
+        Anchor: (Width: 110, Height: 38, Right: 6);
+        Label { Text: "Quests"; Style: (FontSize: 16, TextColor: #f0f4ff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); }
+      }
+      Button #TalkButton {
+        Anchor: (Width: 110, Height: 38, Right: 6);
+        Label { Text: "Talk"; Style: (FontSize: 16, TextColor: #f0f4ff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); }
+      }
+      Button #CloseButton {
+        Anchor: (Width: 100, Height: 38);
+        Label { Text: "Close"; Style: (FontSize: 16, TextColor: #f0f4ff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); }
+      }
+    }
+  }
+}

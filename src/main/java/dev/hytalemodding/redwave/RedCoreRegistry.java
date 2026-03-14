@@ -62,3 +62,4 @@ public final class RedCoreRegistry {
         return pos.x + ":" + pos.y + ":" + pos.z;
     }
 }
+

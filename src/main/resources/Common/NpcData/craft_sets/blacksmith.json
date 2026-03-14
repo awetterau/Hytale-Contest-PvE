@@ -1,0 +1,15 @@
+{
+  "craftSetId": "blacksmith",
+  "recipes": [
+    {
+      "recipeId": "iron_sword",
+      "inputs": [
+        {"itemId": "Iron_Ingot", "amount": 4},
+        {"itemId": "Wood", "amount": 2}
+      ],
+      "outputs": [
+        {"itemId": "Iron_Sword", "amount": 1}
+      ]
+    }
+  ]
+}

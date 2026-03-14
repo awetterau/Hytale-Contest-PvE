@@ -993,3 +993,4 @@ public final class RedWaveManager {
     private record BlockPosKey(int x, int y, int z) {
     }
 }
+
