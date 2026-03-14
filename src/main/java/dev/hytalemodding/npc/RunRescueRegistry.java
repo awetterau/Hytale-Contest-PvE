@@ -36,7 +36,11 @@ public final class RunRescueRegistry {
         }
         this.loaded = true;
         loadResource();
-        installArchetypeFallbacks();
+        // Only fall back to archetype-driven rescue entries when config is empty.
+        // If rescue.npcs is defined, treat it as authoritative.
+        if (this.byNpcKey.isEmpty()) {
+            installArchetypeFallbacks();
+        }
         System.out.println("[RunRescueRegistry] Loaded rescue entries: " + this.byNpcKey.size());
     }
 

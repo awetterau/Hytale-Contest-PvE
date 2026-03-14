@@ -1,0 +1,85 @@
+{
+  "Parent": "Player",
+  "Model": "NPC/intelligent/Farmer/Models/farmer.blockymodel",
+  "Texture": "NPC/intelligent/Farmer/Models/Model_Textures/farmer.png",
+  "EyeHeight": 1.6,
+  "HitBox": {
+    "Max": {
+      "X": 0.4,
+      "Y": 1.8,
+      "Z": 0.4
+    },
+    "Min": {
+      "X": -0.4,
+      "Y": 0.0,
+      "Z": -0.4
+    }
+  },
+  "AnimationSets": {
+    "Idle": {
+      "Animations": [
+        {
+          "Animation": "NPC/intelligent/Farmer/Animations/idle.blockyanim",
+          "Looping": true
+        },
+        {
+          "Animation": "Characters/Animations/Default/Idle.blockyanim",
+          "Looping": true
+        }
+      ]
+    },
+    "Walk": {
+      "Animations": [
+        {
+          "Animation": "NPC/intelligent/Farmer/Animations/walk.blockyanim",
+          "Looping": true
+        },
+        {
+          "Animation": "Characters/Animations/Default/Walk.blockyanim",
+          "Looping": true
+        }
+      ]
+    },
+    "WalkBackward": {
+      "Animations": [
+        {
+          "Animation": "NPC/intelligent/Farmer/Animations/walk.blockyanim",
+          "Looping": true
+        },
+        {
+          "Animation": "Characters/Animations/Default/Walk_Backward.blockyanim",
+          "Looping": true
+        }
+      ]
+    },
+    "Run": {
+      "Animations": [
+        {
+          "Animation": "NPC/intelligent/Farmer/Animations/walk.blockyanim",
+          "Speed": 1.25,
+          "Looping": true
+        },
+        {
+          "Animation": "Characters/Animations/Default/Run.blockyanim",
+          "Looping": true
+        }
+      ]
+    },
+    "Alerted": {
+      "Animations": [
+        {
+          "Animation": "Characters/Animations/Default/Idle.blockyanim",
+          "Looping": true
+        }
+      ]
+    },
+    "Work": {
+      "Animations": [
+        {
+          "Animation": "Characters/Animations/Default/Idle.blockyanim",
+          "Looping": true
+        }
+      ]
+    }
+  }
+}

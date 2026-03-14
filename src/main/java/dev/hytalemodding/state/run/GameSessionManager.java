@@ -1,11 +1,15 @@
 package dev.hytalemodding.state.run;
 
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.vector.Transform;
 import com.hypixel.hytale.math.vector.Vector3i;
+import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.WorldConfig;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.redwave.RedWaveConfig;
 import dev.hytalemodding.redwave.RedWaveManager;
 
@@ -18,15 +22,22 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
 
 public final class GameSessionManager {
     private static final String RUN_WORLD_PREFIX = "run-session-";
     private static final long RUN_DURATION_MS = 5L * 60L * 1000L;
     private static final long DEFAULT_CRIMSON_DELAY_MS = 0L;
     private static final float DEFAULT_CRIMSON_SPREAD_SECONDS = RUN_DURATION_MS / 1000.0f;
+    private static final long PLAYER_TRANSFER_TIMEOUT_SECONDS = 15L;
+    private static final long WORLD_COPY_TIMEOUT_SECONDS = 90L;
+    private static final long WORLD_LOAD_TIMEOUT_SECONDS = 30L;
+    private static final int WORLD_DELETE_MAX_ATTEMPTS = 20;
+    private static final long WORLD_DELETE_RETRY_DELAY_MS = 100L;
     private static final GameSessionManager INSTANCE = new GameSessionManager();
 
     @Nullable
@@ -38,6 +49,45 @@ public final class GameSessionManager {
     @Nonnull
     public static GameSessionManager get() {
         return INSTANCE;
+    }
+
+    public void cleanupOrphanRunWorldsOnStartup() {
+        Universe universe = Universe.get();
+        if (universe == null) {
+            return;
+        }
+
+        Map<String, World> loadedWorlds = universe.getWorlds();
+        for (String worldName : loadedWorlds.keySet()) {
+            if (!isRunSessionWorldName(worldName)) {
+                continue;
+            }
+            try {
+                System.out.println("[GameDoorDebug] startup cleanup removing loaded orphan world: " + worldName);
+                universe.removeWorld(worldName);
+            } catch (Exception e) {
+                System.out.println("[GameDoorDebug] startup cleanup failed removing loaded world " + worldName + ": " + e);
+            }
+        }
+
+        Path worldsPath = universe.getPath().resolve("worlds");
+        if (!Files.isDirectory(worldsPath)) {
+            return;
+        }
+        try (var stream = Files.list(worldsPath)) {
+            stream.filter(Files::isDirectory)
+                    .filter(path -> isRunSessionWorldName(path.getFileName().toString()))
+                    .forEach(path -> {
+                        try {
+                            System.out.println("[GameDoorDebug] startup cleanup deleting orphan world directory: " + path);
+                            deleteDirectoryIfPresent(path);
+                        } catch (Exception e) {
+                            System.out.println("[GameDoorDebug] startup cleanup failed deleting directory " + path + ": " + e);
+                        }
+                    });
+        } catch (IOException e) {
+            System.out.println("[GameDoorDebug] startup cleanup failed listing world directories: " + e.getMessage());
+        }
     }
 
     public synchronized boolean hasActiveSession() {
@@ -64,9 +114,14 @@ public final class GameSessionManager {
             @Nullable Transform runSpawnTransform,
             @Nullable Transform returnSpawnTransform
     ) {
+        System.out.println("[GameDoorDebug] startSession enter: player=" + starter.getUuid()
+                + " template=" + templateWorld.getName()
+                + " thread=" + Thread.currentThread().getName());
+
         final ActiveSession session;
         synchronized (this) {
             if (this.activeSession != null && this.activeSession.phase != RunPhase.IDLE) {
+                System.out.println("[GameDoorDebug] startSession rejected: active session phase=" + this.activeSession.phase);
                 return CompletableFuture.failedFuture(new IllegalStateException("A run is already active."));
             }
 
@@ -75,6 +130,11 @@ public final class GameSessionManager {
             Path runWorldPath = Universe.get().getPath().resolve("worlds").resolve(runWorldName);
 
             RedWaveManager.Selection selection = RedWaveManager.getSelection(starter.getUuid());
+            UUID templateWorldId = templateWorld.getWorldConfig().getUuid();
+            System.out.println("[GameDoorDebug] crimson selection check: selectionPresent=" + (selection != null)
+                    + " selectionComplete=" + (selection != null && selection.isComplete())
+                    + " templateWorldId=" + templateWorldId
+                    + " selectionWorldId=" + (selection == null ? null : selection.worldId()));
             if (selection == null || !selection.isComplete() || !templateWorld.getWorldConfig().getUuid().equals(selection.worldId())) {
                 return CompletableFuture.failedFuture(
                         new IllegalStateException("Set crimson core and radius in template world with /redcore and /redradius before /gamestart.")
@@ -88,9 +148,15 @@ public final class GameSessionManager {
                 );
             }
 
-            String coreBlockId = templateWorld.getBlockType(corePos.x, corePos.y, corePos.z) != null
-                    ? templateWorld.getBlockType(corePos.x, corePos.y, corePos.z).getId()
-                    : null;
+            System.out.println("[GameDoorDebug] crimson core read start: world=" + templateWorld.getName() + " pos=" + corePos);
+            String coreBlockId;
+            try {
+                coreBlockId = resolveCoreBlockId(templateWorld, corePos);
+            } catch (Exception e) {
+                String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                return CompletableFuture.failedFuture(new IllegalStateException("Unable to validate crimson core: " + reason, e));
+            }
+            System.out.println("[GameDoorDebug] crimson core read done: blockId=" + coreBlockId);
             if (!RedWaveConfig.CORE_BLOCK_ID.equals(coreBlockId)) {
                 return CompletableFuture.failedFuture(
                         new IllegalStateException("Crimson core must be a cyan wool block (" + RedWaveConfig.CORE_BLOCK_ID + ") in template world.")
@@ -114,10 +180,59 @@ public final class GameSessionManager {
 
         Universe universe = Universe.get();
         Path templatePath = universe.getPath().resolve("worlds").resolve(session.templateWorldName);
+        long startMs = System.currentTimeMillis();
+        System.out.println("[GameDoorDebug] session preparing: template=" + session.templateWorldName
+                + " runWorld=" + session.runWorldName
+                + " templatePath=" + templatePath
+                + " runPath=" + session.runWorldPath);
 
-        return CompletableFuture.runAsync(() -> copyDirectory(templatePath, session.runWorldPath))
-                .thenCompose(ignored -> loadAndInstantiateRunWorld(universe, session))
-                .thenCompose(runWorld -> movePlayerToWorld(starter, templateWorld, runWorld, session.runSpawnTransform).thenApply(x -> runWorld))
+        CompletableFuture<Void> copyFuture = CompletableFuture.runAsync(() -> {
+                    long copyStart = System.currentTimeMillis();
+                    System.out.println("[GameDoorDebug] copy start: " + templatePath + " -> " + session.runWorldPath);
+                    copyDirectory(templatePath, session.runWorldPath);
+                    long copyMs = System.currentTimeMillis() - copyStart;
+                    System.out.println("[GameDoorDebug] copy success in " + copyMs + "ms");
+                })
+                .orTimeout(WORLD_COPY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+        CompletableFuture<World> loadFuture = copyFuture.thenCompose(ignored -> {
+                    long loadStart = System.currentTimeMillis();
+                    System.out.println("[GameDoorDebug] world load start: runWorld=" + session.runWorldName);
+                    return loadAndInstantiateRunWorld(universe, session).whenComplete((world, err) -> {
+                        long loadMs = System.currentTimeMillis() - loadStart;
+                        if (err != null) {
+                            System.out.println("[GameDoorDebug] world load failed after " + loadMs + "ms: " + err);
+                            return;
+                        }
+                        System.out.println("[GameDoorDebug] world load success in " + loadMs + "ms: runWorld=" + world.getName());
+                    });
+                })
+                .orTimeout(WORLD_LOAD_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+        CompletableFuture<World> transferFuture = loadFuture.thenCompose(runWorld -> {
+            UUID playerWorldUuid = starter.getWorldUuid();
+            World playerWorld = playerWorldUuid == null ? null : universe.getWorld(playerWorldUuid);
+            if (playerWorld == null) {
+                return CompletableFuture.failedFuture(
+                        new IllegalStateException("Starter player is not currently in a loaded world.")
+                );
+            }
+            long transferStart = System.currentTimeMillis();
+            System.out.println("[GameDoorDebug] transfer start: player=" + starter.getUuid()
+                    + " from=" + playerWorld.getName() + " to=" + runWorld.getName());
+            return movePlayerToWorld(starter, playerWorld, runWorld, session.runSpawnTransform)
+                    .whenComplete((ignored, err) -> {
+                        long transferMs = System.currentTimeMillis() - transferStart;
+                        if (err != null) {
+                            System.out.println("[GameDoorDebug] transfer failed after " + transferMs + "ms: " + err);
+                            return;
+                        }
+                        System.out.println("[GameDoorDebug] transfer success in " + transferMs + "ms");
+                    })
+                    .thenApply(x -> runWorld);
+        });
+
+        return transferFuture
                 .thenApply(runWorld -> {
                     synchronized (this) {
                         if (this.activeSession == session) {
@@ -140,6 +255,14 @@ public final class GameSessionManager {
                             session.runEndsAtEpochMillis
                     );
                 })
+                .whenComplete((result, err) -> {
+                    long totalMs = System.currentTimeMillis() - startMs;
+                    if (err != null) {
+                        System.out.println("[GameDoorDebug] session start failed after " + totalMs + "ms: " + err);
+                        return;
+                    }
+                    System.out.println("[GameDoorDebug] session start success in " + totalMs + "ms: runWorld=" + result.runWorldName());
+                })
                 .exceptionallyCompose(throwable -> cleanupFailedStart(session, throwable));
     }
 
@@ -150,16 +273,24 @@ public final class GameSessionManager {
 
     @Nonnull
     public CompletableFuture<EndSessionResult> endSession(@Nullable Transform returnSpawnOverride, @Nullable World ignoredFallbackWorld) {
-        return endSession(returnSpawnOverride);
+        return endSessionInternal(returnSpawnOverride, ignoredFallbackWorld);
     }
 
     @Nonnull
     public CompletableFuture<EndSessionResult> endSessionAndWipeInventory(@Nullable Transform returnSpawnOverride, @Nullable World ignoredFallbackWorld) {
-        return endSession(returnSpawnOverride);
+        return endSessionInternal(returnSpawnOverride, ignoredFallbackWorld);
     }
 
     @Nonnull
     public CompletableFuture<EndSessionResult> endSession(@Nullable Transform returnSpawnOverride) {
+        return endSessionInternal(returnSpawnOverride, null);
+    }
+
+    @Nonnull
+    private CompletableFuture<EndSessionResult> endSessionInternal(
+            @Nullable Transform returnSpawnOverride,
+            @Nullable World fallbackWorldOverride
+    ) {
         final ActiveSession session;
         synchronized (this) {
             if (this.activeSession == null || this.activeSession.phase == RunPhase.IDLE) {
@@ -171,7 +302,9 @@ public final class GameSessionManager {
 
         Universe universe = Universe.get();
         World runWorld = universe.getWorld(session.runWorldName);
-        World fallbackWorld = universe.getWorld(session.templateWorldName);
+        World fallbackWorld = fallbackWorldOverride != null
+                ? fallbackWorldOverride
+                : universe.getWorld(session.templateWorldName);
         if (fallbackWorld == null) {
             fallbackWorld = universe.getDefaultWorld();
         }
@@ -248,15 +381,25 @@ public final class GameSessionManager {
         if (!Files.exists(configPath)) {
             configPath = session.runWorldPath.resolve("config.json");
         }
+        System.out.println("[GameDoorDebug] world config path: " + configPath + " exists=" + Files.exists(configPath));
 
         Path finalConfigPath = configPath;
         return WorldConfig.load(finalConfigPath)
                 .thenCompose(config -> {
+                    System.out.println("[GameDoorDebug] world config loaded: " + finalConfigPath);
                     config.setUuid(UUID.randomUUID());
                     config.setDisplayName("Run " + session.runWorldName);
                     config.setDeleteOnRemove(true);
                     config.markChanged();
+                    System.out.println("[GameDoorDebug] makeWorld start: " + session.runWorldName);
                     return universe.makeWorld(session.runWorldName, session.runWorldPath, config);
+                })
+                .whenComplete((world, err) -> {
+                    if (err != null) {
+                        System.out.println("[GameDoorDebug] makeWorld failed: " + err);
+                        return;
+                    }
+                    System.out.println("[GameDoorDebug] makeWorld success: " + world.getName());
                 });
     }
 
@@ -264,11 +407,13 @@ public final class GameSessionManager {
     private CompletableFuture<StartSessionResult> cleanupFailedStart(@Nonnull ActiveSession session, @Nonnull Throwable throwable) {
         Universe universe = Universe.get();
         try {
+            System.out.println("[GameDoorDebug] cleanup failed start: runWorld=" + session.runWorldName + " path=" + session.runWorldPath);
             if (universe.getWorld(session.runWorldName) != null) {
                 universe.removeWorld(session.runWorldName);
             }
             deleteDirectoryIfPresent(session.runWorldPath);
         } catch (Exception ignored) {
+            System.out.println("[GameDoorDebug] cleanup encountered exception: " + ignored);
         }
 
         synchronized (this) {
@@ -309,19 +454,71 @@ public final class GameSessionManager {
             @Nonnull World toWorld,
             @Nullable Transform targetSpawn
     ) {
-        return CompletableFuture.runAsync(playerRef::removeFromStore, fromWorld)
-                .thenCompose(ignored -> {
-                    CompletableFuture<PlayerRef> addFuture = toWorld.addPlayer(
-                            playerRef,
-                            targetSpawn != null ? copyTransformOrNull(targetSpawn) : null,
-                            Boolean.TRUE,
-                            Boolean.FALSE
-                    );
-                    if (addFuture == null) {
-                        return CompletableFuture.failedFuture(new IllegalStateException("Player add returned null (inactive connection?)."));
+        CompletableFuture<Void> teleportCompleted = new CompletableFuture<>();
+        Transform destination = targetSpawn != null ? copyTransformOrNull(targetSpawn) : null;
+
+        return CompletableFuture.runAsync(() -> {
+                    UUID playerWorldUuid = playerRef.getWorldUuid();
+                    if (playerWorldUuid == null) {
+                        throw new IllegalStateException("Player has no current world before transfer.");
                     }
-                    return addFuture.thenApply(added -> null);
-                });
+                    UUID fromWorldUuid = fromWorld.getWorldConfig().getUuid();
+                    if (!fromWorldUuid.equals(playerWorldUuid)) {
+                        throw new IllegalStateException("Player world mismatch before transfer. expected="
+                                + fromWorld.getName() + " actual=" + playerWorldUuid);
+                    }
+
+                    Ref<EntityStore> playerRefHandle = playerRef.getReference();
+                    if (playerRefHandle == null || !playerRefHandle.isValid()) {
+                        throw new IllegalStateException("Player reference is not valid for teleport.");
+                    }
+                    Store<EntityStore> store = playerRefHandle.getStore();
+                    if (store == null) {
+                        throw new IllegalStateException("Player store is unavailable for teleport.");
+                    }
+
+                    Teleport teleport = destination != null
+                            ? Teleport.createForPlayer(toWorld, destination)
+                            : Teleport.createForPlayer(toWorld, playerRef.getTransform());
+                    teleport.setOnComplete(teleportCompleted);
+                    store.addComponent(playerRefHandle, Teleport.getComponentType(), teleport);
+                }, fromWorld)
+                .thenCompose(ignored -> teleportCompleted)
+                .orTimeout(PLAYER_TRANSFER_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .thenApply(ignored -> null)
+                .handle((ignored, throwable) -> {
+                    if (throwable == null) {
+                        return CompletableFuture.<Void>completedFuture(null);
+                    }
+                    Throwable cause = throwable instanceof CompletionException && throwable.getCause() != null
+                            ? throwable.getCause()
+                            : throwable;
+                    String reason = cause.getMessage() != null ? cause.getMessage() : cause.getClass().getSimpleName();
+                    String detail = "Player transfer failed from '" + fromWorld.getName() + "' to '" + toWorld.getName()
+                            + "' for " + playerRef.getUuid() + ": " + reason;
+                    return CompletableFuture.<Void>failedFuture(new IllegalStateException(detail, cause));
+                })
+                .thenCompose(future -> future);
+    }
+
+    @Nullable
+    private static String resolveCoreBlockId(@Nonnull World templateWorld, @Nonnull Vector3i corePos) {
+        try {
+            return CompletableFuture
+                    .supplyAsync(() -> {
+                        var blockType = templateWorld.getBlockType(corePos.x, corePos.y, corePos.z);
+                        return blockType == null ? null : blockType.getId();
+                    }, templateWorld)
+                    .orTimeout(5L, TimeUnit.SECONDS)
+                    .join();
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new IllegalStateException(
+                    "Timed out or failed reading core block in world '" + templateWorld.getName() + "' at " + corePos + ": "
+                            + (cause.getMessage() != null ? cause.getMessage() : cause.getClass().getSimpleName()),
+                    cause
+            );
+        }
     }
 
     private static void copyDirectory(@Nonnull Path source, @Nonnull Path target) {
@@ -362,16 +559,35 @@ public final class GameSessionManager {
             return;
         }
 
-        try (var stream = Files.walk(path)) {
-            stream.sorted(Comparator.reverseOrder()).forEach(p -> {
+        CompletionException lastFailure = null;
+        for (int attempt = 1; attempt <= WORLD_DELETE_MAX_ATTEMPTS; attempt++) {
+            try (var stream = Files.walk(path)) {
+                stream.sorted(Comparator.reverseOrder()).forEach(p -> {
+                    try {
+                        Files.deleteIfExists(p);
+                    } catch (IOException e) {
+                        throw new CompletionException(e);
+                    }
+                });
+                return;
+            } catch (IOException e) {
+                lastFailure = new CompletionException(e);
+            } catch (CompletionException e) {
+                lastFailure = e;
+            }
+
+            if (attempt < WORLD_DELETE_MAX_ATTEMPTS) {
                 try {
-                    Files.deleteIfExists(p);
-                } catch (IOException e) {
-                    throw new CompletionException(e);
+                    Thread.sleep(WORLD_DELETE_RETRY_DELAY_MS);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw new CompletionException(interrupted);
                 }
-            });
-        } catch (IOException e) {
-            throw new CompletionException(e);
+            }
+        }
+
+        if (lastFailure != null) {
+            throw lastFailure;
         }
     }
 
@@ -379,6 +595,10 @@ public final class GameSessionManager {
     private static String buildRunWorldName(@Nonnull String templateWorldName) {
         String safeTemplate = templateWorldName.toLowerCase().replaceAll("[^a-z0-9_-]", "-");
         return RUN_WORLD_PREFIX + safeTemplate + "-" + System.currentTimeMillis();
+    }
+
+    private static boolean isRunSessionWorldName(@Nullable String worldName) {
+        return worldName != null && worldName.startsWith(RUN_WORLD_PREFIX);
     }
 
     @Nullable

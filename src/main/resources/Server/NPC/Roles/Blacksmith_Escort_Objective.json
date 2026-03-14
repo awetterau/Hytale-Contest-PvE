@@ -1,7 +1,7 @@
 {
   "Type": "Generic",
   "StartState": "Idle",
-  "Appearance": "Blacksmith_Escort",
+  "Appearance": "Blacksmith_Escort_Objective",
   "DefaultPlayerAttitude": "Neutral",
   "MaxHealth": 100,
   "MotionControllerList": [
@@ -37,17 +37,15 @@
                 "PickRandomAngle": true
               },
               "BodyMotion": {
-                "Type": "Timer",
-                "Time": [
-                  2,
-                  5
-                ],
-                "Motion": {
-                  "Type": "Wander",
-                  "MaxHeadingChange": 35,
-                  "RelativeSpeed": 0.22
+                "Type": "Nothing"
+              },
+              "Actions": [
+                {
+                  "Type": "PlayAnimation",
+                  "Slot": "Status",
+                  "Animation": "Work"
                 }
-              }
+              ]
             }
           ]
         },

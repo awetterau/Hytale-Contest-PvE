@@ -32,6 +32,7 @@ import dev.hytalemodding.events.ExampleEvent;
 import dev.hytalemodding.state.run.GameDoorInteractionHandler;
 import dev.hytalemodding.state.run.GameRunDirectorSystem;
 import dev.hytalemodding.state.run.GameDoorUseInteraction;
+import dev.hytalemodding.state.run.GameSessionManager;
 import dev.hytalemodding.state.hub.BaseHousingSystem;
 import dev.hytalemodding.game.DevDebugHudSystem;
 import dev.hytalemodding.state.hub.BasePlotInteractionHandler;
@@ -106,6 +107,7 @@ public class ExamplePlugin extends JavaPlugin {
 
     @Override
     protected void start() {
+        GameSessionManager.get().cleanupOrphanRunWorldsOnStartup();
         NpcDefinitionRegistry.get().initialize();
         NpcProgressManager.get().initialize();
         RunRescueRegistry.get().initialize();

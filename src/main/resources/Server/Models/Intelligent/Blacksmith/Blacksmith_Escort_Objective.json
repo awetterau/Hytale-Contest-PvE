@@ -1,7 +1,7 @@
 {
   "Parent": "Player",
-  "Model": "NPC/intelligent/Blacksmith/Models/blacksmith.blockymodel",
-  "Texture": "NPC/intelligent/Blacksmith/Models/Model_Textures/blacksmith.png",
+  "Model": "NPC/intelligent/Blacksmith/Models/blacksmith_slave.blockymodel",
+  "Texture": "NPC/intelligent/Blacksmith/Models/Model_Textures/blacksmith_slave.png",
   "EyeHeight": 1.6,
   "HitBox": {
     "Max": {
@@ -56,6 +56,20 @@
           "Looping": true
         }
       ]
+    },
+    "Work": {
+      "Animations": [
+        {
+          "Animation": "NPC/intelligent/Blacksmith/Animations/work.blockyanim",
+          "Looping": true
+        }
+      ]
     }
-  }
+  },
+  "DefaultAttachments": [
+    {
+      "Model": "Items/Tools/Pickaxe/Iron.blockymodel",
+      "Texture": "Items/Tools/Pickaxe/Iron_Texture.png"
+    }
+  ]
 }
