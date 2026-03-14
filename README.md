@@ -213,12 +213,6 @@ This plugin currently has 4 main systems:
 
 ## Tester scenarios
 
-### Test crimson manually
-1. In the target world, run `/redpos1` and `/redpos2`.
-2. Run `/redstart 30`.
-3. Confirm block conversion progresses.
-4. Run `/redundo` and confirm blocks are restored.
-
 ### Test base plot assignment
 1. Place `Base_Plot_Marker` blocks where desired.
 2. Register one with `/baseplot add smithPlot`.
