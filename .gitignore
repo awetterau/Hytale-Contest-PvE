@@ -4,5 +4,9 @@
 devserver/auth.enc
 /devserver/logs
 /src/.idea
-/devserver/universe
-/devserver
+/devserver/universe/.cache
+/devserver/universe/assetEditor
+/devserver/universe/universe/players
+#/devserver
+/devserver/.cache
+/devserver/universe/worlds/default

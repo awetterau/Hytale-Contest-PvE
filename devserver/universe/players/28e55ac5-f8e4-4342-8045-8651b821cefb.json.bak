@@ -1,0 +1,1222 @@
+{
+  "Components": {
+    "Nameplate": {
+      "Text": "Trident__"
+    },
+    "EffectController": {},
+    "ObjectiveHistory": {
+      "ObjectiveHistory": {},
+      "ObjectiveLineHistory": {}
+    },
+    "DisplayName": {
+      "DisplayName": {
+        "RawText": "Trident__",
+        "Bold": null,
+        "Italic": null,
+        "Monospace": null,
+        "Underline": null
+      }
+    },
+    "UIComponentList": {},
+    "Transform": {
+      "Position": {
+        "X": 54.82062911987305,
+        "Y": 207.0,
+        "Z": 14.59292984008789
+      },
+      "Rotation": {
+        "Pitch": 0.0,
+        "Yaw": 0.669230043888092,
+        "Roll": 0.0
+      }
+    },
+    "BuilderTools": {
+      "SelectionHistory": true
+    },
+    "Velocity": {
+      "Velocity": {
+        "X": 0.4919805459759903,
+        "Y": 0.0,
+        "Z": -0.23580505117086017
+      }
+    },
+    "Player": {
+      "Version": 5,
+      "UUID": {
+        "$binary": "KOVaxfjkQ0KARYZRuCHO+w==",
+        "$type": "04"
+      },
+      "Inventory": {
+        "Version": 4,
+        "Storage": {
+          "Id": "Simple",
+          "Capacity": 36,
+          "Items": {}
+        },
+        "Armor": {
+          "Id": "Simple",
+          "Capacity": 4,
+          "Items": {}
+        },
+        "HotBar": {
+          "Id": "Simple",
+          "Capacity": 9,
+          "Items": {}
+        },
+        "Utility": {
+          "Id": "Simple",
+          "Capacity": 4,
+          "Items": {}
+        },
+        "Backpack": {
+          "Id": "Empty"
+        },
+        "ActiveHotbarSlot": 3,
+        "Tool": {
+          "Id": "Simple",
+          "Capacity": 23,
+          "Items": {
+            "0": {
+              "Id": "EditorTool_Paint",
+              "Quantity": 1,
+              "Durability": 0.0,
+              "MaxDurability": 0.0,
+              "OverrideDroppedItemAnimation": false
+            },
+            "2": {
+              "Id": "EditorTool_Selection",
+              "Quantity": 1,
+              "Durability": 0.0,
+              "MaxDurability": 0.0,
+              "OverrideDroppedItemAnimation": false
+            },
+            "4": {
+              "Id": "EditorTool_Line",
+              "Quantity": 1,
+              "Durability": 0.0,
+              "MaxDurability": 0.0,
+              "OverrideDroppedItemAnimation": false
+            },
+            "1": {
+              "Id": "EditorTool_Sculpt",
+              "Quantity": 1,
+              "Durability": 0.0,
+              "MaxDurability": 0.0,
+              "OverrideDroppedItemAnimation": false
+            },
+            "3": {
+              "Id": "EditorTool_Paste",
+              "Quantity": 1,
+              "Durability": 0.0,
+              "MaxDurability": 0.0,
+              "OverrideDroppedItemAnimation": false
+            },
+            "5": {
+              "Id": "EditorTool_Layers",
+              "Quantity": 1,
+              "Durability": 0.0,
+              "MaxDurability": 0.0,
+              "OverrideDroppedItemAnimation": false
+            }
+          }
+        },
+        "ActiveToolsSlot": -1,
+        "ActiveUtilitySlot": -1,
+        "SortType": "Name"
+      },
+      "PlayerData": {
+        "BlockIdVersion": 11,
+        "World": "hub",
+        "KnownRecipes": [],
+        "PerWorldData": {
+          "run-session-game-1772931875600": {
+            "LastPosition": {
+              "X": -8.421896934509277,
+              "Y": 224.0,
+              "Z": -34.682674407958984,
+              "Pitch": -0.3883481025695801,
+              "Yaw": -0.03497894108295441,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772766604673": {
+            "LastPosition": {
+              "X": 59.757049560546875,
+              "Y": 80.0,
+              "Z": 0.8522399663925171,
+              "Pitch": -0.14040003716945648,
+              "Yaw": -1.6996947526931763,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772756550569": {
+            "LastPosition": {
+              "X": 62.19812774658203,
+              "Y": 86.78729248046875,
+              "Z": 22.52880859375,
+              "Pitch": -0.7836422324180603,
+              "Yaw": 0.4798927307128906,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": true
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1772932398148": {
+            "LastPosition": {
+              "X": -0.06144912913441658,
+              "Y": 224.0,
+              "Z": -51.45016098022461,
+              "Pitch": -0.3690001964569092,
+              "Yaw": 1.5161635875701904,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772766474493": {
+            "LastPosition": {
+              "X": 66.31671905517578,
+              "Y": 80.0,
+              "Z": 1.8598685264587402,
+              "Pitch": -0.16747373342514038,
+              "Yaw": 1.53023099899292,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1773100736868": {
+            "LastPosition": {
+              "X": -0.627801239490509,
+              "Y": 223.10000002384186,
+              "Z": -50.48981857299805,
+              "Pitch": 0.0,
+              "Yaw": 0.5477628707885742,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1772942667063": {
+            "LastPosition": {
+              "X": -2.2506961822509766,
+              "Y": 224.05010986328125,
+              "Z": -65.70108032226562,
+              "Pitch": -0.15659961104393005,
+              "Yaw": -0.6847867369651794,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772766244706": {
+            "LastPosition": {
+              "X": 64.83533477783203,
+              "Y": 80.0,
+              "Z": 0.5488632917404175,
+              "Pitch": -0.3185993432998657,
+              "Yaw": 2.3387398719787598,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772764450334": {
+            "LastPosition": {
+              "X": 61.287208557128906,
+              "Y": 80.0,
+              "Z": 0.9844091534614563,
+              "Pitch": -0.2312999963760376,
+              "Yaw": -1.8377758264541626,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1773102314831": {
+            "LastPosition": {
+              "X": -2.0896248817443848,
+              "Y": 224.05010986328125,
+              "Z": -51.25498580932617,
+              "Pitch": -0.7681475281715393,
+              "Yaw": 1.1840585470199585,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [
+              {
+                "MarkerId": "death-marker-89df4891-f8f1-4170-81ea-22462121c026",
+                "Transform": {
+                  "X": -2.0896248817443848,
+                  "Y": 224.05010986328125,
+                  "Z": -51.25498580932617,
+                  "Pitch": 0.0,
+                  "Yaw": 0.0,
+                  "Roll": 0.0
+                },
+                "Day": 29
+              }
+            ],
+            "UserMarkers": []
+          },
+          "run-session-game-1772942878043": {
+            "LastPosition": {
+              "X": -0.43038058280944824,
+              "Y": 224.0,
+              "Z": -65.07490539550781,
+              "Pitch": -0.4068000614643097,
+              "Yaw": 0.6247139573097229,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772760674514": {
+            "LastPosition": {
+              "X": 72.69371795654297,
+              "Y": 91.6557846069336,
+              "Z": 12.4793701171875,
+              "Pitch": 0.045223139226436615,
+              "Yaw": -2.3868844509124756,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": true
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772761484872": {
+            "LastPosition": {
+              "X": 61.6794548034668,
+              "Y": 80.0,
+              "Z": 2.8336262702941895,
+              "Pitch": -0.3546072542667389,
+              "Yaw": 1.44968843460083,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772765948132": {
+            "LastPosition": {
+              "X": 66.91380310058594,
+              "Y": 80.0,
+              "Z": 0.008904466405510902,
+              "Pitch": -0.194734126329422,
+              "Yaw": 1.965428113937378,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1773100701870": {
+            "LastPosition": {
+              "X": -4.413702011108398,
+              "Y": 224.05010986328125,
+              "Z": -54.221763610839844,
+              "Pitch": -0.4279492199420929,
+              "Yaw": 0.6215614676475525,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [
+              {
+                "MarkerId": "death-marker-5bbc9063-ada3-4dd8-bd35-4a53b5e8e1f4",
+                "Transform": {
+                  "X": -4.413702011108398,
+                  "Y": 224.05010986328125,
+                  "Z": -54.221763610839844,
+                  "Pitch": 0.0,
+                  "Yaw": 0.0,
+                  "Roll": 0.0
+                },
+                "Day": 29
+              }
+            ],
+            "UserMarkers": []
+          },
+          "run-session-default-1772755057022": {
+            "LastPosition": {
+              "X": 39.15122985839844,
+              "Y": 80.0,
+              "Z": -2.6650941371917725,
+              "Pitch": -0.41265395283699036,
+              "Yaw": 3.0696427822113037,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772757035913": {
+            "LastPosition": {
+              "X": 65.17176818847656,
+              "Y": 80.0,
+              "Z": 3.0342226028442383,
+              "Pitch": -0.4429992437362671,
+              "Yaw": 1.4629484415054321,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1772943483138": {
+            "LastPosition": {
+              "X": 4.166150093078613,
+              "Y": 224.0,
+              "Z": -63.02450942993164,
+              "Pitch": -0.17505133152008057,
+              "Yaw": 0.4343661963939667,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772759752660": {
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1772943613187": {
+            "LastPosition": {
+              "X": -0.6547818183898926,
+              "Y": 224.0,
+              "Z": -59.87459945678711,
+              "Pitch": -0.3208508789539337,
+              "Yaw": 1.8959839344024658,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1773100365725": {
+            "LastPosition": {
+              "X": -3.904297113418579,
+              "Y": 224.05010986328125,
+              "Z": -55.298500061035156,
+              "Pitch": -0.2097000628709793,
+              "Yaw": 1.600759744644165,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772755043794": {
+            "LastPosition": {
+              "X": 37.9001579284668,
+              "Y": 80.0,
+              "Z": 9.630498886108398,
+              "Pitch": -0.42930158972740173,
+              "Yaw": 1.663395881652832,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1773100384620": {
+            "LastPosition": {
+              "X": 5.028690338134766,
+              "Y": 80.0,
+              "Z": 6.670255184173584,
+              "Pitch": 0.21960070729255676,
+              "Yaw": 0.10665003955364227,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [
+              {
+                "MarkerId": "death-marker-df071f88-0259-4d35-8d45-95526239437f",
+                "Transform": {
+                  "X": -4.610835552215576,
+                  "Y": 223.0,
+                  "Z": -46.35254669189453,
+                  "Pitch": 0.0,
+                  "Yaw": 0.0,
+                  "Roll": 0.0
+                },
+                "Day": 29
+              }
+            ],
+            "UserMarkers": []
+          },
+          "run-session-default-1772763873363": {
+            "LastPosition": {
+              "X": 60.63872528076172,
+              "Y": 80.0,
+              "Z": 2.0613150596618652,
+              "Pitch": -0.14624778926372528,
+              "Yaw": -1.4029669761657715,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772767018043": {
+            "LastPosition": {
+              "X": 65.86975860595703,
+              "Y": 80.0,
+              "Z": 1.0239843130111694,
+              "Pitch": -0.2218511551618576,
+              "Yaw": 1.8587359189987183,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1772931372478": {
+            "LastPosition": {
+              "X": -5.457420349121094,
+              "Y": 224.0,
+              "Z": -34.41387939453125,
+              "Pitch": -0.2592027187347412,
+              "Yaw": 1.1231673955917358,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772766466603": {
+            "LastPosition": {
+              "X": 59.87786102294922,
+              "Y": 80.0,
+              "Z": 1.896977424621582,
+              "Pitch": -0.25465822219848633,
+              "Yaw": 4.8441643714904785,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772763420051": {
+            "LastPosition": {
+              "X": 61.16767120361328,
+              "Y": 80.0,
+              "Z": 0.8076149225234985,
+              "Pitch": -0.20385125279426575,
+              "Yaw": -1.7917027473449707,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "game": {
+            "LastPosition": {
+              "X": 2.828462600708008,
+              "Y": 224.0,
+              "Z": -51.420318603515625,
+              "Pitch": -0.28935250639915466,
+              "Yaw": 1.9630541801452637,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772756607524": {
+            "LastMovementStates": {
+              "Flying": true
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772763702369": {
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1772942407886": {
+            "LastPosition": {
+              "X": -0.4045918583869934,
+              "Y": 224.0,
+              "Z": -63.2327880859375,
+              "Pitch": -0.2789996862411499,
+              "Yaw": -0.0043881479650735855,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772765867479": {
+            "LastPosition": {
+              "X": 66.98358917236328,
+              "Y": 80.0,
+              "Z": -0.16787089407444,
+              "Pitch": -0.17729979753494263,
+              "Yaw": 1.9516162872314453,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1772932051375": {
+            "LastPosition": {
+              "X": -5.212405204772949,
+              "Y": 224.0,
+              "Z": -37.24787521362305,
+              "Pitch": -0.1705491840839386,
+              "Yaw": 1.5454176664352417,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772765235953": {
+            "LastPosition": {
+              "X": 61.9017333984375,
+              "Y": 80.0,
+              "Z": 1.226935863494873,
+              "Pitch": -0.2637011408805847,
+              "Yaw": -1.777492880821228,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "default": {
+            "LastPosition": {
+              "X": 39.31031036376953,
+              "Y": 93.42221069335938,
+              "Z": -5.2082905769348145,
+              "Pitch": -0.6425992846488953,
+              "Yaw": -2.8607184886932373,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": true
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772764883262": {
+            "LastPosition": {
+              "X": 61.85245132446289,
+              "Y": 80.0,
+              "Z": 1.403447151184082,
+              "Pitch": -0.22004997730255127,
+              "Yaw": -1.7350672483444214,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1772932561335": {
+            "LastPosition": {
+              "X": 2.415961265563965,
+              "Y": 224.0,
+              "Z": -51.62574005126953,
+              "Pitch": -0.3811489939689636,
+              "Yaw": -0.17538224160671234,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1772942922833": {
+            "LastPosition": {
+              "X": 1.6938679218292236,
+              "Y": 224.0,
+              "Z": -61.259765625,
+              "Pitch": -0.15884876251220703,
+              "Yaw": 0.13691698014736176,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772766455875": {
+            "LastPosition": {
+              "X": 60.297157287597656,
+              "Y": 80.0,
+              "Z": 2.95711350440979,
+              "Pitch": -0.1763373613357544,
+              "Yaw": 5.1150383949279785,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772764669300": {
+            "LastPosition": {
+              "X": 61.863800048828125,
+              "Y": 80.0,
+              "Z": 0.6801285743713379,
+              "Pitch": -0.38834667205810547,
+              "Yaw": -2.1318650245666504,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1773100353555": {
+            "LastPosition": {
+              "X": -3.4630649089813232,
+              "Y": 224.05010986328125,
+              "Z": -54.430633544921875,
+              "Pitch": -0.13049988448619843,
+              "Yaw": 1.312315583229065,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772767470122": {
+            "LastPosition": {
+              "X": 65.52810668945312,
+              "Y": 80.0,
+              "Z": 3.1322224140167236,
+              "Pitch": -0.2533520460128784,
+              "Yaw": 0.9076051115989685,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772766313719": {
+            "LastPosition": {
+              "X": 66.66963958740234,
+              "Y": 80.0,
+              "Z": -0.2654990255832672,
+              "Pitch": -0.23534904420375824,
+              "Yaw": 2.1115097999572754,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772757267286": {
+            "LastPosition": {
+              "X": 45.83759307861328,
+              "Y": 80.0,
+              "Z": 3.1949973106384277,
+              "Pitch": -0.4128571152687073,
+              "Yaw": -1.6922836303710938,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772767246544": {
+            "LastPosition": {
+              "X": 65.91918182373047,
+              "Y": 80.0,
+              "Z": 3.676164150238037,
+              "Pitch": -0.2628001272678375,
+              "Yaw": 0.752527117729187,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1772932372202": {
+            "LastPosition": {
+              "X": 2.402419090270996,
+              "Y": 224.0,
+              "Z": -68.50080108642578,
+              "Pitch": -0.533249020576477,
+              "Yaw": 2.0777647495269775,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1772943887926": {
+            "LastPosition": {
+              "X": 0.8218896985054016,
+              "Y": 224.0,
+              "Z": -65.78723907470703,
+              "Pitch": -0.19259929656982422,
+              "Yaw": 0.08246408402919769,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1773099697116": {
+            "LastPosition": {
+              "X": -3.612090587615967,
+              "Y": 224.0,
+              "Z": -44.32205581665039,
+              "Pitch": -0.2646012008190155,
+              "Yaw": 2.5655570030212402,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772765566591": {
+            "LastPosition": {
+              "X": 62.090843200683594,
+              "Y": 80.0,
+              "Z": 0.9619078636169434,
+              "Pitch": -0.3244454264640808,
+              "Yaw": -2.116044044494629,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1772943297472": {
+            "LastPosition": {
+              "X": -2.8920743465423584,
+              "Y": 224.05010986328125,
+              "Z": -61.93163299560547,
+              "Pitch": -0.24435143172740936,
+              "Yaw": -1.6837788820266724,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772766432428": {
+            "LastPosition": {
+              "X": 61.77122497558594,
+              "Y": 80.0,
+              "Z": 0.7436813712120056,
+              "Pitch": -0.2771995961666107,
+              "Yaw": -1.9498414993286133,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772759547822": {
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "hub": {
+            "LastPosition": {
+              "X": 58.13898468017578,
+              "Y": 207.0,
+              "Z": 0.21252933144569397,
+              "Pitch": 0.0,
+              "Yaw": 0.0,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772755005566": {
+            "LastPosition": {
+              "X": 32.92104721069336,
+              "Y": 80.0,
+              "Z": 14.383323669433594,
+              "Pitch": -0.2965524196624756,
+              "Yaw": 2.7375452518463135,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1773100374522": {
+            "LastPosition": {
+              "X": -4.390048027038574,
+              "Y": 224.05010986328125,
+              "Z": -55.951087951660156,
+              "Pitch": -0.21915006637573242,
+              "Yaw": 1.7038131952285767,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772766582813": {
+            "LastPosition": {
+              "X": 61.905738830566406,
+              "Y": 80.0,
+              "Z": 0.35413801670074463,
+              "Pitch": -0.22949868440628052,
+              "Yaw": -2.2014589309692383,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1772932547892": {
+            "LastPosition": {
+              "X": -1.7449862957000732,
+              "Y": 224.05010986328125,
+              "Z": -53.394474029541016,
+              "Pitch": -0.20205017924308777,
+              "Yaw": 2.580416202545166,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-default-1772761261954": {
+            "LastPosition": {
+              "X": 68.55953216552734,
+              "Y": 83.0,
+              "Z": 5.7293701171875,
+              "Pitch": -0.5958019495010376,
+              "Yaw": -0.5106930136680603,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
+          "run-session-game-1772942862696": {
+            "LastPosition": {
+              "X": -0.36841925978660583,
+              "Y": 224.0,
+              "Z": -65.13693237304688,
+              "Pitch": -0.2582987844944,
+              "Yaw": -0.6613866090774536,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          }
+        },
+        "DiscoveredZones": [
+          "Zone1_Tier1"
+        ],
+        "DiscoveredInstances": [],
+        "ReputationData": {},
+        "ActiveObjectiveUUIDs": []
+      },
+      "BlockPlacementOverride": false,
+      "HotbarManager": {
+        "SavedHotbars": [
+          {
+            "Id": "Simple",
+            "Capacity": 9,
+            "Items": {
+              "0": {
+                "Id": "Wood_Ash_Trunk",
+                "Quantity": 1,
+                "Durability": 0.0,
+                "MaxDurability": 0.0,
+                "OverrideDroppedItemAnimation": false
+              },
+              "1": {
+                "Id": "Fluid_Lava",
+                "Quantity": 1,
+                "Durability": 0.0,
+                "MaxDurability": 0.0,
+                "OverrideDroppedItemAnimation": false
+              }
+            }
+          },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "CurrentHotbar": 0
+      },
+      "GameMode": "Adventure"
+    },
+    "HitboxCollision": {
+      "HitboxCollisionConfigIndex": 1
+    },
+    "UniqueItemUsages": {
+      "UniqueItemUsed": []
+    },
+    "Instance": {},
+    "UUID": {
+      "UUID": {
+        "$binary": "KOVaxfjkQ0KARYZRuCHO+w==",
+        "$type": "04"
+      }
+    },
+    "EntityStats": {
+      "Version": 5,
+      "Stats": {
+        "Oxygen": {
+          "Id": "Oxygen",
+          "Value": 100.0
+        },
+        "Mana": {
+          "Id": "Mana",
+          "Value": 0.0
+        },
+        "Health": {
+          "Id": "Health",
+          "Value": 100.0
+        },
+        "GlidingActive": {
+          "Id": "GlidingActive",
+          "Value": 0.0
+        },
+        "Immunity": {
+          "Id": "Immunity",
+          "Value": 0.0
+        },
+        "SignatureCharges": {
+          "Id": "SignatureCharges",
+          "Value": 0.0
+        },
+        "Stamina": {
+          "Id": "Stamina",
+          "Value": 9.399993896484375
+        },
+        "Ammo": {
+          "Id": "Ammo",
+          "Value": 0.0
+        },
+        "Unknown": {
+          "Id": "Unknown",
+          "Value": 0.0
+        },
+        "SignatureEnergy": {
+          "Id": "SignatureEnergy",
+          "Value": 0.0
+        },
+        "DeployablePreview": {
+          "Id": "DeployablePreview",
+          "Value": 0.0
+        },
+        "StaminaRegenDelay": {
+          "Id": "StaminaRegenDelay",
+          "Value": 0.0
+        },
+        "MagicCharges": {
+          "Id": "MagicCharges",
+          "Value": 0.0
+        }
+      }
+    },
+    "HeadRotation": {
+      "Rotation": {
+        "Pitch": -0.24254517257213593,
+        "Yaw": 0.7696641087532043,
+        "Roll": 0.0
+      }
+    }
+  }
+}

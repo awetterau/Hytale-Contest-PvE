@@ -1,0 +1,16 @@
+{
+  "users": {
+    "28e55ac5-f8e4-4342-8045-8651b821cefb": {
+      "groups": [
+        "OP",
+        "Adventure"
+      ]
+    }
+  },
+  "groups": {
+    "Default": [],
+    "OP": [
+      "*"
+    ]
+  }
+}
