@@ -12,6 +12,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.redwave.RedWaveConfig;
+import dev.hytalemodding.redwave.RedCoreRegistry;
 import dev.hytalemodding.redwave.RedWaveManager;
 
 import javax.annotation.Nonnull;
@@ -38,12 +39,10 @@ public class RedCoreCommand extends AbstractPlayerCommand {
         );
 
         world.setBlock(corePos.x, corePos.y, corePos.z, RedWaveConfig.CORE_BLOCK_ID);
+        RedCoreRegistry.register(world.getWorldConfig().getUuid(), corePos);
         RedWaveManager.setCore(playerRef.getUuid(), world.getWorldConfig().getUuid(), corePos);
         context.sendMessage(Message.raw(
                 "Crimson core set and cyan wool placed at: " + corePos.x + ", " + corePos.y + ", " + corePos.z
         ));
     }
 }
-
-
-
