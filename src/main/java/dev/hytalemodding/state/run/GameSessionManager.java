@@ -12,6 +12,7 @@ import com.hypixel.hytale.server.core.universe.world.WorldConfig;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.redwave.RedWaveConfig;
 import dev.hytalemodding.redwave.RedWaveManager;
+import dev.hytalemodding.redwave.RedCoreProfileRegistry;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -129,37 +130,37 @@ public final class GameSessionManager {
             String runWorldName = buildRunWorldName(templateWorldName);
             Path runWorldPath = Universe.get().getPath().resolve("worlds").resolve(runWorldName);
 
-            RedWaveManager.Selection selection = RedWaveManager.getSelection(starter.getUuid());
             UUID templateWorldId = templateWorld.getWorldConfig().getUuid();
-            System.out.println("[GameDoorDebug] crimson selection check: selectionPresent=" + (selection != null)
-                    + " selectionComplete=" + (selection != null && selection.isComplete())
-                    + " templateWorldId=" + templateWorldId
-                    + " selectionWorldId=" + (selection == null ? null : selection.worldId()));
-            if (selection == null || !selection.isComplete() || !templateWorld.getWorldConfig().getUuid().equals(selection.worldId())) {
-                return CompletableFuture.failedFuture(
-                        new IllegalStateException("Set crimson core and radius in template world with /redcore and /redradius before /gamestart.")
-                );
-            }
-            Vector3i corePos = selection.corePos();
-            Integer radiusBlocks = selection.radiusBlocks();
-            if (corePos == null || radiusBlocks == null) {
-                return CompletableFuture.failedFuture(
-                        new IllegalStateException("Crimson setup is incomplete. Use /redcore and /redradius.")
-                );
-            }
+            List<RedCoreProfileRegistry.RedCoreProfile> configuredProfiles = RedCoreProfileRegistry.snapshot(templateWorldId);
+            ArrayList<RedCoreProfileRegistry.RedCoreProfile> validProfiles = new ArrayList<>();
+            for (RedCoreProfileRegistry.RedCoreProfile profile : configuredProfiles) {
+                Vector3i corePos = profile.corePos();
+                if (corePos == null) {
+                    continue;
+                }
+                int effectiveRadius = normalizeRadius(profile.radiusBlocks());
+                float effectiveStartSeconds = normalizeStartSeconds(profile.startSeconds());
 
-            System.out.println("[GameDoorDebug] crimson core read start: world=" + templateWorld.getName() + " pos=" + corePos);
-            String coreBlockId;
-            try {
-                coreBlockId = resolveCoreBlockId(templateWorld, corePos);
-            } catch (Exception e) {
-                String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
-                return CompletableFuture.failedFuture(new IllegalStateException("Unable to validate crimson core: " + reason, e));
+                System.out.println("[GameDoorDebug] crimson core read start: world=" + templateWorld.getName() + " pos=" + corePos);
+                String coreBlockId;
+                try {
+                    coreBlockId = resolveCoreBlockId(templateWorld, corePos);
+                } catch (Exception e) {
+                    String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                    return CompletableFuture.failedFuture(new IllegalStateException("Unable to validate crimson core: " + reason, e));
+                }
+                System.out.println("[GameDoorDebug] crimson core read done: blockId=" + coreBlockId);
+                if (!RedWaveConfig.CORE_BLOCK_ID.equals(coreBlockId)) {
+                    continue;
+                }
+                validProfiles.add(new RedCoreProfileRegistry.RedCoreProfile(new Vector3i(corePos), effectiveRadius, effectiveStartSeconds));
             }
-            System.out.println("[GameDoorDebug] crimson core read done: blockId=" + coreBlockId);
-            if (!RedWaveConfig.CORE_BLOCK_ID.equals(coreBlockId)) {
+            System.out.println("[GameDoorDebug] crimson profile check: templateWorldId=" + templateWorldId
+                    + " configured=" + configuredProfiles.size()
+                    + " valid=" + validProfiles.size());
+            if (validProfiles.isEmpty()) {
                 return CompletableFuture.failedFuture(
-                        new IllegalStateException("Crimson core must be a cyan wool block (" + RedWaveConfig.CORE_BLOCK_ID + ") in template world.")
+                        new IllegalStateException("Configure crimson cores/radius/time in template world using /redui before /gamestart.")
                 );
             }
 
@@ -168,9 +169,7 @@ public final class GameSessionManager {
                     runWorldName,
                     runWorldPath,
                     starter.getUuid(),
-                    new Vector3i(corePos),
-                    radiusBlocks,
-                    DEFAULT_CRIMSON_SPREAD_SECONDS,
+                    validProfiles,
                     copyTransformOrNull(runSpawnTransform),
                     copyTransformOrNull(returnSpawnTransform)
             );
@@ -609,6 +608,20 @@ public final class GameSessionManager {
         return new Transform(transform.getPosition().clone(), transform.getRotation().clone());
     }
 
+    private static int normalizeRadius(int configuredRadius) {
+        if (configuredRadius < RedWaveConfig.MIN_RADIUS_BLOCKS || configuredRadius > RedWaveConfig.MAX_RADIUS_BLOCKS) {
+            return RedWaveConfig.DEFAULT_UI_RADIUS_BLOCKS;
+        }
+        return configuredRadius;
+    }
+
+    private static float normalizeStartSeconds(float configuredSeconds) {
+        if (configuredSeconds <= 0.0f || Float.isNaN(configuredSeconds) || Float.isInfinite(configuredSeconds)) {
+            return RedWaveConfig.DEFAULT_UI_START_SECONDS;
+        }
+        return configuredSeconds;
+    }
+
     public enum RunPhase {
         IDLE,
         PREPARING,
@@ -627,9 +640,7 @@ public final class GameSessionManager {
         @Nonnull
         private final UUID starterPlayerId;
         @Nonnull
-        private final Vector3i crimsonCorePos;
-        private final int crimsonRadiusBlocks;
-        private final float crimsonSpreadSeconds;
+        private final List<RedCoreProfileRegistry.RedCoreProfile> crimsonProfiles;
         @Nullable
         private final Transform runSpawnTransform;
         @Nullable
@@ -647,9 +658,7 @@ public final class GameSessionManager {
                 @Nonnull String runWorldName,
                 @Nonnull Path runWorldPath,
                 @Nonnull UUID starterPlayerId,
-                @Nonnull Vector3i crimsonCorePos,
-                int crimsonRadiusBlocks,
-                float crimsonSpreadSeconds,
+                @Nonnull List<RedCoreProfileRegistry.RedCoreProfile> crimsonProfiles,
                 @Nullable Transform runSpawnTransform,
                 @Nullable Transform returnSpawnTransform
         ) {
@@ -657,9 +666,7 @@ public final class GameSessionManager {
             this.runWorldName = runWorldName;
             this.runWorldPath = runWorldPath;
             this.starterPlayerId = starterPlayerId;
-            this.crimsonCorePos = crimsonCorePos;
-            this.crimsonRadiusBlocks = crimsonRadiusBlocks;
-            this.crimsonSpreadSeconds = crimsonSpreadSeconds;
+            this.crimsonProfiles = copyProfiles(crimsonProfiles);
             this.runSpawnTransform = runSpawnTransform;
             this.returnSpawnTransform = returnSpawnTransform;
         }
@@ -675,9 +682,7 @@ public final class GameSessionManager {
                     this.startedAtEpochMillis,
                     this.runEndsAtEpochMillis,
                     this.crimsonStartAtEpochMillis,
-                    new Vector3i(this.crimsonCorePos),
-                    this.crimsonRadiusBlocks,
-                    this.crimsonSpreadSeconds
+                    copyProfiles(this.crimsonProfiles)
             );
         }
     }
@@ -708,13 +713,20 @@ public final class GameSessionManager {
             long startedAtEpochMillis,
             long runEndsAtEpochMillis,
             long crimsonStartAtEpochMillis,
-            @Nonnull Vector3i crimsonCorePos,
-            int crimsonRadiusBlocks,
-            float crimsonSpreadSeconds
+            @Nonnull List<RedCoreProfileRegistry.RedCoreProfile> crimsonProfiles
     ) {
         public boolean crimsonEnabled() {
-            return this.crimsonRadiusBlocks > 0;
+            return !this.crimsonProfiles.isEmpty();
         }
+    }
+
+    @Nonnull
+    private static List<RedCoreProfileRegistry.RedCoreProfile> copyProfiles(@Nonnull List<RedCoreProfileRegistry.RedCoreProfile> profiles) {
+        ArrayList<RedCoreProfileRegistry.RedCoreProfile> copy = new ArrayList<>(profiles.size());
+        for (RedCoreProfileRegistry.RedCoreProfile profile : profiles) {
+            copy.add(new RedCoreProfileRegistry.RedCoreProfile(new Vector3i(profile.corePos()), profile.radiusBlocks(), profile.startSeconds()));
+        }
+        return copy;
     }
 }
 

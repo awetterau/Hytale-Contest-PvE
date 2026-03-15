@@ -8,6 +8,8 @@ public final class RedWaveConfig {
     public static final String OPTIONAL_CRIMSON_VOID_DAMAGE_BLOCK_ID = "Crimson_Void_Damage";
 
     public static final int DEFAULT_RADIUS_BLOCKS = 24;
+    public static final int DEFAULT_UI_RADIUS_BLOCKS = 6;
+    public static final float DEFAULT_UI_START_SECONDS = 9.0f;
     public static final int MIN_RADIUS_BLOCKS = 1;
     public static final int MAX_RADIUS_BLOCKS = 256;
 

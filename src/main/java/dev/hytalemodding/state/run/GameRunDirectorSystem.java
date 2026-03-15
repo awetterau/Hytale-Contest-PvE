@@ -3,7 +3,6 @@ package dev.hytalemodding.state.run;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
-import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -12,6 +11,7 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.hud.GameTimerHud;
 import dev.hytalemodding.redwave.RedWaveManager;
+import dev.hytalemodding.redwave.RedCoreProfileRegistry;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,10 +40,10 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
 
         if (snapshot.crimsonEnabled() && snapshot.phase() == GameSessionManager.RunPhase.EXPLORATION && GameSessionManager.get().shouldActivateCrimson()) {
             if (RedWaveManager.getActiveWave(worldId) == null) {
-                Vector3i corePos = snapshot.crimsonCorePos();
-                int radius = snapshot.crimsonRadiusBlocks();
-                RedWaveManager.beginUndoSession(worldId);
-                RedWaveManager.startWave(worldId, corePos, radius, snapshot.crimsonSpreadSeconds());
+                for (RedCoreProfileRegistry.RedCoreProfile profile : snapshot.crimsonProfiles()) {
+                    RedWaveManager.beginUndoSession(worldId, profile.corePos());
+                    RedWaveManager.startWave(worldId, profile.corePos(), profile.radiusBlocks(), profile.startSeconds());
+                }
                 sendRunWorldMessage(worldId, "Crimson infection is spreading. Return to base.");
             }
             GameSessionManager.get().markCrimsonActive();
