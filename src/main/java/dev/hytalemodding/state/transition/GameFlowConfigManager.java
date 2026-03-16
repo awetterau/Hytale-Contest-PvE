@@ -5,6 +5,7 @@ import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.universe.Universe;
+import dev.hytalemodding.redwave.RedCoreProfileRegistry;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -15,6 +16,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -43,6 +46,8 @@ public final class GameFlowConfigManager {
     private boolean blacksmithRescued;
     @Nonnull
     private Set<String> rescuedNpcKeys = new HashSet<>();
+    @Nonnull
+    private HashMap<String, ArrayList<RedCoreProfileRegistry.RedCoreProfile>> crimsonCoreProfilesByWorld = new HashMap<>();
     private boolean loaded;
 
     private GameFlowConfigManager() {
@@ -155,6 +160,35 @@ public final class GameFlowConfigManager {
         return Set.copyOf(this.rescuedNpcKeys);
     }
 
+    @Nonnull
+    public synchronized List<RedCoreProfileRegistry.RedCoreProfile> getCrimsonCoreProfiles(@Nonnull String worldName) {
+        ensureLoaded();
+        String normalizedWorld = normalizeWorldName(worldName, DEFAULT_TEMPLATE_WORLD);
+        ArrayList<RedCoreProfileRegistry.RedCoreProfile> existing = this.crimsonCoreProfilesByWorld.get(normalizedWorld);
+        if (existing == null || existing.isEmpty()) {
+            return List.of();
+        }
+        return copyAndSortProfiles(existing);
+    }
+
+    public synchronized void setCrimsonCoreProfiles(@Nonnull String worldName, @Nonnull List<RedCoreProfileRegistry.RedCoreProfile> profiles) {
+        ensureLoaded();
+        String normalizedWorld = normalizeWorldName(worldName, DEFAULT_TEMPLATE_WORLD);
+        ArrayList<RedCoreProfileRegistry.RedCoreProfile> cleaned = new ArrayList<>();
+        for (RedCoreProfileRegistry.RedCoreProfile profile : profiles) {
+            if (profile == null || profile.corePos() == null) {
+                continue;
+            }
+            cleaned.add(new RedCoreProfileRegistry.RedCoreProfile(new Vector3i(profile.corePos()), profile.radiusBlocks(), profile.startSeconds()));
+        }
+        if (cleaned.isEmpty()) {
+            this.crimsonCoreProfilesByWorld.remove(normalizedWorld);
+        } else {
+            this.crimsonCoreProfilesByWorld.put(normalizedWorld, copyAndSortProfiles(cleaned));
+        }
+        saveQuietly();
+    }
+
     @Nullable
     public synchronized Vector3i getDoorBlock() {
         ensureLoaded();
@@ -239,6 +273,7 @@ public final class GameFlowConfigManager {
             this.rescuedNpcKeys.add("blacksmith");
         }
         this.blacksmithRescued = this.rescuedNpcKeys.contains("blacksmith");
+        this.crimsonCoreProfilesByWorld = readCrimsonProfiles(properties);
     }
 
     private synchronized void saveQuietly() {
@@ -257,6 +292,7 @@ public final class GameFlowConfigManager {
         properties.setProperty("rescuedNpcs", String.join(",", this.rescuedNpcKeys));
         this.blacksmithRescued = this.rescuedNpcKeys.contains("blacksmith");
         properties.setProperty("blacksmithRescued", Boolean.toString(this.blacksmithRescued));
+        writeCrimsonProfiles(properties, this.crimsonCoreProfilesByWorld);
 
         try {
             Path parent = path.getParent();
@@ -364,6 +400,87 @@ public final class GameFlowConfigManager {
     }
 
     @Nonnull
+    private static ArrayList<RedCoreProfileRegistry.RedCoreProfile> copyAndSortProfiles(@Nonnull List<RedCoreProfileRegistry.RedCoreProfile> profiles) {
+        ArrayList<RedCoreProfileRegistry.RedCoreProfile> copy = new ArrayList<>();
+        for (RedCoreProfileRegistry.RedCoreProfile profile : profiles) {
+            if (profile == null || profile.corePos() == null) {
+                continue;
+            }
+            copy.add(new RedCoreProfileRegistry.RedCoreProfile(new Vector3i(profile.corePos()), profile.radiusBlocks(), profile.startSeconds()));
+        }
+        copy.sort(Comparator
+                .comparingInt((RedCoreProfileRegistry.RedCoreProfile p) -> p.corePos().x)
+                .thenComparingInt(p -> p.corePos().y)
+                .thenComparingInt(p -> p.corePos().z));
+        return copy;
+    }
+
+    @Nonnull
+    private static HashMap<String, ArrayList<RedCoreProfileRegistry.RedCoreProfile>> readCrimsonProfiles(@Nonnull Properties properties) {
+        HashMap<String, ArrayList<RedCoreProfileRegistry.RedCoreProfile>> out = new HashMap<>();
+        for (String key : properties.stringPropertyNames()) {
+            if (!key.startsWith("crimsonProfiles.")) {
+                continue;
+            }
+            String worldName = key.substring("crimsonProfiles.".length()).trim();
+            if (worldName.isEmpty()) {
+                continue;
+            }
+            String raw = properties.getProperty(key, "");
+            ArrayList<RedCoreProfileRegistry.RedCoreProfile> profiles = new ArrayList<>();
+            if (!raw.isBlank()) {
+                for (String token : raw.split(";")) {
+                    String item = token.trim();
+                    if (item.isEmpty()) {
+                        continue;
+                    }
+                    String[] parts = item.split(":");
+                    if (parts.length != 5) {
+                        continue;
+                    }
+                    Integer x = readInt(parts[0]);
+                    Integer y = readInt(parts[1]);
+                    Integer z = readInt(parts[2]);
+                    Integer radius = readInt(parts[3]);
+                    Double seconds = readDouble(parts[4]);
+                    if (x == null || y == null || z == null || radius == null || seconds == null) {
+                        continue;
+                    }
+                    profiles.add(new RedCoreProfileRegistry.RedCoreProfile(new Vector3i(x, y, z), radius, seconds.floatValue()));
+                }
+            }
+            if (!profiles.isEmpty()) {
+                out.put(normalizeWorldName(worldName, DEFAULT_TEMPLATE_WORLD), copyAndSortProfiles(profiles));
+            }
+        }
+        return out;
+    }
+
+    private static void writeCrimsonProfiles(
+            @Nonnull Properties properties,
+            @Nonnull HashMap<String, ArrayList<RedCoreProfileRegistry.RedCoreProfile>> profilesByWorld
+    ) {
+        for (String key : new ArrayList<>(properties.stringPropertyNames())) {
+            if (key.startsWith("crimsonProfiles.")) {
+                properties.remove(key);
+            }
+        }
+        for (var entry : profilesByWorld.entrySet()) {
+            String worldName = normalizeWorldName(entry.getKey(), DEFAULT_TEMPLATE_WORLD);
+            ArrayList<RedCoreProfileRegistry.RedCoreProfile> profiles = copyAndSortProfiles(entry.getValue());
+            if (profiles.isEmpty()) {
+                continue;
+            }
+            ArrayList<String> tokens = new ArrayList<>();
+            for (RedCoreProfileRegistry.RedCoreProfile profile : profiles) {
+                Vector3i pos = profile.corePos();
+                tokens.add(pos.x + ":" + pos.y + ":" + pos.z + ":" + profile.radiusBlocks() + ":" + profile.startSeconds());
+            }
+            properties.setProperty("crimsonProfiles." + worldName, String.join(";", tokens));
+        }
+    }
+
+    @Nonnull
     private static String normalizeWorldName(@Nullable String name, @Nonnull String fallback) {
         if (name == null) {
             return fallback;
@@ -425,6 +542,3 @@ public final class GameFlowConfigManager {
         return new Transform(new Vector3d(transform.getPosition()), new Vector3f(transform.getRotation()));
     }
 }
-
-
-

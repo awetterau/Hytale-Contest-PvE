@@ -12,6 +12,7 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.hud.GameTimerHud;
 import dev.hytalemodding.redwave.RedWaveManager;
 import dev.hytalemodding.redwave.RedCoreProfileRegistry;
+import dev.hytalemodding.redwave.RedWaveConfig;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,11 +41,21 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
 
         if (snapshot.crimsonEnabled() && snapshot.phase() == GameSessionManager.RunPhase.EXPLORATION && GameSessionManager.get().shouldActivateCrimson()) {
             if (RedWaveManager.getActiveWave(worldId) == null) {
+                int started = 0;
                 for (RedCoreProfileRegistry.RedCoreProfile profile : snapshot.crimsonProfiles()) {
+                    var coreType = world.getBlockType(profile.corePos().x, profile.corePos().y, profile.corePos().z);
+                    if (coreType == null || !RedWaveConfig.CORE_BLOCK_ID.equals(coreType.getId())) {
+                        continue;
+                    }
                     RedWaveManager.beginUndoSession(worldId, profile.corePos());
                     RedWaveManager.startWave(worldId, profile.corePos(), profile.radiusBlocks(), profile.startSeconds());
+                    started++;
                 }
-                sendRunWorldMessage(worldId, "Crimson infection is spreading. Return to base.");
+                if (started > 0) {
+                    sendRunWorldMessage(worldId, "Crimson infection is spreading. Return to base.");
+                } else {
+                    sendRunWorldMessage(worldId, "No valid Crimson_Core blocks found in run world.");
+                }
             }
             GameSessionManager.get().markCrimsonActive();
         }
@@ -126,5 +137,3 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
         }
     }
 }
-
-

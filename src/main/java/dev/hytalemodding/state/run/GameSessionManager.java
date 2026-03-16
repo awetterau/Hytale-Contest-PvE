@@ -13,6 +13,7 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.redwave.RedWaveConfig;
 import dev.hytalemodding.redwave.RedWaveManager;
 import dev.hytalemodding.redwave.RedCoreProfileRegistry;
+import dev.hytalemodding.state.transition.CrimsonCoreConfigManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -32,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 public final class GameSessionManager {
     private static final String RUN_WORLD_PREFIX = "run-session-";
     private static final long RUN_DURATION_MS = 5L * 60L * 1000L;
-    private static final long DEFAULT_CRIMSON_DELAY_MS = 0L;
+    private static final long DEFAULT_CRIMSON_DELAY_MS = 15_000L;
     private static final float DEFAULT_CRIMSON_SPREAD_SECONDS = RUN_DURATION_MS / 1000.0f;
     private static final long PLAYER_TRANSFER_TIMEOUT_SECONDS = 15L;
     private static final long WORLD_COPY_TIMEOUT_SECONDS = 90L;
@@ -132,6 +133,12 @@ public final class GameSessionManager {
 
             UUID templateWorldId = templateWorld.getWorldConfig().getUuid();
             List<RedCoreProfileRegistry.RedCoreProfile> configuredProfiles = RedCoreProfileRegistry.snapshot(templateWorldId);
+            if (configuredProfiles.isEmpty()) {
+                configuredProfiles = CrimsonCoreConfigManager.get().getProfiles(templateWorld.getName());
+                if (!configuredProfiles.isEmpty()) {
+                    RedCoreProfileRegistry.setProfiles(templateWorldId, configuredProfiles);
+                }
+            }
             ArrayList<RedCoreProfileRegistry.RedCoreProfile> validProfiles = new ArrayList<>();
             for (RedCoreProfileRegistry.RedCoreProfile profile : configuredProfiles) {
                 Vector3i corePos = profile.corePos();
@@ -140,19 +147,6 @@ public final class GameSessionManager {
                 }
                 int effectiveRadius = normalizeRadius(profile.radiusBlocks());
                 float effectiveStartSeconds = normalizeStartSeconds(profile.startSeconds());
-
-                System.out.println("[GameDoorDebug] crimson core read start: world=" + templateWorld.getName() + " pos=" + corePos);
-                String coreBlockId;
-                try {
-                    coreBlockId = resolveCoreBlockId(templateWorld, corePos);
-                } catch (Exception e) {
-                    String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
-                    return CompletableFuture.failedFuture(new IllegalStateException("Unable to validate crimson core: " + reason, e));
-                }
-                System.out.println("[GameDoorDebug] crimson core read done: blockId=" + coreBlockId);
-                if (!RedWaveConfig.CORE_BLOCK_ID.equals(coreBlockId)) {
-                    continue;
-                }
                 validProfiles.add(new RedCoreProfileRegistry.RedCoreProfile(new Vector3i(corePos), effectiveRadius, effectiveStartSeconds));
             }
             System.out.println("[GameDoorDebug] crimson profile check: templateWorldId=" + templateWorldId
@@ -427,6 +421,7 @@ public final class GameSessionManager {
         return CompletableFuture.failedFuture(cause);
     }
 
+
     @Nonnull
     private static CompletableFuture<Void> movePlayersFromWorld(@Nonnull World fromWorld, @Nonnull World toWorld, @Nullable Transform targetSpawn) {
         UUID fromWorldId = fromWorld.getWorldConfig().getUuid();
@@ -498,26 +493,6 @@ public final class GameSessionManager {
                     return CompletableFuture.<Void>failedFuture(new IllegalStateException(detail, cause));
                 })
                 .thenCompose(future -> future);
-    }
-
-    @Nullable
-    private static String resolveCoreBlockId(@Nonnull World templateWorld, @Nonnull Vector3i corePos) {
-        try {
-            return CompletableFuture
-                    .supplyAsync(() -> {
-                        var blockType = templateWorld.getBlockType(corePos.x, corePos.y, corePos.z);
-                        return blockType == null ? null : blockType.getId();
-                    }, templateWorld)
-                    .orTimeout(5L, TimeUnit.SECONDS)
-                    .join();
-        } catch (CompletionException e) {
-            Throwable cause = e.getCause() != null ? e.getCause() : e;
-            throw new IllegalStateException(
-                    "Timed out or failed reading core block in world '" + templateWorld.getName() + "' at " + corePos + ": "
-                            + (cause.getMessage() != null ? cause.getMessage() : cause.getClass().getSimpleName()),
-                    cause
-            );
-        }
     }
 
     private static void copyDirectory(@Nonnull Path source, @Nonnull Path target) {
@@ -729,4 +704,3 @@ public final class GameSessionManager {
         return copy;
     }
 }
-

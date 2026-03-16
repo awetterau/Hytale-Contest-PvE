@@ -22,12 +22,14 @@ import dev.hytalemodding.redwave.RedWaveConfig;
 import dev.hytalemodding.redwave.RedWaveManager;
 import dev.hytalemodding.redwave.RedCoreRegistry;
 import dev.hytalemodding.redwave.RedCoreProfileRegistry;
+import dev.hytalemodding.state.transition.CrimsonCoreConfigManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -54,10 +56,11 @@ public class RedControlPage extends CustomUIPage {
         World world = store.getExternalData().getWorld();
         UUID worldId = world.getWorldConfig().getUuid();
         PlayerUiState state = this.getState(worldId);
+        this.syncRegistryFromCoreConfig(world);
         this.syncDetectedCoresFromWorld(world, state);
         this.ensureRegistryHasAllDetectedCores(world, worldId);
         this.syncDetectedCoresFromWorld(world, state);
-        this.syncStateToRegistry(worldId, state);
+        this.syncStateToRegistry(world, worldId, state);
         this.applySelectedCoreToManager(state, worldId);
 
         ui.append("d97's/Pages/RedControlPage.ui");
@@ -101,10 +104,11 @@ public class RedControlPage extends CustomUIPage {
         World world = store.getExternalData().getWorld();
         UUID worldId = world.getWorldConfig().getUuid();
         PlayerUiState state = this.getState(worldId);
+        this.syncRegistryFromCoreConfig(world);
         this.syncDetectedCoresFromWorld(world, state);
         this.ensureRegistryHasAllDetectedCores(world, worldId);
         this.syncDetectedCoresFromWorld(world, state);
-        this.syncStateToRegistry(worldId, state);
+        this.syncStateToRegistry(world, worldId, state);
 
         if (eventData.contains("prevcore")) {
             if (!state.switchCore(-1)) {
@@ -129,7 +133,7 @@ public class RedControlPage extends CustomUIPage {
         if (eventData.contains("radiusminus")) {
             int next = Math.max(RedWaveConfig.MIN_RADIUS_BLOCKS, state.currentRadius() - 1);
             state.setCurrentRadius(next);
-            this.syncStateToRegistry(worldId, state);
+            this.syncStateToRegistry(world, worldId, state);
             this.applySelectedCoreToManager(state, worldId);
             player.getPageManager().openCustomPage(ref, store, new RedControlPage(this.playerRef));
             return;
@@ -138,7 +142,7 @@ public class RedControlPage extends CustomUIPage {
         if (eventData.contains("radiusplus")) {
             int next = Math.min(RedWaveConfig.MAX_RADIUS_BLOCKS, state.currentRadius() + 1);
             state.setCurrentRadius(next);
-            this.syncStateToRegistry(worldId, state);
+            this.syncStateToRegistry(world, worldId, state);
             this.applySelectedCoreToManager(state, worldId);
             player.getPageManager().openCustomPage(ref, store, new RedControlPage(this.playerRef));
             return;
@@ -147,7 +151,7 @@ public class RedControlPage extends CustomUIPage {
         if (eventData.contains("startminus")) {
             float next = Math.max(MIN_UI_START_SECONDS, state.currentStartSeconds() - 1.0f);
             state.setCurrentStartSeconds(next);
-            this.syncStateToRegistry(worldId, state);
+            this.syncStateToRegistry(world, worldId, state);
             player.getPageManager().openCustomPage(ref, store, new RedControlPage(this.playerRef));
             return;
         }
@@ -155,7 +159,7 @@ public class RedControlPage extends CustomUIPage {
         if (eventData.contains("startplus")) {
             float next = Math.min(MAX_UI_START_SECONDS, state.currentStartSeconds() + 1.0f);
             state.setCurrentStartSeconds(next);
-            this.syncStateToRegistry(worldId, state);
+            this.syncStateToRegistry(world, worldId, state);
             player.getPageManager().openCustomPage(ref, store, new RedControlPage(this.playerRef));
             return;
         }
@@ -171,7 +175,7 @@ public class RedControlPage extends CustomUIPage {
             RedCoreRegistry.register(worldId, corePos);
             state.selectByPosition(corePos);
             this.syncDetectedCoresFromWorld(world, state);
-            this.syncStateToRegistry(worldId, state);
+            this.syncStateToRegistry(world, worldId, state);
             state.selectByPosition(corePos);
             this.applySelectedCoreToManager(state, worldId);
             this.playerRef.sendMessage(Message.raw("Core set at " + corePos.x + "," + corePos.y + "," + corePos.z));
@@ -253,6 +257,19 @@ public class RedControlPage extends CustomUIPage {
     private PlayerUiState getState(@Nonnull UUID worldId) {
         ConcurrentHashMap<UUID, PlayerUiState> worldMap = PLAYER_WORLD_STATE.computeIfAbsent(this.playerRef.getUuid(), ignored -> new ConcurrentHashMap<>());
         return worldMap.computeIfAbsent(worldId, ignored -> new PlayerUiState(DEFAULT_UI_RADIUS, DEFAULT_UI_START_SECONDS));
+    }
+
+
+    private void syncRegistryFromCoreConfig(@Nonnull World world) {
+        UUID worldId = world.getWorldConfig().getUuid();
+        if (!RedCoreProfileRegistry.snapshot(worldId).isEmpty()) {
+            return;
+        }
+        List<RedCoreProfileRegistry.RedCoreProfile> configured = CrimsonCoreConfigManager.get().getProfiles(world.getName());
+        if (configured.isEmpty()) {
+            return;
+        }
+        RedCoreProfileRegistry.setProfiles(worldId, configured);
     }
 
 
@@ -376,7 +393,7 @@ public class RedControlPage extends CustomUIPage {
         RedWaveManager.setRadius(this.playerRef.getUuid(), worldId, profile.radius);
     }
 
-    private void syncStateToRegistry(@Nonnull UUID worldId, @Nonnull PlayerUiState state) {
+    private void syncStateToRegistry(@Nonnull World world, @Nonnull UUID worldId, @Nonnull PlayerUiState state) {
         ArrayList<RedCoreProfileRegistry.RedCoreProfile> profiles = new ArrayList<>();
         for (CoreProfile core : state.cores) {
             if (core.corePos == null) {
@@ -385,6 +402,7 @@ public class RedControlPage extends CustomUIPage {
             profiles.add(new RedCoreProfileRegistry.RedCoreProfile(new Vector3i(core.corePos), core.radius, core.startSeconds));
         }
         RedCoreProfileRegistry.setProfiles(worldId, profiles);
+        CrimsonCoreConfigManager.get().setProfiles(world.getName(), profiles);
     }
 
     @Nonnull
@@ -501,4 +519,3 @@ public class RedControlPage extends CustomUIPage {
         }
     }
 }
-
