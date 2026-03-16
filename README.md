@@ -47,7 +47,8 @@ This plugin currently has 4 main systems:
   - In hub world: starts a run (copies template world to a temporary run world).
   - In run world: extracts and ends the run world.
 - Run duration is 5 minutes with a timer HUD in the run world.
-- If crimson selection exists for the starter in the template world, crimson auto-starts during the run.
+- Crimson cores are loaded from persisted multi-core profiles and auto-start during the run after a delay.
+- Current default delay before crimson starts: **15 seconds** after run start.
 - Death behavior in run:
   - If starter dies during an active run, the run is ended.
   - Player is returned to hub/base spawn.
