@@ -1,5 +1,6 @@
 package dev.hytalemodding;
 
+import com.hypixel.hytale.server.core.event.events.ecs.PlaceBlockEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerMouseButtonEvent;
@@ -28,6 +29,7 @@ import dev.hytalemodding.commands.run.GameEndCommand;
 import dev.hytalemodding.commands.run.GameResetCommand;
 import dev.hytalemodding.commands.run.GameStartCommand;
 import dev.hytalemodding.commands.run.SetRunSpawnCommand;
+import dev.hytalemodding.commands.run.SpawnUiCommand;
 import dev.hytalemodding.events.ExampleEvent;
 import dev.hytalemodding.state.run.GameDoorInteractionHandler;
 import dev.hytalemodding.state.run.GameRunDirectorSystem;
@@ -41,6 +43,8 @@ import dev.hytalemodding.state.hub.RescueInteractionPacketWatcher;
 import dev.hytalemodding.state.run.RescueObjectiveManager;
 import dev.hytalemodding.state.run.RescueObjectiveSystem;
 import dev.hytalemodding.state.run.RunDeathHandler;
+import dev.hytalemodding.state.run.SpawnPointPlacementHandler;
+import dev.hytalemodding.state.run.SpawnPointDetectionSystem;
 import dev.hytalemodding.npc.NpcDefinitionRegistry;
 import dev.hytalemodding.npc.NpcProgressManager;
 import dev.hytalemodding.npc.RunRescueRegistry;
@@ -68,6 +72,7 @@ public class ExamplePlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new GameEndCommand());
         this.getCommandRegistry().registerCommand(new GameResetCommand());
         this.getCommandRegistry().registerCommand(new SetRunSpawnCommand());
+        this.getCommandRegistry().registerCommand(new SpawnUiCommand());
         this.getCommandRegistry().registerCommand(new SetBaseSpawnCommand());
         this.getCommandRegistry().registerCommand(new SetRescueSpawnCommand());
         this.getCommandRegistry().registerCommand(new BasePlotCommand());
@@ -96,9 +101,10 @@ public class ExamplePlugin extends JavaPlugin {
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, BasePlotInteractionHandler::onPlayerInteract);
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, RescueObjectiveManager.get()::onPlayerInteract);
         this.getEventRegistry().registerGlobal(PlayerMouseButtonEvent.class, GameDoorInteractionHandler::onPlayerMouseButton);
-		
-		
-		this.getCommandRegistry().registerCommand(new RedCoreCommand());
+        this.getEventRegistry().registerGlobal(PlaceBlockEvent.class, SpawnPointPlacementHandler::onPlaceBlock);
+
+
+        this.getCommandRegistry().registerCommand(new RedCoreCommand());
         this.getCommandRegistry().registerCommand(new RedRadiusCommand());
         this.getCommandRegistry().registerCommand(new RedStartCommand());
         this.getCommandRegistry().registerCommand(new RedUndoCommand());
@@ -121,9 +127,10 @@ public class ExamplePlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new RunDeathHandler());
         this.getEntityStoreRegistry().registerSystem(new BaseHousingSystem());
         this.getEntityStoreRegistry().registerSystem(new DevDebugHudSystem());
-		
-		try {
+
+        try {
             this.getChunkStoreRegistry().registerSystem(new CrimsonCoreDetectionSystem());
+            this.getChunkStoreRegistry().registerSystem(new SpawnPointDetectionSystem());
         } catch (Throwable ignored) {
             // Keep plugin startup and command registration alive even when chunk-store APIs/components are unavailable.
         }
@@ -133,6 +140,3 @@ public class ExamplePlugin extends JavaPlugin {
     }
 
 }
-
-
-

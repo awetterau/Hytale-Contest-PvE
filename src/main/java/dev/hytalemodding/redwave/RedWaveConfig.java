@@ -29,7 +29,10 @@ public final class RedWaveConfig {
             "reed"
     );
 
+    public static boolean isCoreBlockId(String blockId) {
+        return CORE_BLOCK_ID.equals(blockId);
+    }
+
     private RedWaveConfig() {
     }
 }
-

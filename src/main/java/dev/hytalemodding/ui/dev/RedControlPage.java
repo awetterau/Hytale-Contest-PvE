@@ -242,7 +242,7 @@ public class RedControlPage extends CustomUIPage {
 
             Vector3i corePos = active.corePos;
             BlockType coreType = world.getBlockType(corePos.x, corePos.y, corePos.z);
-            if (coreType == null || !RedWaveConfig.CORE_BLOCK_ID.equals(coreType.getId())) {
+            if (coreType == null || !RedWaveConfig.isCoreBlockId(coreType.getId())) {
                 this.playerRef.sendMessage(Message.raw("Core block mismatch."));
                 return;
             }
@@ -280,7 +280,7 @@ public class RedControlPage extends CustomUIPage {
         for (RedCoreProfileRegistry.RedCoreProfile configured : configuredByKey.values()) {
             Vector3i pos = configured.corePos();
             BlockType type = world.getBlockType(pos.x, pos.y, pos.z);
-            if (type == null || !RedWaveConfig.CORE_BLOCK_ID.equals(type.getId())) {
+            if (type == null || !RedWaveConfig.isCoreBlockId(type.getId())) {
                 continue;
             }
             merged.add(new RedCoreProfileRegistry.RedCoreProfile(new Vector3i(pos), configured.radiusBlocks(), configured.startSeconds()));
@@ -288,7 +288,7 @@ public class RedControlPage extends CustomUIPage {
 
         for (Vector3i pos : RedCoreRegistry.snapshot(worldId, RedCoreRegistry.CoreSortOrder.BY_XYZ_ASC)) {
             BlockType type = world.getBlockType(pos.x, pos.y, pos.z);
-            if (type == null || !RedWaveConfig.CORE_BLOCK_ID.equals(type.getId())) {
+            if (type == null || !RedWaveConfig.isCoreBlockId(type.getId())) {
                 continue;
             }
             String key = this.key(pos);
@@ -318,7 +318,7 @@ public class RedControlPage extends CustomUIPage {
         for (Vector3i pos : snapshot) {
             String key = this.key(pos);
             BlockType type = world.getBlockType(pos.x, pos.y, pos.z);
-            if (type == null || !RedWaveConfig.CORE_BLOCK_ID.equals(type.getId())) {
+            if (type == null || !RedWaveConfig.isCoreBlockId(type.getId())) {
                 continue;
             }
             CoreProfile existing = previousByKey.get(key);
@@ -344,7 +344,7 @@ public class RedControlPage extends CustomUIPage {
                 continue;
             }
             BlockType type = world.getBlockType(pos.x, pos.y, pos.z);
-            if (type == null || !RedWaveConfig.CORE_BLOCK_ID.equals(type.getId())) {
+            if (type == null || !RedWaveConfig.isCoreBlockId(type.getId())) {
                 continue;
             }
             detected.add(new CoreProfile(pos, configured.radiusBlocks(), configured.startSeconds()));

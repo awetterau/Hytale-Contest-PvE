@@ -12,6 +12,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import dev.hytalemodding.state.transition.GameFlowConfigManager;
+import dev.hytalemodding.state.transition.SpawnPointZoneConfigManager;
 import dev.hytalemodding.state.transition.RunHubTransferService;
 
 import javax.annotation.Nonnull;
@@ -89,7 +90,7 @@ public final class GameDoorInteractionHandler {
     private static void tryStartFromDoor(@Nonnull PlayerRef playerRef, @Nonnull World templateWorld) {
         GameFlowConfigManager config = GameFlowConfigManager.get();
         String hubWorldName = config.getHubWorldName();
-        if (!hubWorldName.equalsIgnoreCase(templateWorld.getName())) {
+        if (!isHubWorld(templateWorld)) {
             playerRef.sendMessage(Message.raw("Use the game door from hub world '" + hubWorldName + "'."));
             System.out.println("[GameDoorDebug] start rejected: wrong world " + templateWorld.getName() + " expected " + hubWorldName);
             return;
@@ -103,30 +104,42 @@ public final class GameDoorInteractionHandler {
             return;
         }
 
-        boolean hasRunSpawn = config.hasRunSpawn();
         boolean hasBaseSpawn = config.hasBaseSpawn();
-        if (!hasRunSpawn || !hasBaseSpawn) {
-            String missing = (hasRunSpawn ? "" : "/setrunspawn")
-                    + ((!hasRunSpawn && !hasBaseSpawn) ? " and " : "")
-                    + (hasBaseSpawn ? "" : "/setbasespawn");
-            playerRef.sendMessage(Message.raw("Setup missing: " + missing));
-            System.out.println("[GameDoorDebug] start rejected: missing config");
+        if (!hasBaseSpawn) {
+            playerRef.sendMessage(Message.raw("Setup missing: /setbasespawn"));
+            System.out.println("[GameDoorDebug] start rejected: missing base spawn config");
             return;
         }
 
-        Transform runSpawn = config.getRunSpawn();
-        Transform baseSpawn = config.getBaseSpawn();
-        System.out.println("[GameDoorDebug] start requested by=" + playerRef.getUuid() + " template=" + runTemplateWorld.getName());
+        Integer selectedZone = DoorRunZoneSelectionManager.getSelectedZone(playerRef.getUuid());
+        if (selectedZone == null) {
+            playerRef.sendMessage(Message.raw("Select a door zone in /spawnui before using Game_Start_Door."));
+            System.out.println("[GameDoorDebug] start rejected: missing selected door zone");
+            return;
+        }
 
-        GameSessionManager.get().startSession(playerRef, runTemplateWorld, runSpawn, baseSpawn).whenComplete((result, throwable) -> {
+        SpawnPointZoneManager.SpawnSelectionResult spawnSelection =
+                SpawnPointZoneManager.reserveRandomSpawnForPlayer(runTemplateWorld, selectedZone.intValue(), playerRef.getUuid(), playerRef.getTransform());
+        if (spawnSelection == null) {
+            playerRef.sendMessage(Message.raw("Selected door zone " + SpawnPointZoneManager.getFormattedZoneLabel(selectedZone.intValue()) + " has no registered SpawnPoint_Block entries."));
+            System.out.println("[GameDoorDebug] start rejected: selected zone has no spawn points zone=" + selectedZone);
+            return;
+        }
+
+        DoorRunZoneSelectionManager.consumeSelectedZone(playerRef.getUuid());
+        Transform baseSpawn = config.getBaseSpawn();
+        System.out.println("[GameDoorDebug] start requested by=" + playerRef.getUuid() + " template=" + runTemplateWorld.getName() + " zone=" + selectedZone);
+
+        GameSessionManager.get().startSession(playerRef, runTemplateWorld, spawnSelection.transform(), baseSpawn).whenComplete((result, throwable) -> {
             if (throwable != null) {
                 String reason = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
+                SpawnPointZoneManager.releaseReservedSpawn(playerRef.getUuid());
                 playerRef.sendMessage(Message.raw("Failed to start run: " + reason));
                 System.out.println("[GameDoorDebug] start failed: " + reason);
                 return;
             }
-            System.out.println("[GameDoorDebug] start success runWorld=" + result.runWorldName());
-            playerRef.sendMessage(Message.raw("Run started. Reach the door to extract."));
+            System.out.println("[GameDoorDebug] start success runWorld=" + result.runWorldName() + " location=" + SpawnPointZoneManager.getFormattedLocationLabel(selectedZone.intValue(), spawnSelection.locationIndex()));
+            playerRef.sendMessage(Message.raw("Run started from " + SpawnPointZoneManager.getFormattedLocationLabel(selectedZone.intValue(), spawnSelection.locationIndex()) + ". Reach the door to extract."));
         });
     }
 
@@ -157,12 +170,24 @@ public final class GameDoorInteractionHandler {
                 System.out.println("[GameDoorDebug] extract failed: " + reason);
                 return;
             }
+            SpawnPointZoneManager.releaseReservedSpawn(playerRef.getUuid());
             System.out.println("[GameDoorDebug] extract success: " + result.message());
             playerRef.sendMessage(Message.raw("Extraction complete."));
             if (queuedRescue) {
                 RunHubTransferService.get().spawnQueuedRescueInBase(playerRef, hubWorld, baseSpawn);
             }
         });
+    }
+
+    public static boolean isHubWorld(@Nullable World world) {
+        return world != null && isHubWorld(world.getName());
+    }
+
+    public static boolean isHubWorld(@Nullable String worldName) {
+        if (worldName == null || worldName.isBlank()) {
+            return false;
+        }
+        return GameFlowConfigManager.get().getHubWorldName().equalsIgnoreCase(worldName);
     }
 
     private static boolean isGameDoorBlock(@Nonnull World world, @Nonnull Vector3i target) {
@@ -181,5 +206,3 @@ public final class GameDoorInteractionHandler {
         return last != null && now - last < USE_COOLDOWN_MS;
     }
 }
-
-

@@ -74,7 +74,7 @@ public class RedStartCommand extends AbstractPlayerCommand {
         }
 
         BlockType coreType = world.getBlockType(corePos.x, corePos.y, corePos.z);
-        if (coreType == null || !RedWaveConfig.CORE_BLOCK_ID.equals(coreType.getId())) {
+        if (coreType == null || !RedWaveConfig.isCoreBlockId(coreType.getId())) {
             context.sendMessage(Message.raw(
                     "Core block mismatch at configured position. Expected " + RedWaveConfig.CORE_BLOCK_ID + "."
             ));
@@ -94,6 +94,3 @@ public class RedStartCommand extends AbstractPlayerCommand {
         );
     }
 }
-
-
-

@@ -80,11 +80,10 @@ public class CrimsonCoreDetectionSystem extends RefSystem<ChunkStore> {
         }
 
         BlockType type = world.getBlockType(worldX, localY, worldZ);
-        if (type == null || !RedWaveConfig.CORE_BLOCK_ID.equals(type.getId())) {
+        if (type == null || !RedWaveConfig.isCoreBlockId(type.getId())) {
             return;
         }
 
         RedCoreRegistry.register(worldId, pos);
     }
 }
-

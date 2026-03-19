@@ -44,7 +44,7 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
                 int started = 0;
                 for (RedCoreProfileRegistry.RedCoreProfile profile : snapshot.crimsonProfiles()) {
                     var coreType = world.getBlockType(profile.corePos().x, profile.corePos().y, profile.corePos().z);
-                    if (coreType == null || !RedWaveConfig.CORE_BLOCK_ID.equals(coreType.getId())) {
+                    if (coreType == null || !RedWaveConfig.isCoreBlockId(coreType.getId())) {
                         continue;
                     }
                     RedWaveManager.beginUndoSession(worldId, profile.corePos());
@@ -54,7 +54,7 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
                 if (started > 0) {
                     sendRunWorldMessage(worldId, "Crimson infection is spreading. Return to base.");
                 } else {
-                    sendRunWorldMessage(worldId, "No valid Crimson_Core blocks found in run world.");
+                    sendRunWorldMessage(worldId, "No valid crimson core blocks found in run world.");
                 }
             }
             GameSessionManager.get().markCrimsonActive();

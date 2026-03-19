@@ -330,7 +330,7 @@ public final class RedWaveManager {
         if (id == null || id.isEmpty()) {
             return false;
         }
-        if (RedWaveConfig.CRIMSON_BLOCK_ID.equals(id) || RedWaveConfig.CORE_BLOCK_ID.equals(id)) {
+        if (RedWaveConfig.CRIMSON_BLOCK_ID.equals(id) || RedWaveConfig.isCoreBlockId(id)) {
             return false;
         }
 
@@ -391,7 +391,7 @@ public final class RedWaveManager {
                 continue;
             }
             String id = neighbor.getId();
-            if (RedWaveConfig.CRIMSON_BLOCK_ID.equals(id) || RedWaveConfig.CORE_BLOCK_ID.equals(id)) {
+            if (RedWaveConfig.CRIMSON_BLOCK_ID.equals(id) || RedWaveConfig.isCoreBlockId(id)) {
                 return true;
             }
         }
@@ -993,4 +993,3 @@ public final class RedWaveManager {
     private record BlockPosKey(int x, int y, int z) {
     }
 }
-
