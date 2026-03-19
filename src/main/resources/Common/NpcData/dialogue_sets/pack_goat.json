@@ -1,0 +1,11 @@
+{
+  "dialogueSetId": "pack_goat",
+  "entries": [
+    {
+      "id": "idle_sound",
+      "priority": 10,
+      "conditions": {},
+      "text": "*happy goat noises*"
+    }
+  ]
+}

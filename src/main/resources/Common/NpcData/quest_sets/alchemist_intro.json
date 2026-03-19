@@ -1,0 +1,20 @@
+{
+  "questSetId": "alchemist_intro",
+  "quests": [
+    {
+      "questId": "alchemist_catalyst_ledger",
+      "title": "Catalyst Ledger",
+      "description": "Recover the catalyst ledger from a run and return safely.",
+      "requirements": {
+        "stateIn": ["RESCUED_UNASSIGNED"]
+      },
+      "completion": {
+        "playerHasFlag": "found_catalyst_ledger"
+      },
+      "rewards": {
+        "setFlags": ["alchemist_plot_unlocked"]
+      },
+      "repeatable": false
+    }
+  ]
+}

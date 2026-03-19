@@ -1,0 +1,32 @@
+Group {
+  Anchor: (Left: 140, Top: 110, Width: 640, Height: 300);
+
+  Group {
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_BackGround.png"));
+    Anchor: (Left: 0, Top: 0, Right: 0, Bottom: 0);
+
+    Label {
+      Anchor: (Left: 12, Top: 16, Right: 12, Height: 28);
+      Text: "Run Spawn Zones";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 24);
+    }
+
+    Label #HubEditBlockedLabel {
+      Anchor: (Left: 28, Top: 82, Right: 28, Height: 72);
+      Text: "You cannot edit spawn zones in this world.";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true);
+    }
+
+    Button #DoorRunZoneButton {
+      Anchor: (Left: 110, Bottom: 22, Width: 180, Height: 38);
+      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+      Label { Text: "Door Run Zone"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+    }
+
+    Button #CloseButton {
+      Anchor: (Right: 110, Bottom: 22, Width: 120, Height: 38);
+      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+      Label { Text: "Close"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+    }
+  }
+}

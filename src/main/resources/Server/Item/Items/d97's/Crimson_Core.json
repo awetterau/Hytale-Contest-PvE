@@ -1,0 +1,61 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.Crimson_Core.name",
+    "Description": "server.items.Crimson_Core.description"
+  },
+  "Icon": "Icons/ItemsGenerated/Crimson_Core.png",
+  "ItemLevel": 26,
+  "BlockType": {
+    "ParticleColor": "#4d0a0a",
+    "BlockEntity": {
+      "Components": {
+        "Crimson_Core_State": {}
+      }
+    },
+    "CustomModelAnimation": "Blocks/d97's/animation.blockyanim",
+    "CustomModel": "Blocks/d97's/Crimson_Core.blockymodel",
+    "CustomModelTexture": [
+      {
+        "Texture": "Blocks/d97's/Crimson_Core_Texture.png"
+      }
+    ],
+    "Group": "Gravel",
+    "BlockParticleSetId": "Dust",
+    "Gathering": {
+      "Breaking": {
+        "GatherType": "SoftBlocks"
+      }
+    },
+    "DrawType": "Model",
+    "HitboxType": "Block_Three_Quarter",
+    "Support": {
+      "Down": [
+        {}
+      ]
+    },
+    "Material": "Solid",
+    "Looping": true
+  },
+  "Tags": {
+    "Type": [
+      "Crimson"
+    ]
+  },
+  "Categories": [
+    "Blocks.Rocks"
+  ],
+  "ItemSoundSetId": "ISS_Items_Foliage",
+  "PlayerAnimationsId": "Block",
+  "IconProperties": {
+    "Scale": 0.58823,
+    "Rotation": [
+      22.5,
+      45,
+      22.5
+    ],
+    "Translation": [
+      0,
+      -13.5
+    ]
+  }
+}

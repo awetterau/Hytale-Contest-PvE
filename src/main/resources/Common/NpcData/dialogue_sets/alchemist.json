@@ -1,0 +1,23 @@
+{
+  "dialogueSetId": "alchemist",
+  "entries": [
+    {
+      "id": "before_plot_unlock",
+      "priority": 60,
+      "conditions": {
+        "stateIn": ["RESCUED_UNASSIGNED"],
+        "missingFlag": ["alchemist_plot_unlocked"]
+      },
+      "text": "I need a catalyst ledger before we can claim land. Bring me proof from the ruins."
+    },
+    {
+      "id": "after_plot_unlock",
+      "priority": 50,
+      "conditions": {
+        "stateIn": ["RESCUED_UNASSIGNED"],
+        "hasFlag": ["alchemist_plot_unlocked"]
+      },
+      "text": "Now we can set up a workshop. I will turn reagents into survival tools."
+    }
+  ]
+}

@@ -1,0 +1,216 @@
+Group {
+  Anchor: (Left: 20, Top: 70, Width: 1240, Height: 620);
+
+  Group {
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_BackGround.png"));
+    Anchor: (Left: 0, Top: 0, Width: 760, Bottom: 0);
+
+    Label {
+      Anchor: (Left: 12, Top: 12, Right: 12, Height: 28);
+      Text: "Run Spawn Zones";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 24);
+    }
+
+    Label {
+      Anchor: (Left: 20, Top: 48, Right: 20, Height: 22);
+      Text: "Zone -> Location -> Registered SpawnPoint_Block list";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
+    }
+
+    Label #PlacementModeLabel {
+      Anchor: (Left: 20, Top: 82, Right: 20, Height: 22);
+      Text: "Active: Zone A / A1";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true);
+    }
+
+    Label #DoorRunZoneStatusLabel {
+      Anchor: (Left: 20, Top: 108, Right: 20, Height: 20);
+      Text: "Door zone: none";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
+    }
+
+    Button #SetSpawnPointButton {
+      Anchor: (Right: 22, Top: 74, Width: 150, Height: 54);
+      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+      Label { Text: "Set SpawnPoint"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+    }
+
+    Group {
+      Anchor: (Left: 24, Top: 150, Right: 24, Bottom: 72);
+
+      Label #ActiveLocationLabel {
+        Anchor: (Left: 0, Top: 0, Right: 0, Height: 26);
+        Text: "Selected location: A1";
+        Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true);
+      }
+
+      Label #ActiveLocationCountLabel {
+        Anchor: (Left: 0, Top: 28, Right: 0, Height: 20);
+        Text: "Registered blocks: 0";
+        Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
+      }
+
+      Label #ActiveLocationListLabel {
+        Anchor: (Left: 10, Top: 58, Right: 10, Bottom: 0);
+        Text: "(none)";
+        Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
+      }
+    }
+
+    Button #DoorRunZoneButton {
+      Anchor: (Right: 20, Bottom: 18, Width: 160, Height: 34);
+      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+      Label { Text: "Door Run Zone"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+    }
+
+    Button #CloseButton {
+      Anchor: (Right: 190, Bottom: 18, Width: 120, Height: 34);
+      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+      Label { Text: "Close"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+    }
+  }
+
+  Label {
+    Anchor: (Left: 790, Top: 36, Width: 180, Height: 22);
+    Text: "Zones";
+    Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true);
+  }
+
+  Button #RemoveZoneButton {
+    Anchor: (Left: 800, Top: 66, Width: 44, Height: 30);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label { Text: "-"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true); }
+  }
+
+  Button #AddZoneButton {
+    Anchor: (Left: 850, Top: 66, Width: 44, Height: 30);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label { Text: "+"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true); }
+  }
+
+  Label #ZoneButtonLimitLabel {
+    Anchor: (Left: 900, Top: 70, Width: 150, Height: 20);
+    Text: "Visible slots maxed";
+    Style: (HorizontalAlignment: Start, VerticalAlignment: Center);
+  }
+
+  Button #SetZone1Button {
+    Anchor: (Left: 790, Top: 112, Width: 180, Height: 38);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #SetZone1ButtonLabel { Text: "Zone A"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+  }
+
+  Button #SetZone2Button {
+    Anchor: (Left: 790, Top: 158, Width: 180, Height: 38);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #SetZone2ButtonLabel { Text: "Zone B"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+  }
+
+  Button #SetZone3Button {
+    Anchor: (Left: 790, Top: 204, Width: 180, Height: 38);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #SetZone3ButtonLabel { Text: "Zone C"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+  }
+
+  Button #SetZone4Button {
+    Anchor: (Left: 790, Top: 250, Width: 180, Height: 38);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #SetZone4ButtonLabel { Text: "Zone D"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+  }
+
+  Button #SetZone5Button {
+    Anchor: (Left: 790, Top: 296, Width: 180, Height: 38);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #SetZone5ButtonLabel { Text: "Zone E"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+  }
+
+  Button #SetZone6Button {
+    Anchor: (Left: 790, Top: 342, Width: 180, Height: 38);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #SetZone6ButtonLabel { Text: "Zone F"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+  }
+
+  Button #SetZone7Button {
+    Anchor: (Left: 790, Top: 388, Width: 180, Height: 38);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #SetZone7ButtonLabel { Text: "Zone G"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+  }
+
+  Button #SetZone8Button {
+    Anchor: (Left: 790, Top: 434, Width: 180, Height: 38);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #SetZone8ButtonLabel { Text: "Zone H"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+  }
+
+  Label {
+    Anchor: (Left: 1010, Top: 36, Width: 180, Height: 22);
+    Text: "Locations";
+    Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true);
+  }
+
+  Button #RemoveLocationButton {
+    Anchor: (Left: 1020, Top: 66, Width: 44, Height: 30);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label { Text: "-"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true); }
+  }
+
+  Button #AddLocationButton {
+    Anchor: (Left: 1070, Top: 66, Width: 44, Height: 30);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label { Text: "+"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true); }
+  }
+
+  Label #LocationButtonLimitLabel {
+    Anchor: (Left: 1120, Top: 70, Width: 150, Height: 20);
+    Text: "Visible slots maxed";
+    Style: (HorizontalAlignment: Start, VerticalAlignment: Center);
+  }
+
+  Button #SetLocation1Button {
+    Anchor: (Left: 1010, Top: 112, Width: 180, Height: 38);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #SetLocation1ButtonLabel { Text: "A1"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+  }
+
+  Button #SetLocation2Button {
+    Anchor: (Left: 1010, Top: 158, Width: 180, Height: 38);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #SetLocation2ButtonLabel { Text: "A2"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+  }
+
+  Button #SetLocation3Button {
+    Anchor: (Left: 1010, Top: 204, Width: 180, Height: 38);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #SetLocation3ButtonLabel { Text: "A3"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+  }
+
+  Button #SetLocation4Button {
+    Anchor: (Left: 1010, Top: 250, Width: 180, Height: 38);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #SetLocation4ButtonLabel { Text: "A4"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+  }
+
+  Button #SetLocation5Button {
+    Anchor: (Left: 1010, Top: 296, Width: 180, Height: 38);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #SetLocation5ButtonLabel { Text: "A5"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+  }
+
+  Button #SetLocation6Button {
+    Anchor: (Left: 1010, Top: 342, Width: 180, Height: 38);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #SetLocation6ButtonLabel { Text: "A6"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+  }
+
+  Button #SetLocation7Button {
+    Anchor: (Left: 1010, Top: 388, Width: 180, Height: 38);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #SetLocation7ButtonLabel { Text: "A7"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+  }
+
+  Button #SetLocation8Button {
+    Anchor: (Left: 1010, Top: 434, Width: 180, Height: 38);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #SetLocation8ButtonLabel { Text: "A8"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+  }
+}

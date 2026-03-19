@@ -1,0 +1,14 @@
+{
+  "tradeSetId": "alchemist",
+  "trades": [
+    {
+      "tradeId": "minor_tonic_bundle",
+      "cost": [
+        {"itemId": "Coin", "amount": 20}
+      ],
+      "reward": [
+        {"itemId": "Healing_Tonic_Minor", "amount": 2}
+      ]
+    }
+  ]
+}

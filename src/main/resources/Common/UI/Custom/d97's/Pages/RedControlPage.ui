@@ -1,0 +1,143 @@
+Group {
+  Anchor: (Left: 34, Top: 90, Width: 622, Height: 600);
+
+  Button #PrevCoreButton {
+    Anchor: (Left: 0, Top: 210, Width: 76, Height: 42);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button.png"));
+    Label #PrevCoreButtonLabel {
+      Text: "No cores";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
+    }
+  }
+
+  Button #NextCoreButton {
+    Anchor: (Right: 0, Top: 210, Width: 76, Height: 42);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button.png"));
+    Label #NextCoreButtonLabel {
+      Text: "No cores";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
+    }
+  }
+  
+  Group {
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_BackGround.png"));
+    Anchor: (Left: 86, Top: 40, Right: 86, Bottom: 0);
+
+
+    Label {
+      Anchor: (Left: 12, Top: 12, Right: 12, Height: 22);
+      Text: "Red Control";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true);
+    }
+
+    Label #ActiveCoreLabel {
+      Anchor: (Left: 12, Top: 60, Right: 12, Height: 26);
+      Text: "Active Core: Not set";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 25);
+    }
+
+    Label #RadiusValueLabel {
+      Anchor: (Left: 12, Top: 97, Right: 12, Height: 18);
+      Text: "Current Radius: 6";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
+    }
+    Label #StartValueLabel {
+      Anchor: (Left: 12, Top: 115, Right: 12, Height: 18);
+      Text: "Current Start Seconds: 9";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
+    }
+
+    Button #SetCoreButton {
+      Anchor: (Left: 20, Top: 154, Right: 20, Height: 38);
+      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+      Label {
+        Text: "Set Core";
+        Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
+      }
+    }
+
+    Button #RadiusMinusButton {
+      Anchor: (Left: 20, Top: 200, Width: 60, Height: 38);
+      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+      Label { Text: "-1"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+    }
+
+    Label #RadiusRowLabel {
+      Anchor: (Left: 90, Top: 200, Right: 90, Height: 22);
+      Text: "Adjust radius with +/-";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true);
+    }
+
+    Label #RadiusBigValueLabel {
+      Anchor: (Left: 90, Top: 222, Right: 90, Height: 20);
+      Text: "6";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 20);
+    }
+
+    Button #RadiusPlusButton {
+      Anchor: (Right: 20, Top: 200, Width: 60, Height: 38);
+      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+      Label { Text: "+1"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+    }
+
+    Button #StartMinusButton {
+      Anchor: (Left: 20, Top: 262, Width: 60, Height: 38);
+      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+      Label { Text: "-1"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+    }
+
+    Label #StartRowLabel {
+      Anchor: (Left: 90, Top: 262, Right: 90, Height: 22);
+      Text: "Adjust start seconds with +/-";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true);
+    }
+
+    Label #StartBigValueLabel {
+      Anchor: (Left: 90, Top: 284, Right: 90, Height: 20);
+      Text: "9";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 20);
+    }
+
+    Button #StartPlusButton {
+      Anchor: (Right: 20, Top: 262, Width: 60, Height: 38);
+      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+      Label { Text: "+1"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+    }
+
+    Button #StartWaveButton {
+      Anchor: (Left: 20, Top: 316, Right: 20, Height: 38);
+      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+      Label {
+        Text: "Start Wave";
+        Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
+      }
+    }
+
+    Button #UndoButton {
+      Anchor: (Left: 20, Top: 362, Right: 20, Height: 38);
+      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+      Label {
+        Text: "Undo";
+        Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
+      }
+    }
+
+    Button #GlobalUndoButton {
+      Anchor: (Left: 20, Top: 408, Right: 20, Height: 38);
+      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+      Label {
+        Text: "Global Undo";
+        Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
+      }
+    }
+
+    Button #CloseButton {
+      Anchor: (Left: 20, Top: 454, Right: 20, Height: 38);
+      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+      Label {
+        Text: "Close";
+        Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
+      }
+    }
+  }
+}
