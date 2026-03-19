@@ -40,10 +40,6 @@ Group #NpcDialogueRoot {
       LayoutMode: Right;
       Anchor: (Height: 42, Bottom: 8);
 
-      Button #CraftButton {
-        Anchor: (Width: 110, Height: 38, Right: 6);
-        Label { Text: "Craft"; Style: (FontSize: 16, TextColor: #f0f4ff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); }
-      }
       Button #TradeButton {
         Anchor: (Width: 110, Height: 38, Right: 6);
         Label { Text: "Trade"; Style: (FontSize: 16, TextColor: #f0f4ff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); }
@@ -55,10 +51,6 @@ Group #NpcDialogueRoot {
       Button #QuestsButton {
         Anchor: (Width: 110, Height: 38, Right: 6);
         Label { Text: "Quests"; Style: (FontSize: 16, TextColor: #f0f4ff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); }
-      }
-      Button #TalkButton {
-        Anchor: (Width: 110, Height: 38, Right: 6);
-        Label { Text: "Talk"; Style: (FontSize: 16, TextColor: #f0f4ff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); }
       }
       Button #CloseButton {
         Anchor: (Width: 100, Height: 38);

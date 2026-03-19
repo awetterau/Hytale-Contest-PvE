@@ -26,17 +26,26 @@ public final class RunHubTransferService {
     }
 
     public void spawnQueuedRescueInBase(@Nonnull PlayerRef playerRef, @Nonnull World hubWorld, @Nonnull Transform baseSpawn) {
-        RescueObjectiveManager.get().spawnQueuedRescueInBase(hubWorld, baseSpawn).whenComplete((spawned, spawnErr) -> {
-            // Preserve rescued progression after successful extraction regardless of spawn success.
-            RescueObjectiveManager.get().setBlacksmithRescued(true);
-            if (spawnErr != null || Boolean.FALSE.equals(spawned)) {
-                String reason = spawnErr != null ? spawnErr.getMessage() : "spawn returned false";
-                playerRef.sendMessage(Message.raw("Blacksmith marked rescued, but base transfer failed: " + reason));
-                System.out.println("[GameDoorDebug] rescue transfer failed (rescued preserved): " + reason);
+        RescueObjectiveManager.get().spawnQueuedRescueInBase(hubWorld, baseSpawn).whenComplete((result, spawnErr) -> {
+            if (spawnErr != null) {
+                String reason = spawnErr.getMessage();
+                playerRef.sendMessage(Message.raw("Rescue transfer failed: " + reason));
+                System.out.println("[GameDoorDebug] rescue transfer failed: " + reason);
                 return;
             }
-            playerRef.sendMessage(Message.raw("Blacksmith rescued and added to base."));
-            System.out.println("[GameDoorDebug] rescue transfer success");
+            if (result == null || result.npcKey() == null || result.npcKey().isBlank()) {
+                playerRef.sendMessage(Message.raw("No queued rescue to transfer."));
+                return;
+            }
+            if (!result.spawned()) {
+                String reason = result.reason() == null ? "spawn returned false" : result.reason();
+                playerRef.sendMessage(Message.raw("Rescue transfer failed for " + result.npcKey() + ": " + reason));
+                System.out.println("[GameDoorDebug] rescue transfer failed npc=" + result.npcKey() + ": " + reason);
+                return;
+            }
+            RescueObjectiveManager.get().setNpcRescued(result.npcKey(), true);
+            playerRef.sendMessage(Message.raw(result.npcKey() + " rescued and added to base."));
+            System.out.println("[GameDoorDebug] rescue transfer success npc=" + result.npcKey());
         });
     }
 }

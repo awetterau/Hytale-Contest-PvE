@@ -27,6 +27,9 @@ public final class QuestDefinition {
     public final java.util.List<String> rewardUnlockCrafts;
     @Nonnull
     public final java.util.List<String> rewardUnlockTrades;
+    @Nonnull
+    public final java.util.List<ItemAmount> requiredItems;
+    public final boolean consumeRequiredItemsOnComplete;
     public final boolean rewardAutoAcceptNext;
 
     public QuestDefinition(
@@ -41,6 +44,8 @@ public final class QuestDefinition {
             @Nonnull java.util.List<String> rewardRescueNpcs,
             @Nonnull java.util.List<String> rewardUnlockCrafts,
             @Nonnull java.util.List<String> rewardUnlockTrades,
+            @Nonnull java.util.List<ItemAmount> requiredItems,
+            boolean consumeRequiredItemsOnComplete,
             boolean rewardAutoAcceptNext
     ) {
         this.questId = normalize(questId);
@@ -54,6 +59,8 @@ public final class QuestDefinition {
         this.rewardRescueNpcs = java.util.List.copyOf(rewardRescueNpcs);
         this.rewardUnlockCrafts = java.util.List.copyOf(rewardUnlockCrafts);
         this.rewardUnlockTrades = java.util.List.copyOf(rewardUnlockTrades);
+        this.requiredItems = java.util.List.copyOf(requiredItems);
+        this.consumeRequiredItemsOnComplete = consumeRequiredItemsOnComplete;
         this.rewardAutoAcceptNext = rewardAutoAcceptNext;
     }
 
@@ -94,6 +101,17 @@ public final class QuestDefinition {
                 case "event" -> EVENT;
                 default -> SIDE;
             };
+        }
+    }
+
+    public static final class ItemAmount {
+        @Nonnull
+        public final String itemId;
+        public final int amount;
+
+        public ItemAmount(@Nonnull String itemId, int amount) {
+            this.itemId = itemId.trim();
+            this.amount = Math.max(1, amount);
         }
     }
 }

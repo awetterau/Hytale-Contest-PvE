@@ -1,0 +1,17 @@
+server.npcRoles.Blacksmith_Escort.name=Blacksmith Escort
+server.npcRoles.Blacksmith_Escort_Objective.name=Blacksmith Escort (Objective)
+server.npcRoles.Blacksmith_Escort_Base.name=Blacksmith Escort (Base)
+server.npcRoles.Crimson_Escort_Companion.name=Crimson Companion
+server.npcRoles.Test_Interaction_Follow.name=Test Follow
+server.npcRoles.Rooter_Man_Boss.name=Rooter Man
+server.npcRoles.Rooter_Man_Crystal.name=Rooter Crystal
+server.items.Rooter_Crystal.name=Rooter Crystal
+server.items.Rooter_Crystal.description=A suspended infection crystal tied to Rooter Man.
+server.items.Game_Start_Door.name=Run Gate Door
+server.items.Game_Start_Door.description=Use this door block to start and extract from runs.
+server.items.Base_Plot_Marker.name=Base Plot Marker
+server.items.Base_Plot_Marker.description=Use this marker to assign a rescued NPC to this plot.
+
+
+items.Crimson_Core.name=Crimson Core
+items.Crimson_Core.description=A fleshy, viscous mass of unknown origin.

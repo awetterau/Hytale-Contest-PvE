@@ -2,9 +2,10 @@
 
 This plugin currently has 4 main systems:
 - Run session flow (start run, timer, extract/end run world)
-- Rescue objective (escort blacksmith in run -> transfer to base on extraction)
+- Rescue objective (escort a configured rescue NPC in run -> transfer to base on extraction)
 - Crimson wave (area spread + undo)
 - Base housing plots (profession-locked plots + auto-assignment + workshop state flow)
+- NPC economy/progression (trade, upgrades, quest unlocks) driven by per-NPC properties files
 
 ## Code layout (current)
 - `src/main/java/dev/hytalemodding/state/run`
@@ -17,6 +18,8 @@ This plugin currently has 4 main systems:
   - Shared housing domain logic (plots, assignment, workshop placement/spawn sync).
 - `src/main/java/dev/hytalemodding/npc`
   - NPC domain (archetypes, role mapping, dialogue manager, progression unlocks).
+- `src/main/java/dev/hytalemodding/npc/economy`
+  - Data-driven NPC economy (offers, upgrades, inventory transaction execution).
 - `src/main/java/dev/hytalemodding/quest`
   - Quest domain (definitions, progress, flags, reward application).
 - `src/main/java/dev/hytalemodding/ui/hub`, `ui/dev`, `ui/npc`
@@ -34,10 +37,10 @@ This plugin currently has 4 main systems:
    - `/setbasespawn` (hub return location)
    - Optional: `/setrescuespawn` (fixed rescue NPC point in run)
 4. Press `F` on `Game_Start_Door` in hub to start a run.
-5. In run world, interact with the rescue blacksmith NPC so they follow.
+5. In run world, interact with the active rescue NPC so they follow.
 6. Return to the run door and press `F` to extract.
-7. Confirm you return to hub with your inventory preserved and blacksmith is marked rescued.
-8. Run `/blacksmith status` to verify state.
+7. Confirm you return to hub with your inventory preserved and that NPC is marked rescued.
+8. Run `/npcdev rescue <npcKey> <true|false>` if you need to force/verify rescued state during testing.
 
 ## System behavior details
 
@@ -82,6 +85,18 @@ This plugin currently has 4 main systems:
    - and the ordered list of registered coordinates.
 6. Use **Door Run Zone** to go back to the temporary door-zone selector.
 
+### NPC economy config (current)
+- Economy is defined per NPC under:
+  - `src/main/resources/Common/NpcData/npcs/<npcKey>.properties`
+- Blacksmith currently uses:
+  - `src/main/resources/Common/NpcData/npcs/blacksmith.properties`
+- Pack goat currently uses:
+  - `src/main/resources/Common/NpcData/npcs/pack_goat.properties`
+- Legacy split NPC economy files (`craft_sets`, `trade_sets`, `upgrade_trees`) are removed from active workflow.
+- NPC dialogue action menu is currently:
+  - `Trade`, `Upgrades`, `Quests`, `Close`
+- Trade/Upgrades/Quests require the NPC to have a purchased workshop assignment.
+
 ### Run session + door flow
 - Door block id: `Game_Start_Door`
 - Press `F` on the door:
@@ -98,10 +113,10 @@ This plugin currently has 4 main systems:
   - If starter extracts via door, run ends and return keeps inventory.
 
 ### Rescue objective flow
-- Run objective role: `Blacksmith_Escort_Objective`
-- Base resident role: `Blacksmith_Escort_Base`
-- Rescue transfer only queues on extraction if the objective NPC is actively following.
-- Base blacksmith interaction opens blacksmith dialogue UI.
+- Run objective role: taken from `npc-archetypes.properties` (`runRescueRole`).
+- Base resident role: taken from `npc-archetypes.properties` (`hubRole`).
+- Rescue transfer queues on extraction when escort was confirmed (follow interaction) or NPC is in a follow state.
+- Base rescued NPC interaction opens that NPC's dialogue/UI.
 - If player dies in run, escorted NPC is not transferred to hub and runtime rescue state is reset.
 - Rescue NPC registration/spawn is data-driven via:
   - `src/main/resources/Common/NpcData/npc-archetypes.properties` (roles/service metadata)
@@ -123,7 +138,7 @@ This plugin currently has 4 main systems:
   - Purchasing a plot auto-assigns matching rescued NPC (if available).
   - NPC moves to workshop/home and enters working state.
 - Rule:
-  - One NPC per profession. The blacksmith profession has one working blacksmith.
+  - One NPC per profession key.
 
 ## Command reference
 
@@ -152,20 +167,6 @@ This plugin currently has 4 main systems:
   - Sets fixed run rescue spawn using your current transform.
 
 ### Rescue + NPC commands
-- `/blacksmith status`
-  - Dumps rescue/runtime/config status.
-- `/blacksmith setspawn <run|base|rescue>`
-  - Shortcut to set run/base/rescue spawn from your current location.
-- `/blacksmith spawn <run|base>`
-  - Forces spawn of rescue objective (run) or base blacksmith (base).
-- `/blacksmith rescued <true|false>`
-  - Manually sets rescued progression flag.
-- `/blacksmith reset`
-  - Clears runtime rescue state and sets rescued=false.
-- `/blacksmith resetall`
-  - Reset rescue state and remove base blacksmith entities in current world.
-- `/spawnblacksmith`
-  - Spawns `Blacksmith_Escort_Base` at your location.
 - `/npcspawn [role]`
   - Spawns any loaded spawnable NPC role (default `Blacksmith_Escort_Base`).
 - `/npcroles [filter]`
@@ -259,7 +260,7 @@ This plugin currently has 4 main systems:
 1. Place `Base_Plot_Marker` blocks where desired.
 2. Register one with `/baseplot add smithPlot`.
 3. Reserve the plot for blacksmith with `/baseplot settype smithPlot blacksmith`.
-4. Ensure blacksmith is rescued (`/blacksmith rescued true` for fast test).
+4. Ensure blacksmith is rescued (`/npcdev rescue blacksmith true` for fast test).
 5. Interact marker and purchase the plot.
 6. Confirm house is built and blacksmith appears at plot home/workshop.
 
@@ -277,7 +278,7 @@ This plugin currently has 4 main systems:
 1. Run `/npcdev rescue blacksmith true`.
 2. Run `/questdev accept ember_core_hunt`.
 3. Run `/questdev complete ember_core_hunt`.
-4. Interact blacksmith and confirm new craft/trade unlocks are available in NPC UI.
+4. Interact blacksmith and confirm new trade/upgrades unlock effects are available in NPC UI.
 5. Run `/questdev flags` and confirm `blacksmith_tempered_unlocked` is present.
 
 ### Test run death behavior

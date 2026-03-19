@@ -116,13 +116,9 @@ public final class NpcDefinitionRegistry {
         NpcArchetype.PlotUnlockMode plotUnlockMode = NpcArchetype.PlotUnlockMode.fromRaw(p.getProperty(prefix + "plotUnlockMode"));
 
         NpcArchetype.NpcServices services = NpcArchetype.NpcServices.fromCsv(p.getProperty(prefix + "services"));
-        String dialogueSetId = normalizeNullable(p.getProperty(prefix + "dialogueSetId"));
-        String questSetId = normalizeNullable(p.getProperty(prefix + "questSetId"));
-        String upgradeTreeId = normalizeNullable(p.getProperty(prefix + "upgradeTreeId"));
-        String craftSetId = normalizeNullable(p.getProperty(prefix + "craftSetId"));
-        String tradeSetId = normalizeNullable(p.getProperty(prefix + "tradeSetId"));
         List<String> defaultCraftUnlocks = parseCsv(p.getProperty(prefix + "defaultCraftUnlocks"));
         List<String> defaultTradeUnlocks = parseCsv(p.getProperty(prefix + "defaultTradeUnlocks"));
+        List<String> followStateAliases = parseCsv(p.getProperty(prefix + "followStateAliases"));
         boolean animalRoutesToFarmer = Boolean.parseBoolean(p.getProperty(prefix + "animal.routeToFarmer", "false"));
         String farmerNpcKey = normalizeNullable(p.getProperty(prefix + "animal.farmerNpcKey"));
 
@@ -137,13 +133,9 @@ public final class NpcDefinitionRegistry {
                 prePlotQuestId,
                 plotUnlockMode,
                 services,
-                dialogueSetId,
-                questSetId,
-                upgradeTreeId,
-                craftSetId,
-                tradeSetId,
                 defaultCraftUnlocks,
                 defaultTradeUnlocks,
+                followStateAliases,
                 animalRoutesToFarmer,
                 farmerNpcKey
         );
@@ -179,13 +171,9 @@ public final class NpcDefinitionRegistry {
                 null,
                 NpcArchetype.PlotUnlockMode.MATERIALS,
                 new NpcArchetype.NpcServices(true, true, true, true, true),
-                "blacksmith",
-                "blacksmith",
-                "blacksmith",
-                "blacksmith",
-                "blacksmith",
                 List.of("iron_sword"),
                 List.of("basic_armor_trade"),
+                List.of("follow"),
                 false,
                 null
         );

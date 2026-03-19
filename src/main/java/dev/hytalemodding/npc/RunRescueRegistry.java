@@ -48,7 +48,13 @@ public final class RunRescueRegistry {
     public synchronized String chooseNpcForTemplateWorld(@Nonnull String templateWorldName) {
         initialize();
         String world = normalize(templateWorldName);
-        for (RescueSpawnDefinition def : this.byNpcKey.values()) {
+        java.util.ArrayList<String> keys = new java.util.ArrayList<>(this.byNpcKey.keySet());
+        keys.sort(String::compareTo);
+        for (String key : keys) {
+            RescueSpawnDefinition def = this.byNpcKey.get(key);
+            if (def == null) {
+                continue;
+            }
             if (!def.enabled) {
                 continue;
             }

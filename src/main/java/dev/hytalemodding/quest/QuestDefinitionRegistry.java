@@ -119,6 +119,10 @@ public final class QuestDefinitionRegistry {
         List<String> rewardRescueNpcs = parseCsv(p.getProperty(prefix + "rewards.rescueNpcs"));
         List<String> rewardUnlockCrafts = parseCsv(p.getProperty(prefix + "rewards.unlockCrafts"));
         List<String> rewardUnlockTrades = parseCsv(p.getProperty(prefix + "rewards.unlockTrades"));
+        List<QuestDefinition.ItemAmount> requiredItems = parseItems(p.getProperty(prefix + "requirements.items"));
+        boolean consumeRequiredItemsOnComplete = Boolean.parseBoolean(
+                p.getProperty(prefix + "requirements.consumeItemsOnComplete", "true")
+        );
         boolean rewardAutoAcceptNext = Boolean.parseBoolean(p.getProperty(prefix + "rewards.autoAcceptNext", "false"));
         return new QuestDefinition(
                 questId,
@@ -132,6 +136,8 @@ public final class QuestDefinitionRegistry {
                 rewardRescueNpcs,
                 rewardUnlockCrafts,
                 rewardUnlockTrades,
+                requiredItems,
+                consumeRequiredItemsOnComplete,
                 rewardAutoAcceptNext
         );
     }
@@ -147,6 +153,37 @@ public final class QuestDefinitionRegistry {
             if (!value.isBlank()) {
                 out.add(value);
             }
+        }
+        return List.copyOf(out);
+    }
+
+    @Nonnull
+    private static List<QuestDefinition.ItemAmount> parseItems(@Nullable String raw) {
+        if (raw == null || raw.isBlank()) {
+            return List.of();
+        }
+        List<QuestDefinition.ItemAmount> out = new ArrayList<>();
+        for (String token : raw.split(",")) {
+            if (token == null || token.isBlank()) {
+                continue;
+            }
+            String[] parts = token.split(":");
+            if (parts.length == 0) {
+                continue;
+            }
+            String itemId = parts[0].trim();
+            if (itemId.isBlank()) {
+                continue;
+            }
+            int amount = 1;
+            if (parts.length > 1) {
+                try {
+                    amount = Integer.parseInt(parts[1].trim());
+                } catch (NumberFormatException ignored) {
+                    amount = 1;
+                }
+            }
+            out.add(new QuestDefinition.ItemAmount(itemId, amount));
         }
         return List.copyOf(out);
     }

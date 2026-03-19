@@ -1,0 +1,9 @@
+Group #MapOpenRoot {
+  LayoutMode: Top;
+
+  Group #MapImageFullscreen {
+    Anchor: (Left: 0, Right: 0);
+    FlexWeight: 1;
+    Background: (TexturePath: "../Textures/custom_map.png");
+  }
+}

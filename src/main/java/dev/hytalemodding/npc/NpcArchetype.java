@@ -27,20 +27,12 @@ public final class NpcArchetype {
     public final PlotUnlockMode plotUnlockMode;
     @Nonnull
     public final NpcServices services;
-    @Nullable
-    public final String dialogueSetId;
-    @Nullable
-    public final String questSetId;
-    @Nullable
-    public final String upgradeTreeId;
-    @Nullable
-    public final String craftSetId;
-    @Nullable
-    public final String tradeSetId;
     @Nonnull
     public final List<String> defaultCraftUnlocks;
     @Nonnull
     public final List<String> defaultTradeUnlocks;
+    @Nonnull
+    public final List<String> followStateAliases;
     public final boolean animalRoutesToFarmer;
     @Nullable
     public final String farmerNpcKey;
@@ -56,13 +48,9 @@ public final class NpcArchetype {
             @Nullable String prePlotQuestId,
             @Nonnull PlotUnlockMode plotUnlockMode,
             @Nonnull NpcServices services,
-            @Nullable String dialogueSetId,
-            @Nullable String questSetId,
-            @Nullable String upgradeTreeId,
-            @Nullable String craftSetId,
-            @Nullable String tradeSetId,
             @Nonnull List<String> defaultCraftUnlocks,
             @Nonnull List<String> defaultTradeUnlocks,
+            @Nonnull List<String> followStateAliases,
             boolean animalRoutesToFarmer,
             @Nullable String farmerNpcKey
     ) {
@@ -76,13 +64,9 @@ public final class NpcArchetype {
         this.prePlotQuestId = normalizeNullable(prePlotQuestId);
         this.plotUnlockMode = plotUnlockMode;
         this.services = services;
-        this.dialogueSetId = normalizeNullable(dialogueSetId);
-        this.questSetId = normalizeNullable(questSetId);
-        this.upgradeTreeId = normalizeNullable(upgradeTreeId);
-        this.craftSetId = normalizeNullable(craftSetId);
-        this.tradeSetId = normalizeNullable(tradeSetId);
         this.defaultCraftUnlocks = List.copyOf(defaultCraftUnlocks);
         this.defaultTradeUnlocks = List.copyOf(defaultTradeUnlocks);
+        this.followStateAliases = defaultLowercase(followStateAliases);
         this.animalRoutesToFarmer = animalRoutesToFarmer;
         this.farmerNpcKey = normalizeNullable(farmerNpcKey);
     }
@@ -102,6 +86,21 @@ public final class NpcArchetype {
         }
         String trimmed = raw.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    @Nonnull
+    private static List<String> defaultLowercase(@Nonnull List<String> values) {
+        java.util.ArrayList<String> out = new java.util.ArrayList<>(values.size());
+        for (String value : values) {
+            if (value == null) {
+                continue;
+            }
+            String normalized = value.trim().toLowerCase(Locale.ROOT);
+            if (!normalized.isEmpty()) {
+                out.add(normalized);
+            }
+        }
+        return List.copyOf(out);
     }
 
     public enum NpcCategory {

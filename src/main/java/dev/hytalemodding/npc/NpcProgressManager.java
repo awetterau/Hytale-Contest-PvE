@@ -1,7 +1,6 @@
 package dev.hytalemodding.npc;
 
 import com.hypixel.hytale.server.core.universe.Universe;
-import dev.hytalemodding.state.transition.GameFlowConfigManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -23,7 +22,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class NpcProgressManager {
     private static final String PLUGIN_CONFIG_DIR = "HytaleModding-ExamplePlugin";
     private static final String CONFIG_FILE_NAME = "npc-progress.properties";
-    private static final String DEFAULT_NPC_KEY = "blacksmith";
     private static final NpcProgressManager INSTANCE = new NpcProgressManager();
 
     private final ConcurrentHashMap<String, NpcProgress> progressByNpc = new ConcurrentHashMap<>();
@@ -46,7 +44,7 @@ public final class NpcProgressManager {
         ensureLoaded();
         String key = normalize(npcKey);
         if (key.isEmpty()) {
-            key = DEFAULT_NPC_KEY;
+            key = "unknown";
         }
         NpcProgress existing = this.progressByNpc.get(key);
         if (existing != null) {
@@ -128,6 +126,19 @@ public final class NpcProgressManager {
         saveQuietly();
     }
 
+    public synchronized void setUpgradeTier(@Nonnull String npcKey, int tier) {
+        ensureLoaded();
+        String key = normalize(npcKey);
+        if (key.isBlank()) {
+            return;
+        }
+        NpcProgress current = getOrCreate(key);
+        int nextTier = Math.max(0, tier);
+        int nextLevel = Math.max(current.level, nextTier + 1);
+        this.progressByNpc.put(key, current.withTierAndLevel(nextTier, nextLevel));
+        saveQuietly();
+    }
+
     @Nonnull
     public synchronized List<String> describeAll() {
         ensureLoaded();
@@ -160,27 +171,6 @@ public final class NpcProgressManager {
         Path path = getConfigPath();
         if (path != null && Files.exists(path)) {
             loadFromProperties(path);
-        }
-
-        NpcArchetype defaultArchetype = NpcDefinitionRegistry.get().getArchetype(DEFAULT_NPC_KEY);
-        this.progressByNpc.computeIfAbsent(
-                DEFAULT_NPC_KEY,
-                ignored -> NpcProgress.defaultFor(
-                        DEFAULT_NPC_KEY,
-                        defaultArchetype == null ? List.of() : defaultArchetype.defaultCraftUnlocks,
-                        defaultArchetype == null ? List.of() : defaultArchetype.defaultTradeUnlocks
-                )
-        );
-
-        // Legacy bridge for current blacksmith save path.
-        boolean legacyBlacksmithRescued = GameFlowConfigManager.get().isBlacksmithRescued();
-        NpcProgress blacksmith = this.progressByNpc.get(DEFAULT_NPC_KEY);
-        if (blacksmith != null && legacyBlacksmithRescued && !blacksmith.rescued) {
-            this.progressByNpc.put(
-                    DEFAULT_NPC_KEY,
-                    blacksmith.withRescuedState(true, NpcProgressState.RESCUED_UNASSIGNED, System.currentTimeMillis())
-            );
-            saveQuietly();
         }
     }
 
@@ -481,6 +471,21 @@ public final class NpcProgressManager {
                     this.assignedPlotId,
                     this.level,
                     this.upgradeTier,
+                    this.lastStateChangeMs,
+                    this.unlockedCrafts,
+                    this.unlockedTrades
+            );
+        }
+
+        @Nonnull
+        private NpcProgress withTierAndLevel(int tier, int level) {
+            return new NpcProgress(
+                    this.npcKey,
+                    this.rescued,
+                    this.state,
+                    this.assignedPlotId,
+                    Math.max(1, level),
+                    Math.max(0, tier),
                     this.lastStateChangeMs,
                     this.unlockedCrafts,
                     this.unlockedTrades

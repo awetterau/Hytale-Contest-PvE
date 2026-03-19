@@ -1,54 +1,49 @@
 {
-  "Parent": "Player",
   "Model": "NPC/intelligent/Farmer/Models/farmer.blockymodel",
   "Texture": "NPC/intelligent/Farmer/Models/Model_Textures/farmer.png",
-  "EyeHeight": 1.6,
+  "EyeHeight": 2,
   "HitBox": {
     "Max": {
-      "X": 0.4,
-      "Y": 1.8,
-      "Z": 0.4
+      "X": 2,
+      "Y": 5,
+      "Z": 2
     },
     "Min": {
-      "X": -0.4,
-      "Y": 0.0,
-      "Z": -0.4
+      "X": -2,
+      "Y": 0,
+      "Z": -2
     }
   },
+  "MinScale": 1,
+  "MaxScale": 1,
   "AnimationSets": {
     "Idle": {
       "Animations": [
         {
-          "Animation": "NPC/intelligent/Farmer/Animations/idle.blockyanim",
-          "Looping": true
+          "Animation": "NPC/intelligent/Farmer/Animations/idle.blockyanim"
         },
         {
-          "Animation": "Characters/Animations/Default/Idle.blockyanim",
-          "Looping": true
+          "Animation": "Characters/Animations/Default/Idle.blockyanim"
         }
       ]
     },
     "Walk": {
       "Animations": [
         {
-          "Animation": "NPC/intelligent/Farmer/Animations/walk.blockyanim",
-          "Looping": true
+          "Animation": "NPC/intelligent/Farmer/Animations/walk.blockyanim"
         },
         {
-          "Animation": "Characters/Animations/Default/Walk.blockyanim",
-          "Looping": true
+          "Animation": "Characters/Animations/Default/Walk.blockyanim"
         }
       ]
     },
     "WalkBackward": {
       "Animations": [
         {
-          "Animation": "NPC/intelligent/Farmer/Animations/walk.blockyanim",
-          "Looping": true
+          "Animation": "NPC/intelligent/Farmer/Animations/walk.blockyanim"
         },
         {
-          "Animation": "Characters/Animations/Default/Walk_Backward.blockyanim",
-          "Looping": true
+          "Animation": "Characters/Animations/Default/Walk_Backward.blockyanim"
         }
       ]
     },
@@ -56,28 +51,17 @@
       "Animations": [
         {
           "Animation": "NPC/intelligent/Farmer/Animations/walk.blockyanim",
-          "Speed": 1.25,
-          "Looping": true
+          "Speed": 1
         },
         {
-          "Animation": "Characters/Animations/Default/Run.blockyanim",
-          "Looping": true
+          "Animation": "Characters/Animations/Default/Run.blockyanim"
         }
       ]
     },
     "Alerted": {
       "Animations": [
         {
-          "Animation": "Characters/Animations/Default/Idle.blockyanim",
-          "Looping": true
-        }
-      ]
-    },
-    "Work": {
-      "Animations": [
-        {
-          "Animation": "Characters/Animations/Default/Idle.blockyanim",
-          "Looping": true
+          "Animation": "Characters/Animations/Default/Idle.blockyanim"
         }
       ]
     }

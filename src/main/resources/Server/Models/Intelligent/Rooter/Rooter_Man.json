@@ -1,0 +1,87 @@
+{
+  "Model": "NPC/intelligent/Rooter/Models/rooterman.blockymodel",
+  "Texture": "NPC/intelligent/Rooter/Models/Model_Textures/rooterman.png",
+  "EyeHeight": 2,
+  "HitBox": {
+    "Max": {
+      "X": 0.7,
+      "Y": 2.3,
+      "Z": 0.7
+    },
+    "Min": {
+      "X": -0.7,
+      "Y": 0.0,
+      "Z": -0.7
+    }
+  },
+  "MinScale": 1,
+  "MaxScale": 1,
+  "AnimationSets": {
+    "Idle": {
+      "Animations": [
+        {
+          "Animation": "Characters/Animations/Default/Idle.blockyanim",
+          "Looping": true
+        }
+      ]
+    },
+    "Walk": {
+      "Animations": [
+        {
+          "Animation": "NPC/intelligent/Rooter/Animations/walk.blockyanim",
+          "Looping": true
+        },
+        {
+          "Animation": "Characters/Animations/Default/Walk.blockyanim"
+        }
+      ]
+    },
+    "WalkBackward": {
+      "Animations": [
+        {
+          "Animation": "NPC/intelligent/Rooter/Animations/walk.blockyanim",
+          "Looping": true
+        },
+        {
+          "Animation": "Characters/Animations/Default/Walk_Backward.blockyanim"
+        }
+      ]
+    },
+    "Run": {
+      "Animations": [
+        {
+          "Animation": "NPC/intelligent/Rooter/Animations/walk.blockyanim",
+          "Speed": 1.15,
+          "Looping": true
+        },
+        {
+          "Animation": "Characters/Animations/Default/Run.blockyanim"
+        }
+      ]
+    },
+    "Alerted": {
+      "Animations": [
+        {
+          "Animation": "Characters/Animations/Default/Idle.blockyanim",
+          "Looping": true
+        }
+      ]
+    },
+    "Attack1": {
+      "Animations": [
+        {
+          "Animation": "NPC/intelligent/Rooter/Animations/attack1.blockyanim",
+          "Looping": false
+        }
+      ]
+    },
+    "Attack2": {
+      "Animations": [
+        {
+          "Animation": "NPC/intelligent/Rooter/Animations/attack2.blockyanim",
+          "Looping": false
+        }
+      ]
+    }
+  }
+}

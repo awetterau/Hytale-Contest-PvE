@@ -34,6 +34,7 @@ import java.util.UUID;
 
 public class DevAdminPanelPage extends InteractiveCustomUIPage<DevAdminPanelPage.Data> {
     private static final String PLOT_ID = "blacksmith_a";
+    private static final String NPC_KEY = "blacksmith";
 
     public static class Data {
         public String action;
@@ -68,8 +69,8 @@ public class DevAdminPanelPage extends InteractiveCustomUIPage<DevAdminPanelPage
         switch (action) {
             case "reset_flow" -> runResetFlow();
             case "setup_plot" -> setupPlotAtPlayer();
-            case "rescued_true" -> RescueObjectiveManager.get().setBlacksmithRescued(true);
-            case "rescued_false" -> RescueObjectiveManager.get().setBlacksmithRescued(false);
+            case "rescued_true" -> RescueObjectiveManager.get().setNpcRescued(NPC_KEY, true);
+            case "rescued_false" -> RescueObjectiveManager.get().setNpcRescued(NPC_KEY, false);
             case "purchase_plot" -> this.playerRef.sendMessage(Message.raw(BaseHousingManager.get().purchasePlot(PLOT_ID).message));
             case "set_working" -> HubNpcManager.get().devSetState("blacksmith", HubNpcManager.HubNpcState.WORKING);
             case "open_terminal" -> openPlotTerminal(ref, store);
@@ -91,8 +92,8 @@ public class DevAdminPanelPage extends InteractiveCustomUIPage<DevAdminPanelPage
         }
         BaseHousingManager.get().resetAll();
         HubNpcManager.get().resetAll();
-        RescueObjectiveManager.get().resetBlacksmithProgress();
-        RescueObjectiveManager.get().setBlacksmithRescued(false);
+        RescueObjectiveManager.get().resetRuntimeStatePreserveRescued();
+        RescueObjectiveManager.get().setNpcRescued(NPC_KEY, false);
     }
 
     private void setupPlotAtPlayer() {
@@ -139,7 +140,7 @@ public class DevAdminPanelPage extends InteractiveCustomUIPage<DevAdminPanelPage
                 + "1) Reset Flow  2) Setup Plot Here  3) Rescued TRUE  4) Purchase Plot\n"
                 + "If needed, click Force WORKING then interact with blacksmith.\n\n"
                 + "World: " + worldName + " (hub: " + GameFlowConfigManager.get().getHubWorldName() + ")\n"
-                + "Blacksmith: rescued=" + RescueObjectiveManager.get().isBlacksmithRescued()
+                + "Blacksmith: rescued=" + RescueObjectiveManager.get().isNpcRescued(NPC_KEY)
                 + ", state=" + npc.state
                 + ", assignedPlot=" + (npc.assignedPlotId == null ? "<none>" : npc.assignedPlotId) + "\n"
                 + plotLine + "\n"

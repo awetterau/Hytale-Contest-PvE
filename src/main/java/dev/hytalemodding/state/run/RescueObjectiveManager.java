@@ -35,7 +35,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class RescueObjectiveManager {
     private static final String FOLLOW_STATE = "Follow";
-    private static final String BLACKSMITH_KEY = "blacksmith";
     private static final RescueObjectiveManager INSTANCE = new RescueObjectiveManager();
 
     private final ConcurrentHashMap<UUID, RescueObjective> objectives = new ConcurrentHashMap<>();
@@ -88,7 +87,7 @@ public final class RescueObjectiveManager {
         }
 
         String stateName = npc.getRole().getStateSupport().getStateName();
-        boolean followingState = isFollowingStateName(stateName);
+        boolean followingState = isFollowingStateName(objective, stateName);
 
         long now = System.currentTimeMillis();
         if (followingState && objective.state == RescueState.WAITING) {
@@ -110,8 +109,8 @@ public final class RescueObjectiveManager {
         return objective == null ? null : objective.state;
     }
 
-    public boolean isBlacksmithRescued() {
-        return NpcProgressManager.get().isNpcRescued(BLACKSMITH_KEY);
+    public boolean isNpcRescued(@Nonnull String npcKey) {
+        return NpcProgressManager.get().isNpcRescued(npcKey);
     }
 
     public boolean isPendingBaseSpawn() {
@@ -127,15 +126,6 @@ public final class RescueObjectiveManager {
         return objective != null && objective.npcRef != null && objective.npcRef.isValid();
     }
 
-    public synchronized void setBlacksmithRescued(boolean rescued) {
-        setNpcRescued(BLACKSMITH_KEY, rescued);
-        if (rescued) {
-            this.pendingRescueNpcKey = null;
-            this.pendingBaseSpawn = false;
-            this.baseSpawnInProgress = false;
-        }
-    }
-
     public synchronized void resetRuntimeStatePreserveRescued() {
         this.objectives.clear();
         this.pendingRescueNpcKey = null;
@@ -143,21 +133,22 @@ public final class RescueObjectiveManager {
         this.baseSpawnInProgress = false;
     }
 
-    public synchronized void resetBlacksmithProgress() {
-        this.objectives.clear();
-        this.pendingRescueNpcKey = null;
-        this.pendingBaseSpawn = false;
-        this.baseSpawnInProgress = false;
-        setBlacksmithRescued(false);
+    public synchronized void setNpcRescued(@Nonnull String npcKey, boolean rescued) {
+        setNpcRescuedInternal(npcKey, rescued);
+        if (rescued) {
+            this.pendingRescueNpcKey = null;
+            this.pendingBaseSpawn = false;
+            this.baseSpawnInProgress = false;
+        }
     }
 
-    public boolean spawnBaseBlacksmithNow(@Nonnull World destinationWorld, @Nonnull Transform destinationTransform) {
-        if (isBlacksmithRescued()) {
+    public boolean spawnBaseNpcNow(@Nonnull String npcKey, @Nonnull World destinationWorld, @Nonnull Transform destinationTransform) {
+        if (isNpcRescued(npcKey)) {
             return false;
         }
-        boolean success = spawnBaseNpcNow(destinationWorld, destinationTransform, BLACKSMITH_KEY);
+        boolean success = spawnBaseNpcNowInternal(destinationWorld, destinationTransform, npcKey);
         if (success) {
-            setBlacksmithRescued(true);
+            setNpcRescued(npcKey, true);
         }
         return success;
     }
@@ -249,6 +240,7 @@ public final class RescueObjectiveManager {
         boolean announce = objective.state != RescueState.FOLLOWING;
         objective.state = RescueState.FOLLOWING;
         objective.lastFollowingAtMs = System.currentTimeMillis();
+        objective.escortConfirmed = true;
         if (announce) {
             playerRef.sendMessage(Message.raw("Rescue NPC follow started."));
             System.out.println("[RescueDebug] follow signal from interaction player=" + playerRef.getUuid());
@@ -267,7 +259,7 @@ public final class RescueObjectiveManager {
         if (NpcProgressManager.get().isNpcRescued(objective.npcKey)) {
             return false;
         }
-        boolean following = objective.state == RescueState.FOLLOWING || isNpcFollowingNow(objective);
+        boolean following = objective.escortConfirmed || objective.state == RescueState.FOLLOWING || isNpcFollowingNow(objective);
         if (!following) {
             System.out.println("[RescueDebug] queue rejected: npc is not actively following");
             return false;
@@ -282,14 +274,16 @@ public final class RescueObjectiveManager {
     }
 
     @Nonnull
-    public CompletableFuture<Boolean> spawnQueuedRescueInBase(
+    public CompletableFuture<QueuedRescueSpawnResult> spawnQueuedRescueInBase(
             @Nonnull World destinationWorld,
             @Nonnull Transform destinationTransform
     ) {
         final String pendingNpc;
         synchronized (this) {
             if (!this.pendingBaseSpawn || this.baseSpawnInProgress || this.pendingRescueNpcKey == null) {
-                return CompletableFuture.completedFuture(false);
+                return CompletableFuture.completedFuture(
+                        new QueuedRescueSpawnResult(null, false, "No queued rescue.")
+                );
             }
             pendingNpc = this.pendingRescueNpcKey;
             this.baseSpawnInProgress = true;
@@ -297,17 +291,20 @@ public final class RescueObjectiveManager {
             this.pendingRescueNpcKey = null;
         }
 
-        CompletableFuture<Boolean> result = new CompletableFuture<>();
+        CompletableFuture<QueuedRescueSpawnResult> result = new CompletableFuture<>();
         destinationWorld.execute(() -> {
-            boolean success = spawnBaseNpcNow(destinationWorld, destinationTransform, pendingNpc);
+            boolean success = spawnBaseNpcNowInternal(destinationWorld, destinationTransform, pendingNpc);
             if (success) {
-                setNpcRescued(pendingNpc, true);
                 System.out.println("[RescueDebug] base spawn success npc=" + pendingNpc + " world=" + destinationWorld.getName());
             } else {
                 System.out.println("[RescueDebug] base spawn failed npc=" + pendingNpc + " world=" + destinationWorld.getName());
             }
             this.baseSpawnInProgress = false;
-            result.complete(success);
+            result.complete(new QueuedRescueSpawnResult(
+                    pendingNpc,
+                    success,
+                    success ? null : "spawn returned false"
+            ));
         });
         return result;
     }
@@ -349,7 +346,7 @@ public final class RescueObjectiveManager {
         objective.hubRoleName = archetype.hubRole;
     }
 
-    private boolean spawnBaseNpcNow(@Nonnull World destinationWorld, @Nonnull Transform destinationTransform, @Nonnull String npcKey) {
+    private boolean spawnBaseNpcNowInternal(@Nonnull World destinationWorld, @Nonnull Transform destinationTransform, @Nonnull String npcKey) {
         NpcArchetype archetype = NpcDefinitionRegistry.get().getArchetype(npcKey);
         if (archetype == null || archetype.hubRole == null || archetype.hubRole.isBlank()) {
             return false;
@@ -489,7 +486,7 @@ public final class RescueObjectiveManager {
             return false;
         }
         String stateName = npc.getRole().getStateSupport().getStateName();
-        return isFollowingStateName(stateName);
+        return isFollowingStateName(objective, stateName);
     }
 
     @Nullable
@@ -517,11 +514,27 @@ public final class RescueObjectiveManager {
         return found[0];
     }
 
-    private static boolean isFollowingStateName(@Nullable String stateName) {
+    private static boolean isFollowingStateName(@Nonnull RescueObjective objective, @Nullable String stateName) {
         if (stateName == null) {
             return false;
         }
-        return FOLLOW_STATE.equalsIgnoreCase(stateName) || stateName.startsWith("$Interaction");
+        if (FOLLOW_STATE.equalsIgnoreCase(stateName) || stateName.startsWith("$Interaction")) {
+            return true;
+        }
+        if (objective.npcKey == null || objective.npcKey.isBlank()) {
+            return false;
+        }
+        NpcArchetype archetype = NpcDefinitionRegistry.get().getArchetype(objective.npcKey);
+        if (archetype == null || archetype.followStateAliases.isEmpty()) {
+            return false;
+        }
+        String normalized = stateName.trim().toLowerCase();
+        for (String alias : archetype.followStateAliases) {
+            if (normalized.equals(alias)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void sendRunWorldMessage(@Nonnull UUID runWorldId, @Nonnull String text) {
@@ -534,7 +547,7 @@ public final class RescueObjectiveManager {
         }
     }
 
-    private static void setNpcRescued(@Nonnull String npcKey, boolean rescued) {
+    private static void setNpcRescuedInternal(@Nonnull String npcKey, boolean rescued) {
         NpcProgressManager.get().setNpcRescued(npcKey, rescued);
         GameFlowConfigManager.get().setNpcRescued(npcKey, rescued);
     }
@@ -554,6 +567,7 @@ public final class RescueObjectiveManager {
         private RescueState state = RescueState.WAITING;
         private boolean spawning;
         private boolean spawnedOnce;
+        private boolean escortConfirmed;
         private long lastFollowingAtMs;
 
         private RescueObjective(@Nonnull UUID starterPlayerId) {
@@ -566,5 +580,12 @@ public final class RescueObjectiveManager {
         FOLLOWING,
         SAFE,
         FAILED
+    }
+
+    public record QueuedRescueSpawnResult(
+            @Nullable String npcKey,
+            boolean spawned,
+            @Nullable String reason
+    ) {
     }
 }

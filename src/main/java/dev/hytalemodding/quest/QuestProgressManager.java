@@ -3,6 +3,9 @@ package dev.hytalemodding.quest;
 import com.hypixel.hytale.server.core.universe.Universe;
 import dev.hytalemodding.state.transition.GameFlowConfigManager;
 import dev.hytalemodding.npc.NpcProgressManager;
+import dev.hytalemodding.npc.economy.NpcEconomyDefinition;
+import dev.hytalemodding.npc.economy.NpcInventoryService;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -72,10 +75,25 @@ public final class QuestProgressManager {
     }
 
     public synchronized boolean complete(@Nonnull String questId) {
+        return complete(questId, null);
+    }
+
+    public synchronized boolean complete(@Nonnull String questId, @Nullable PlayerRef playerRef) {
         ensureLoaded();
         QuestDefinition definition = QuestDefinitionRegistry.get().getQuest(questId);
         if (definition == null) {
             return false;
+        }
+        if (playerRef != null && !definition.requiredItems.isEmpty()) {
+            java.util.List<NpcEconomyDefinition.ItemAmount> costs = toEconomyItems(definition.requiredItems);
+            if (!NpcInventoryService.canAfford(playerRef, costs)) {
+                return false;
+            }
+            if (definition.consumeRequiredItemsOnComplete) {
+                if (!NpcInventoryService.executeTransaction(playerRef, costs, java.util.List.of())) {
+                    return false;
+                }
+            }
         }
         QuestProgress current = getOrCreate(definition.questId);
         this.byQuestId.put(definition.questId, current.withState(true, true));
@@ -225,6 +243,17 @@ public final class QuestProgressManager {
             }
         }
         return List.copyOf(out);
+    }
+
+    @Nonnull
+    private static java.util.List<NpcEconomyDefinition.ItemAmount> toEconomyItems(
+            @Nonnull java.util.List<QuestDefinition.ItemAmount> requiredItems
+    ) {
+        java.util.ArrayList<NpcEconomyDefinition.ItemAmount> out = new java.util.ArrayList<>(requiredItems.size());
+        for (QuestDefinition.ItemAmount required : requiredItems) {
+            out.add(new NpcEconomyDefinition.ItemAmount(required.itemId, required.amount));
+        }
+        return java.util.List.copyOf(out);
     }
 
     public static final class QuestProgress {

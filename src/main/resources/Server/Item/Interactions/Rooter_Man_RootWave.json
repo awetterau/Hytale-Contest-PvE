@@ -1,0 +1,55 @@
+{
+  "Type": "Simple",
+  "RunTime": 0.7,
+  "Effects": {
+    "WorldSoundEventId": "SFX_Unarmed_Impact",
+    "LocalSoundEventId": "SFX_Unarmed_Impact"
+  },
+  "Next": {
+    "Type": "Parallel",
+    "Interactions": [
+      {
+        "Interactions": [
+          {
+            "Type": "Selector",
+            "RunTime": 0.26,
+            "Selector": {
+              "Id": "AOECircle",
+              "Range": 7.5
+            },
+            "HitEntity": {
+              "Interactions": [
+                {
+                  "Type": "Replace",
+                  "DefaultValue": {
+                    "Interactions": [
+                      "Rooter_Man_Wave_Damage"
+                    ]
+                  },
+                  "Var": ""
+                }
+              ]
+            },
+            "Next": {
+              "Type": "Simple",
+              "RunTime": 0.24
+            }
+          }
+        ]
+      },
+      {
+        "Interactions": [
+          {
+            "Type": "Simple",
+            "RunTime": 0.5,
+            "Effects": {
+              "WorldSoundEventId": "SFX_Unarmed_Impact",
+              "LocalSoundEventId": "SFX_Unarmed_Impact"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+

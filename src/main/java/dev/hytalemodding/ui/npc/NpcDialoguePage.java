@@ -21,6 +21,8 @@ import dev.hytalemodding.npc.NpcArchetype;
 import dev.hytalemodding.npc.NpcDefinitionRegistry;
 import dev.hytalemodding.npc.NpcDialogueManager;
 import dev.hytalemodding.npc.NpcProgressManager;
+import dev.hytalemodding.npc.economy.NpcEconomyDefinition;
+import dev.hytalemodding.npc.economy.NpcEconomyRegistry;
 
 import javax.annotation.Nonnull;
 
@@ -55,30 +57,26 @@ public class NpcDialoguePage extends InteractiveCustomUIPage<NpcDialoguePage.Dat
         String name = archetype == null ? this.npcKey : archetype.displayName;
         HubNpcManager.NpcData npcData = BaseHousingManager.get().getNpcData(this.npcKey);
         boolean hasAssignedPlot = npcData.assignedPlotId != null;
-        boolean hasCraftUnlocks = !NpcProgressManager.get().getUnlockedCrafts(this.npcKey).isEmpty();
         boolean hasTradeUnlocks = !NpcProgressManager.get().getUnlockedTrades(this.npcKey).isEmpty();
-        boolean canTalk = archetype == null || archetype.services.canTalk;
-        boolean canCraft = archetype != null && archetype.services.canCraft && hasAssignedPlot && hasCraftUnlocks;
         boolean canTrade = archetype != null && archetype.services.canTrade && hasAssignedPlot && hasTradeUnlocks;
         boolean canQuest = archetype != null && archetype.services.canGiveQuests && hasAssignedPlot;
         boolean canUpgrade = archetype != null && archetype.services.canUpgrade && hasAssignedPlot;
+        NpcEconomyDefinition economy = NpcEconomyRegistry.get().getNpc(this.npcKey);
+        String readyText = economy == null ? (name + " is ready. What do you need?") : economy.readyDialogueText;
+        String lockedText = economy == null ? (name + " needs setup before full services are available.") : economy.noWorkshopDialogueText;
 
         commandBuilder.append("Pages/NpcDialogue.ui");
         commandBuilder.set("#NpcName.Text", name);
         commandBuilder.set("#DialogueText.Text", hasAssignedPlot
-                ? name + " is ready. What do you need?"
-                : name + " needs setup before full services are available.");
-        commandBuilder.set("#CraftButton.Visible", canCraft);
+                ? readyText
+                : lockedText);
         commandBuilder.set("#TradeButton.Visible", canTrade);
         commandBuilder.set("#UpgradesButton.Visible", canUpgrade);
         commandBuilder.set("#QuestsButton.Visible", canQuest);
-        commandBuilder.set("#TalkButton.Visible", canTalk);
 
-        eventBuilder.addEventBinding(CustomUIEventBindingType.Activating, "#CraftButton", EventData.of("Action", "craft"), false);
         eventBuilder.addEventBinding(CustomUIEventBindingType.Activating, "#TradeButton", EventData.of("Action", "trade"), false);
         eventBuilder.addEventBinding(CustomUIEventBindingType.Activating, "#UpgradesButton", EventData.of("Action", "upgrades"), false);
         eventBuilder.addEventBinding(CustomUIEventBindingType.Activating, "#QuestsButton", EventData.of("Action", "quests"), false);
-        eventBuilder.addEventBinding(CustomUIEventBindingType.Activating, "#TalkButton", EventData.of("Action", "talk"), false);
         eventBuilder.addEventBinding(CustomUIEventBindingType.Activating, "#CloseButton", EventData.of("Action", "close"), false);
     }
 
@@ -86,14 +84,9 @@ public class NpcDialoguePage extends InteractiveCustomUIPage<NpcDialoguePage.Dat
     public void handleDataEvent(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull Data data) {
         String action = data.action == null ? "" : data.action.trim().toLowerCase();
         HubNpcManager.NpcData npcData = BaseHousingManager.get().getNpcData(this.npcKey);
-        if (("craft".equals(action) || "upgrades".equals(action) || "quests".equals(action))
+        if (("trade".equals(action) || "upgrades".equals(action) || "quests".equals(action))
                 && npcData.assignedPlotId == null) {
             this.playerRef.sendMessage(Message.raw("This NPC needs a purchased plot assignment first."));
-            return;
-        }
-        if ("craft".equals(action)) {
-            this.internalNavigation = true;
-            openPage(ref, store, new NpcWorkshopPage(this.playerRef, this.npcKey));
             return;
         }
         if ("trade".equals(action)) {
@@ -109,11 +102,6 @@ public class NpcDialoguePage extends InteractiveCustomUIPage<NpcDialoguePage.Dat
         if ("quests".equals(action)) {
             this.internalNavigation = true;
             openPage(ref, store, new NpcQuestPage(this.playerRef, this.npcKey));
-            return;
-        }
-        if ("talk".equals(action)) {
-            this.internalNavigation = true;
-            openPage(ref, store, new NpcTalkPage(this.playerRef, this.npcKey, 1));
             return;
         }
         NpcDialogueManager.get().closeDialogue(this.playerRef);

@@ -1,6 +1,8 @@
 package dev.hytalemodding.game;
 
 import com.hypixel.hytale.server.core.universe.Universe;
+import dev.hytalemodding.npc.NpcArchetype;
+import dev.hytalemodding.npc.NpcDefinitionRegistry;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -20,7 +22,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class HubNpcManager {
     private static final String PLUGIN_CONFIG_DIR = "HytaleModding-ExamplePlugin";
     private static final String CONFIG_FILE_NAME = "hub-npcs.properties";
-    private static final String BLACKSMITH_KEY = "blacksmith";
     private static final long MOVE_TO_WORKSHOP_TIMEOUT_MS = 12_000L;
     private static final HubNpcManager INSTANCE = new HubNpcManager();
 
@@ -171,7 +172,7 @@ public final class HubNpcManager {
     public synchronized void resetAll() {
         ensureLoaded();
         this.npcs.clear();
-        ensureDefaultNpc();
+        ensureDefaultNpcs();
         saveQuietly();
     }
 
@@ -182,7 +183,7 @@ public final class HubNpcManager {
         this.loaded = true;
         Path path = getConfigFilePath();
         if (path == null || !Files.exists(path)) {
-            ensureDefaultNpc();
+            ensureDefaultNpcs();
             return;
         }
 
@@ -191,7 +192,7 @@ public final class HubNpcManager {
             properties.load(reader);
         } catch (IOException e) {
             System.out.println("[HubNpc] Failed to load config: " + e.getMessage());
-            ensureDefaultNpc();
+            ensureDefaultNpcs();
             return;
         }
 
@@ -206,14 +207,23 @@ public final class HubNpcManager {
                 this.npcs.put(id, npc);
             }
         }
-        ensureDefaultNpc();
+        ensureDefaultNpcs();
     }
 
-    private synchronized void ensureDefaultNpc() {
-        this.npcs.computeIfAbsent(
-                BLACKSMITH_KEY,
-                ignored -> new NpcData(BLACKSMITH_KEY, 1, null, List.of(), List.of(), HubNpcState.WANDERING, 0L)
-        );
+    private synchronized void ensureDefaultNpcs() {
+        for (NpcArchetype archetype : NpcDefinitionRegistry.get().getAll()) {
+            if (archetype.hubRole == null || archetype.hubRole.isBlank()) {
+                continue;
+            }
+            String key = normalizeProfession(archetype.npcKey);
+            if (key.isEmpty()) {
+                continue;
+            }
+            this.npcs.computeIfAbsent(
+                    key,
+                    ignored -> new NpcData(key, 1, null, List.of(), List.of(), HubNpcState.WANDERING, 0L)
+            );
+        }
     }
 
     private synchronized void saveQuietly() {

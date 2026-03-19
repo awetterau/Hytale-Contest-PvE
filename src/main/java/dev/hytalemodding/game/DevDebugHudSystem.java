@@ -86,7 +86,7 @@ public class DevDebugHudSystem extends TickingSystem<EntityStore> {
         }
 
         lines.add("[DEV] Hub NPC/Plot Debug");
-        lines.add("World=" + worldName + " rescued=" + GameFlowConfigManager.get().isBlacksmithRescued());
+        lines.add("World=" + worldName + " rescued=" + GameFlowConfigManager.get().isNpcRescued(BLACKSMITH));
         lines.add("NPC=" + npc.profession + " lvl=" + npc.level + " state=" + npc.state.name() + " assignedPlot=" + (npc.assignedPlotId == null ? "<none>" : npc.assignedPlotId));
         lines.add("Recipes=" + npc.unlockedRecipes.size() + " Quests=" + npc.availableQuests.size());
 

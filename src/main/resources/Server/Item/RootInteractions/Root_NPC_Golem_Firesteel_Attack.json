@@ -1,0 +1,13 @@
+{
+  "Tags": {
+    "Attack": [
+      "Melee"
+    ]
+  },
+  "Cooldown": {
+    "Cooldown": 2.0
+  },
+  "Interactions": [
+    "Rooter_Man_Melee_Swipe"
+  ]
+}

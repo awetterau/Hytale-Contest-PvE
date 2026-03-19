@@ -8,12 +8,13 @@ Use this as the implementation map when adding/removing content.
 - Add NPC key to `npcs=...`
 - Add `npc.<key>.*` fields (`category`, `hubRole`, `plotType`, `services`, etc.)
 
-2. Add NPC content sets
-- Dialogue: `src/main/resources/Common/NpcData/dialogue_sets/<id>.json`
-- Quest set (optional): `src/main/resources/Common/NpcData/quest_sets/<id>.json`
-- Upgrade tree (optional): `src/main/resources/Common/NpcData/upgrade_trees/<id>.json`
-- Craft set (optional): `src/main/resources/Common/NpcData/craft_sets/<id>.json`
-- Trade set (optional): `src/main/resources/Common/NpcData/trade_sets/<id>.json`
+2. Add NPC economy/content file
+- File: `src/main/resources/Common/NpcData/npcs/<npcKey>.properties`
+- Define:
+  - `offers=...`
+  - `offer.<id>.*` entries (cost/reward/type/requirements)
+  - `upgrades=...`
+  - `upgrade.<id>.*` entries (tier/cost/grants/flags)
 
 3. Register run-rescue spawn (if this NPC is rescuable in runs)
 - File: `src/main/resources/Common/NpcData/run-rescue-spawns.properties`

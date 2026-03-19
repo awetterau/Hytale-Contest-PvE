@@ -109,8 +109,10 @@ public class NpcQuestPage extends InteractiveCustomUIPage<NpcQuestPage.Data> {
                 this.playerRef.sendMessage(Message.raw("No quest selected for " + this.npcKey + "."));
                 return;
             }
-            boolean ok = QuestProgressManager.get().complete(quest.questId);
-            this.playerRef.sendMessage(Message.raw(ok ? "Quest completed: " + quest.title : "Quest completion failed."));
+            boolean ok = QuestProgressManager.get().complete(quest.questId, this.playerRef);
+            this.playerRef.sendMessage(Message.raw(ok
+                    ? "Quest completed: " + quest.title
+                    : "Quest completion failed. Required objective items are missing."));
             refresh(ref, store);
             return;
         }

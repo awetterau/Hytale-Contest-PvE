@@ -43,7 +43,6 @@ public final class GameFlowConfigManager {
     private Transform baseSpawn;
     @Nullable
     private Transform rescueRunSpawn;
-    private boolean blacksmithRescued;
     @Nonnull
     private Set<String> rescuedNpcKeys = new HashSet<>();
     @Nonnull
@@ -124,15 +123,6 @@ public final class GameFlowConfigManager {
         saveQuietly();
     }
 
-    public synchronized boolean isBlacksmithRescued() {
-        ensureLoaded();
-        return isNpcRescued("blacksmith");
-    }
-
-    public synchronized void setBlacksmithRescued(boolean rescued) {
-        setNpcRescued("blacksmith", rescued);
-    }
-
     public synchronized boolean isNpcRescued(@Nonnull String npcKey) {
         ensureLoaded();
         String key = normalizeNpcKey(npcKey);
@@ -150,7 +140,6 @@ public final class GameFlowConfigManager {
         } else {
             this.rescuedNpcKeys.remove(key);
         }
-        this.blacksmithRescued = this.rescuedNpcKeys.contains("blacksmith");
         saveQuietly();
     }
 
@@ -238,7 +227,6 @@ public final class GameFlowConfigManager {
         lines.add("Base spawn: " + formatTransform(this.baseSpawn));
         lines.add("Rescue run spawn: " + formatTransform(this.rescueRunSpawn));
         lines.add("Door block: " + formatVector(this.doorBlock));
-        lines.add("Blacksmith rescued: " + this.blacksmithRescued);
         lines.add("Rescued NPC keys: " + String.join(",", this.rescuedNpcKeys));
         return lines;
     }
@@ -267,12 +255,7 @@ public final class GameFlowConfigManager {
         this.runSpawn = readTransform(properties, "runSpawn");
         this.baseSpawn = readTransform(properties, "baseSpawn");
         this.rescueRunSpawn = readTransform(properties, "rescueRunSpawn");
-        this.blacksmithRescued = Boolean.parseBoolean(properties.getProperty("blacksmithRescued", "false"));
         this.rescuedNpcKeys = new HashSet<>(parseCsv(properties.getProperty("rescuedNpcs")));
-        if (this.blacksmithRescued) {
-            this.rescuedNpcKeys.add("blacksmith");
-        }
-        this.blacksmithRescued = this.rescuedNpcKeys.contains("blacksmith");
         this.crimsonCoreProfilesByWorld = readCrimsonProfiles(properties);
     }
 
@@ -290,8 +273,6 @@ public final class GameFlowConfigManager {
         writeTransform(properties, "baseSpawn", this.baseSpawn);
         writeTransform(properties, "rescueRunSpawn", this.rescueRunSpawn);
         properties.setProperty("rescuedNpcs", String.join(",", this.rescuedNpcKeys));
-        this.blacksmithRescued = this.rescuedNpcKeys.contains("blacksmith");
-        properties.setProperty("blacksmithRescued", Boolean.toString(this.blacksmithRescued));
         writeCrimsonProfiles(properties, this.crimsonCoreProfilesByWorld);
 
         try {

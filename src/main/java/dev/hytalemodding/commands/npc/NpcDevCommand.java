@@ -125,9 +125,7 @@ public class NpcDevCommand extends AbstractPlayerCommand {
         }
         boolean rescued = Boolean.parseBoolean(raw);
         NpcProgressManager.get().setNpcRescued(npcKey, rescued);
-        if ("blacksmith".equals(npcKey)) {
-            RescueObjectiveManager.get().setBlacksmithRescued(rescued);
-        }
+        RescueObjectiveManager.get().setNpcRescued(npcKey, rescued);
         context.sendMessage(Message.raw("Set rescued state for " + npcKey + " to " + rescued + "."));
     }
 

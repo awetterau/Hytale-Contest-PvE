@@ -6,7 +6,8 @@ devserver/auth.enc
 /src/.idea
 /devserver/universe/.cache
 /devserver/universe/assetEditor
-/devserver/universe/universe/players
+/devserver/universe/players
 #/devserver
 /devserver/.cache
 /devserver/universe/worlds/default
+/devserver/universe/players
