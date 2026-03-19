@@ -30,7 +30,7 @@ This plugin currently has 4 main systems:
    - Run template world name (default): `game`
 2. In hub world, place a `Game_Start_Door` block.
 3. Set required spawns:
-   - `/setrunspawn` (run start location)
+   - `/spawnui` (run start location)
    - `/setbasespawn` (hub return location)
    - Optional: `/setrescuespawn` (fixed rescue NPC point in run)
 4. Press `F` on `Game_Start_Door` in hub to start a run.
@@ -40,6 +40,47 @@ This plugin currently has 4 main systems:
 8. Run `/blacksmith status` to verify state.
 
 ## System behavior details
+
+### Spawn zone system + SpawnUI workflow
+- Spawn zones are now organized as:
+  - **Zone** -> top-level group used by the door selector.
+  - **Location** -> sub-group inside a zone used to cluster multiple spawn points.
+  - **SpawnPoint_Block entries** -> actual spawn blocks registered under one zone/location.
+- Persistence file:
+  - `SpawnPoint_Zones.properties`
+  - Stores dynamic zone data by world, including zone count, per-zone location count, and ordered spawn entries (`x/y/z/dimension`).
+- Editing permissions:
+  - Spawn editing is currently allowed only in editable worlds.
+  - Default editable world allowlist: `game`.
+  - If you open the editor outside that allowlist, it shows a locked page and does **not** register or reconcile spawn data for that world.
+
+#### How the run spawn selection works
+1. In hub, run `/spawnui`.
+2. In the **Door Run Zone** page, choose the zone you want the next `Game_Start_Door` run to use.
+3. That door-zone selection is temporary and is consumed when the run starts.
+4. When the door starts a run, the system:
+   - uses the selected zone,
+   - chooses a **location** inside that zone with weighted randomness,
+   - gives lower probability to the same location that player used previously in that zone,
+   - reserves a unique spawn point inside the chosen location,
+   - and avoids handing the same exact spawn point to another player while reserved.
+5. If run start fails, the reservation is released. After extraction, the reserved spawn is also released.
+
+#### How to edit spawn data with `/spawnui`
+1. Go to an editable world (currently `game`).
+2. Run `/spawnui`.
+3. In **Door Run Zone**, press **Edit Zones**.
+4. In the spawn editor:
+   - use the **zone buttons** to switch active zone,
+   - use the small `+` / `-` buttons above zones to add/remove zones,
+   - use the **location buttons** to switch active location inside the active zone,
+   - use the small `+` / `-` buttons above locations to add/remove locations for the active zone only,
+   - use **Set SpawnPoint** to place a `SpawnPoint_Block` under your player and register it into the active zone/location.
+5. The central panel shows:
+   - the active zone/location,
+   - the number of registered blocks in that location,
+   - and the ordered list of registered coordinates.
+6. Use **Door Run Zone** to go back to the temporary door-zone selector.
 
 ### Run session + door flow
 - Door block id: `Game_Start_Door`
