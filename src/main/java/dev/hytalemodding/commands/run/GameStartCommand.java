@@ -53,15 +53,11 @@ public class GameStartCommand extends AbstractPlayerCommand {
 
                     context.sendMessage(
                             Message.raw(
-                                    "Run started in world '"
+                                    "Run world prepared in '"
                                             + result.runWorldName()
-                                            + "'. Crimson timer target: "
-                                            + result.crimsonStartAtEpochMillis()
+                                            + "'. Waiting for client gameplay ready before the timer starts."
                             )
                     );
                 });
     }
 }
-
-
-

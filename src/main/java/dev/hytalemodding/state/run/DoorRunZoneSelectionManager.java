@@ -1,5 +1,6 @@
 package dev.hytalemodding.state.run;
 
+import javax.annotation.Nullable;
 import javax.annotation.Nonnull;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,13 +23,26 @@ public final class DoorRunZoneSelectionManager {
         return SELECTED_ZONE_BY_PLAYER.get(playerId);
     }
 
-    public static Integer consumeSelectedZone(@Nonnull UUID playerId) {
-        return SELECTED_ZONE_BY_PLAYER.remove(playerId);
-    }
-
     public static void clearInvalidSelections(int zoneCount) {
         int safeZoneCount = Math.max(1, zoneCount);
         SELECTED_ZONE_BY_PLAYER.entrySet().removeIf(entry -> entry.getValue() == null || entry.getValue() < 0 || entry.getValue() >= safeZoneCount);
+    }
+
+    @Nullable
+    public static Integer ensureSelectedZoneOrDefault(@Nonnull UUID playerId) {
+        Integer selectedZone = getSelectedZone(playerId);
+        if (selectedZone != null && SpawnPointZoneManager.hasRegisteredSpawnInZone(selectedZone.intValue())) {
+            return selectedZone;
+        }
+
+        Integer fallbackZone = SpawnPointZoneManager.getFirstZoneWithRegisteredSpawns();
+        if (fallbackZone == null) {
+            SELECTED_ZONE_BY_PLAYER.remove(playerId);
+            return null;
+        }
+
+        setSelectedZone(playerId, fallbackZone.intValue());
+        return fallbackZone;
     }
 
     @Nonnull

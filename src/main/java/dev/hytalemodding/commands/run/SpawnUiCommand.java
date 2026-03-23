@@ -11,9 +11,7 @@ import com.hypixel.hytale.server.core.entity.entities.player.pages.CustomUIPage;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import dev.hytalemodding.ui.dev.DoorRunZoneSelectPage;
 import dev.hytalemodding.ui.dev.SpawnSelectPage;
-import dev.hytalemodding.state.run.SpawnPointZoneManager;
 
 import javax.annotation.Nonnull;
 
@@ -38,13 +36,13 @@ public class SpawnUiCommand extends AbstractPlayerCommand {
         }
 
         CustomUIPage current = player.getPageManager().getCustomPage();
-        if (current instanceof SpawnSelectPage || current instanceof DoorRunZoneSelectPage) {
+        if (current instanceof SpawnSelectPage) {
             player.getPageManager().setPage(ref, store, Page.None);
             context.sendMessage(Message.raw("Spawn selector panel closed."));
             return;
         }
 
-        player.getPageManager().openCustomPage(ref, store, new DoorRunZoneSelectPage(playerRef));
+        player.getPageManager().openCustomPage(ref, store, new SpawnSelectPage(playerRef));
         context.sendMessage(Message.raw("Spawn selector panel opened."));
     }
 }

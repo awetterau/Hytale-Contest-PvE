@@ -1,28 +1,39 @@
 package dev.hytalemodding.ui.dev;
 
+import com.hypixel.hytale.codec.Codec;
+import com.hypixel.hytale.codec.KeyedCodec;
+import com.hypixel.hytale.codec.builder.BuilderCodec;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
-import com.hypixel.hytale.protocol.packets.interface_.Page;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
-import com.hypixel.hytale.server.core.entity.entities.player.pages.CustomUIPage;
+import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.state.run.DoorRunZoneSelectionManager;
+import dev.hytalemodding.state.run.GameDoorInteractionHandler;
 import dev.hytalemodding.state.run.SpawnPointZoneManager;
 
 import javax.annotation.Nonnull;
 
-public class DoorRunZoneSelectPage extends CustomUIPage {
+public class DoorRunZoneSelectPage extends InteractiveCustomUIPage<DoorRunZoneSelectPage.Data> {
     private static final int MAX_ZONE_BUTTONS = 8;
 
+    public static final class Data {
+        public String action;
+
+        public static final BuilderCodec<Data> CODEC = BuilderCodec.builder(Data.class, Data::new)
+                .addField(new KeyedCodec("Action", Codec.STRING), (d, v) -> d.action = v, d -> d.action)
+                .build();
+    }
+
     public DoorRunZoneSelectPage(@Nonnull PlayerRef playerRef) {
-        super(playerRef, CustomPageLifetime.CanDismiss);
+        super(playerRef, CustomPageLifetime.CanDismissOrCloseThroughInteraction, Data.CODEC);
     }
 
     @Override
@@ -33,6 +44,7 @@ public class DoorRunZoneSelectPage extends CustomUIPage {
             @Nonnull Store<EntityStore> store
     ) {
         SpawnPointZoneManager.refreshForPlayer(this.playerRef);
+        DoorRunZoneSelectionManager.ensureSelectedZoneOrDefault(this.playerRef.getUuid());
         ui.append("d97's/Pages/DoorRunZoneSelectPage.ui");
         ui.set("#SelectedDoorZoneLabel.Text", "Selected door zone: " + DoorRunZoneSelectionManager.getSelectedZoneLabel(this.playerRef.getUuid()));
 
@@ -47,20 +59,21 @@ public class DoorRunZoneSelectPage extends CustomUIPage {
             }
         }
 
-        events.addEventBinding(CustomUIEventBindingType.Activating, "#EditZonesButton", EventData.of("Action", "edit_zones"), false);
-        events.addEventBinding(CustomUIEventBindingType.Activating, "#CloseButton", EventData.of("Action", "close"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#CancelButton", EventData.of("Action", "cancel"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#CloseButton", EventData.of("Action", "start"), false);
     }
 
     @Override
     public void handleDataEvent(
             @Nonnull Ref<EntityStore> ref,
             @Nonnull Store<EntityStore> store,
-            @Nonnull String eventData
+            @Nonnull Data data
     ) {
         Player player = store.getComponent(ref, Player.getComponentType());
         if (player == null) {
             return;
         }
+        String eventData = data.action == null ? "" : data.action.trim().toLowerCase();
 
         if (eventData.contains("door_zone_")) {
             int zoneIndex = parseTrailingIndex(eventData, "door_zone_");
@@ -69,12 +82,13 @@ public class DoorRunZoneSelectPage extends CustomUIPage {
             }
             return;
         }
-        if (eventData.contains("edit_zones")) {
-            player.getPageManager().openCustomPage(ref, store, new SpawnSelectPage(this.playerRef));
+        if (eventData.contains("cancel")) {
+            close();
             return;
         }
-        if (eventData.contains("close")) {
-            player.getPageManager().setPage(ref, store, Page.None);
+        if (eventData.contains("start")) {
+            close();
+            GameDoorInteractionHandler.tryStartFromDoorSelection(this.playerRef);
         }
     }
 
@@ -85,7 +99,7 @@ public class DoorRunZoneSelectPage extends CustomUIPage {
             int zoneIndex
     ) {
         DoorRunZoneSelectionManager.setSelectedZone(this.playerRef.getUuid(), zoneIndex);
-        player.sendMessage(Message.raw("Door run zone selected: " + DoorRunZoneSelectionManager.getSelectedZoneLabel(this.playerRef.getUuid()) + ". Select it again before the next door use."));
+        player.sendMessage(Message.raw("Door run zone selected: " + DoorRunZoneSelectionManager.getSelectedZoneLabel(this.playerRef.getUuid()) + ". Press Start to begin loading the run."));
         player.getPageManager().openCustomPage(ref, store, new DoorRunZoneSelectPage(this.playerRef));
     }
 

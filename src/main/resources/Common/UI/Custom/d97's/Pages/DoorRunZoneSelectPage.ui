@@ -1,86 +1,91 @@
-Group {
-  Anchor: (Left: 90, Top: 90, Width: 760, Height: 500);
+Group #DoorRunZoneRoot {
+  Anchor: (Left: 0, Top: 0, Right: 0, Bottom: 0);
+  Background: (Color: #5b5b5bff);
 
-  Group {
-    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_BackGround.png"));
-    Anchor: (Left: 0, Top: 0, Right: 0, Bottom: 0);
+  Group #DoorRunZoneMapArea {
+    Anchor: (Left: 0, Top: 48, Right: 0, Bottom: 136);
+    Background: (TexturePath: "../../Textures/custom_map.png");
+  }
+
+  Group #DoorRunZoneHeader {
+    Anchor: (Left: 0, Top: 0, Right: 0, Height: 48);
+    Background: (Color: #5b5b5bff);
 
     Label {
-      Anchor: (Left: 12, Top: 12, Right: 12, Height: 26);
+      Anchor: (Left: 16, Top: 8, Right: 16, Height: 18);
       Text: "Door Run Zone";
-      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 24);
-    }
-
-    Label {
-      Anchor: (Left: 24, Top: 46, Right: 24, Height: 64);
-      Text: "Choose the zone the door will use for the next run. This selection is temporary, is not saved, and must be selected again before every Game_Start_Door use.";
-      Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 22);
     }
 
     Label #SelectedDoorZoneLabel {
-      Anchor: (Left: 20, Top: 122, Right: 20, Height: 24);
+      Anchor: (Left: 16, Top: 24, Right: 16, Height: 18);
       Text: "Selected door zone: none";
       Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true);
     }
+  }
 
-    Button #DoorZone1Button {
-      Anchor: (Left: 60, Top: 176, Width: 180, Height: 40);
-      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
-      Label #DoorZone1Label { Text: "Zone A"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
-    }
+  Group #DoorRunZoneFooter {
+    Anchor: (Left: 0, Bottom: 0, Right: 0, Height: 136);
+    Background: (Color: #5b5b5bff);
+  }
 
-    Button #DoorZone2Button {
-      Anchor: (Left: 280, Top: 176, Width: 180, Height: 40);
-      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
-      Label #DoorZone2Label { Text: "Zone B"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
-    }
+  Button #DoorZone1Button {
+    Anchor: (Left: 84, Bottom: 356, Width: 312, Height: 140);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #DoorZone1Label { Text: "Zone A"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 22); }
+  }
 
-    Button #DoorZone3Button {
-      Anchor: (Left: 500, Top: 176, Width: 180, Height: 40);
-      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
-      Label #DoorZone3Label { Text: "Zone C"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
-    }
+  Button #DoorZone2Button {
+    Anchor: (Left: 804, Top: 178, Width: 312, Height: 140);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #DoorZone2Label { Text: "Zone B"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 22); }
+  }
 
-    Button #DoorZone4Button {
-      Anchor: (Left: 60, Top: 228, Width: 180, Height: 40);
-      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
-      Label #DoorZone4Label { Text: "Zone D"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
-    }
+  Button #DoorZone3Button {
+    Anchor: (Right: 92, Bottom: 246, Width: 312, Height: 140);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #DoorZone3Label { Text: "Zone C"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 22); }
+  }
 
-    Button #DoorZone5Button {
-      Anchor: (Left: 280, Top: 228, Width: 180, Height: 40);
-      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
-      Label #DoorZone5Label { Text: "Zone E"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
-    }
+  Button #DoorZone4Button {
+    Anchor: (Left: 8, Bottom: 42, Width: 380, Height: 84);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #DoorZone4Label { Text: "Zone D"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 20); }
+  }
 
-    Button #DoorZone6Button {
-      Anchor: (Left: 500, Top: 228, Width: 180, Height: 40);
-      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
-      Label #DoorZone6Label { Text: "Zone F"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
-    }
+  Button #DoorZone5Button {
+    Anchor: (Left: 396, Bottom: 42, Width: 380, Height: 84);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #DoorZone5Label { Text: "Zone E"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 20); }
+  }
 
-    Button #DoorZone7Button {
-      Anchor: (Left: 170, Top: 280, Width: 180, Height: 40);
-      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
-      Label #DoorZone7Label { Text: "Zone G"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
-    }
+  Button #DoorZone6Button {
+    Anchor: (Left: 784, Bottom: 42, Width: 380, Height: 84);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #DoorZone6Label { Text: "Zone F"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 20); }
+  }
 
-    Button #DoorZone8Button {
-      Anchor: (Left: 390, Top: 280, Width: 180, Height: 40);
-      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
-      Label #DoorZone8Label { Text: "Zone H"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
-    }
+  Button #DoorZone7Button {
+    Anchor: (Left: 1172, Bottom: 42, Width: 380, Height: 84);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #DoorZone7Label { Text: "Zone G"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 20); }
+  }
 
-    Button #EditZonesButton {
-      Anchor: (Left: 56, Bottom: 18, Width: 160, Height: 36);
-      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
-      Label { Text: "Edit Zones"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
-    }
+  Button #DoorZone8Button {
+    Anchor: (Left: 1560, Bottom: 42, Width: 352, Height: 84);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label #DoorZone8Label { Text: "Zone H"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 20); }
+  }
 
-    Button #CloseButton {
-      Anchor: (Right: 20, Bottom: 18, Width: 120, Height: 36);
-      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
-      Label { Text: "Close"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
-    }
+  Button #CancelButton {
+    Anchor: (Left: 16, Bottom: 4, Width: 200, Height: 28);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label { Text: "Cancel"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+  }
+
+  Button #CloseButton {
+    Anchor: (Right: 16, Bottom: 4, Width: 160, Height: 28);
+    Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
+    Label { Text: "Start"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
   }
 }

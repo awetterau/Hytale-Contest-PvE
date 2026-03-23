@@ -16,7 +16,6 @@ import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import dev.hytalemodding.state.run.DoorRunZoneSelectionManager;
 import dev.hytalemodding.state.run.SpawnPointZoneManager;
 
 import javax.annotation.Nonnull;
@@ -42,7 +41,7 @@ public class SpawnSelectPage extends CustomUIPage {
         if (isEditingLocked(store)) {
             ui.append("d97's/Pages/SpawnSelectPageLocked.ui");
             ui.set("#HubEditBlockedLabel.Text", "You can only edit spawn zones in: " + String.join(", ", SpawnPointZoneManager.getEditableWorldNames()) + ". Current world: " + store.getExternalData().getWorld().getName() + ".");
-            events.addEventBinding(CustomUIEventBindingType.Activating, "#DoorRunZoneButton", EventData.of("Action", "door_run_zone"), false);
+            ui.set("#DoorRunZoneButton.Visible", false);
             events.addEventBinding(CustomUIEventBindingType.Activating, "#CloseButton", EventData.of("Action", "close"), false);
             return;
         }
@@ -56,7 +55,6 @@ public class SpawnSelectPage extends CustomUIPage {
         events.addEventBinding(CustomUIEventBindingType.Activating, "#AddLocationButton", EventData.of("Action", "add_location"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#RemoveLocationButton", EventData.of("Action", "remove_location"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#SetSpawnPointButton", EventData.of("Action", "set_spawnpoint"), false);
-        events.addEventBinding(CustomUIEventBindingType.Activating, "#DoorRunZoneButton", EventData.of("Action", "door_run_zone"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#CloseButton", EventData.of("Action", "close"), false);
     }
 
@@ -75,11 +73,6 @@ public class SpawnSelectPage extends CustomUIPage {
             player.getPageManager().setPage(ref, store, Page.None);
             return;
         }
-        if (eventData.contains("door_run_zone")) {
-            player.getPageManager().openCustomPage(ref, store, new DoorRunZoneSelectPage(this.playerRef));
-            return;
-        }
-
         SpawnPointZoneManager.refreshForPlayer(this.playerRef);
 
         if (isEditingLocked(store)) {
@@ -180,7 +173,8 @@ public class SpawnSelectPage extends CustomUIPage {
         int zoneIndex = SpawnPointZoneManager.getActiveZoneIndex();
         int locationIndex = SpawnPointZoneManager.getActiveLocationIndex();
         ui.set("#PlacementModeLabel.Text", "Active: " + SpawnPointZoneManager.getPlacementSelectionLabel());
-        ui.set("#DoorRunZoneStatusLabel.Text", "Door zone: " + DoorRunZoneSelectionManager.getSelectedZoneLabel(this.playerRef.getUuid()));
+        ui.set("#DoorRunZoneStatusLabel.Text", "Spawn zone editor");
+        ui.set("#DoorRunZoneButton.Visible", false);
         ui.set("#ActiveLocationLabel.Text", "Selected location: " + SpawnPointZoneManager.getFormattedLocationLabel(zoneIndex, locationIndex));
         ui.set("#ActiveLocationCountLabel.Text", "Registered blocks: " + SpawnPointZoneManager.getCountForLocation(zoneIndex, locationIndex));
         ui.set("#ActiveLocationListLabel.Text", SpawnPointZoneManager.getListText(zoneIndex, locationIndex));

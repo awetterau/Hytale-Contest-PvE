@@ -30,7 +30,10 @@ import dev.hytalemodding.commands.run.GameResetCommand;
 import dev.hytalemodding.commands.run.GameStartCommand;
 import dev.hytalemodding.commands.run.SetRunSpawnCommand;
 import dev.hytalemodding.commands.run.SpawnUiCommand;
+<<<<<<< HEAD
 import dev.hytalemodding.events.ExampleEvent;
+=======
+>>>>>>> 3d7d7d5 (Optimization of execution startup and configuration)
 import dev.hytalemodding.game.DevDebugHudSystem;
 import dev.hytalemodding.loot.LifeEssenceChestBreakCleanupSystem;
 import dev.hytalemodding.loot.LifeEssenceChestOpenSystem;
@@ -62,6 +65,11 @@ import dev.hytalemodding.state.run.GameSessionManager;
 import dev.hytalemodding.state.run.RescueObjectiveManager;
 import dev.hytalemodding.state.run.RescueObjectiveSystem;
 import dev.hytalemodding.state.run.RunDeathHandler;
+<<<<<<< HEAD
+=======
+import dev.hytalemodding.state.run.RunStartCameraSystem;
+import dev.hytalemodding.state.run.RunStartMovementLockSystem;
+>>>>>>> 3d7d7d5 (Optimization of execution startup and configuration)
 import dev.hytalemodding.state.run.SpawnPointDetectionSystem;
 import dev.hytalemodding.state.run.SpawnPointPlacementHandler;
 
@@ -107,7 +115,11 @@ public class ExamplePlugin extends JavaPlugin {
                 BasePlotUseInteraction.class,
                 BasePlotUseInteraction.CODEC
         );
+<<<<<<< HEAD
         this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, ExampleEvent::onPlayerReady);
+=======
+        this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, GameSessionManager.get()::onPlayerReady);
+>>>>>>> 3d7d7d5 (Optimization of execution startup and configuration)
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, GameDoorInteractionHandler::onPlayerInteract);
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, BasePlotInteractionHandler::onPlayerInteract);
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, RescueObjectiveManager.get()::onPlayerInteract);
@@ -142,6 +154,11 @@ public class ExamplePlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new LifeEssenceChestBreakCleanupSystem(processedLifeEssenceContainers));
         this.getEntityStoreRegistry().registerSystem(new GameRunDirectorSystem());
         this.getEntityStoreRegistry().registerSystem(new RescueObjectiveSystem());
+<<<<<<< HEAD
+=======
+        this.getEntityStoreRegistry().registerSystem(new RunStartCameraSystem());
+        this.getEntityStoreRegistry().registerSystem(new RunStartMovementLockSystem());
+>>>>>>> 3d7d7d5 (Optimization of execution startup and configuration)
         this.getEntityStoreRegistry().registerSystem(new RunDeathHandler());
         this.getEntityStoreRegistry().registerSystem(new BaseHousingSystem());
         this.getEntityStoreRegistry().registerSystem(new DevDebugHudSystem());
@@ -171,4 +188,8 @@ public class ExamplePlugin extends JavaPlugin {
             this.mapReplacementPacketController = null;
         }
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 3d7d7d5 (Optimization of execution startup and configuration)

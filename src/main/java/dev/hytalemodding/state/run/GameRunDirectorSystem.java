@@ -29,6 +29,11 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
             hideAllTimerHuds();
             return;
         }
+        if (snapshot.phase() != GameSessionManager.RunPhase.EXPLORATION
+                && snapshot.phase() != GameSessionManager.RunPhase.CRIMSON_ACTIVE) {
+            hideAllTimerHuds();
+            return;
+        }
 
         World world = store.getExternalData().getWorld();
         UUID worldId = world.getWorldConfig().getUuid();

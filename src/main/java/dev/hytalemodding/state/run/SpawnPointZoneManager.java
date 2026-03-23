@@ -148,6 +148,38 @@ public final class SpawnPointZoneManager {
         return Math.max(1, locationCountByZone.getOrDefault(clampZoneIndex(zoneIndex), SpawnPointZoneConfigManager.DEFAULT_LOCATION_COUNT));
     }
 
+    public static boolean hasRegisteredSpawnInZone(int zoneIndex) {
+        var zones = zonesByActiveWorld;
+        if (zones == null) {
+            return false;
+        }
+
+        LinkedHashMap<Integer, ArrayList<SpawnPointZoneConfigManager.SpawnPointEntry>> locationMap = zones.get(clampZoneIndex(zoneIndex));
+        if (locationMap == null) {
+            return false;
+        }
+
+        int locationCount = getLocationCount(zoneIndex);
+        for (int locationIndex = 0; locationIndex < locationCount; locationIndex++) {
+            ArrayList<SpawnPointZoneConfigManager.SpawnPointEntry> entries = locationMap.get(locationIndex);
+            if (entries != null && !entries.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Nullable
+    public static Integer getFirstZoneWithRegisteredSpawns() {
+        int safeZoneCount = getZoneCount();
+        for (int zoneIndex = 0; zoneIndex < safeZoneCount; zoneIndex++) {
+            if (hasRegisteredSpawnInZone(zoneIndex)) {
+                return zoneIndex;
+            }
+        }
+        return null;
+    }
+
     @Nonnull
     public static String getActiveZoneLabel() {
         return formatZone(getActiveZoneIndex());
@@ -342,7 +374,7 @@ public final class SpawnPointZoneManager {
                 ? new Vector3f(0.0f, 0.0f, 0.0f)
                 : new Vector3f(referenceTransform.getRotation());
         Transform transform = new Transform(
-                new Vector3d(entry.position().x + 0.5d, entry.position().y, entry.position().z + 0.5d),
+                new Vector3d(entry.position().x + 0.5d, entry.position().y + 1.0d, entry.position().z + 0.5d),
                 rotation
         );
         return new SpawnSelectionResult(transform, locationIndex, new Vector3i(entry.position().x, entry.position().y, entry.position().z));

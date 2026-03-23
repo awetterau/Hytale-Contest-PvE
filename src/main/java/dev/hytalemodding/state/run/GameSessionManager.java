@@ -5,6 +5,7 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.vector.Transform;
 import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
+import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -23,8 +24,10 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -227,18 +230,12 @@ public final class GameSessionManager {
 
         return transferFuture
                 .thenApply(runWorld -> {
+                    RunStartMovementLockManager.get().lockPlayerForIntro(starter);
                     synchronized (this) {
                         if (this.activeSession == session) {
-                            session.phase = RunPhase.EXPLORATION;
-                            session.startedAtEpochMillis = System.currentTimeMillis();
-                            session.runEndsAtEpochMillis = session.startedAtEpochMillis + RUN_DURATION_MS;
-                            session.crimsonStartAtEpochMillis = session.startedAtEpochMillis + DEFAULT_CRIMSON_DELAY_MS;
                             session.runWorldUuid = runWorld.getWorldConfig().getUuid();
+                            session.phase = RunPhase.WAITING_FOR_PLAYERS_READY;
                         }
-                    }
-                    GameSessionManager.ActiveSessionSnapshot snapshot = this.getActiveSession();
-                    if (snapshot != null) {
-                        RescueObjectiveManager.get().spawnRescueOnRunStart(runWorld, snapshot);
                     }
                     return new StartSessionResult(
                             session.templateWorldName,
@@ -356,10 +353,57 @@ public final class GameSessionManager {
     }
 
     public synchronized long getRemainingMillis() {
-        if (this.activeSession == null || this.activeSession.phase == RunPhase.IDLE) {
+        if (this.activeSession == null
+                || (this.activeSession.phase != RunPhase.EXPLORATION && this.activeSession.phase != RunPhase.CRIMSON_ACTIVE)) {
             return 0L;
         }
         return Math.max(0L, this.activeSession.runEndsAtEpochMillis - System.currentTimeMillis());
+    }
+
+    public void onPlayerReady(@Nonnull PlayerReadyEvent event) {
+        UUID playerId = event.getPlayer().getUuid();
+        World runWorld;
+        ActiveSessionSnapshot snapshot;
+
+        synchronized (this) {
+            if (this.activeSession == null || this.activeSession.phase != RunPhase.WAITING_FOR_PLAYERS_READY) {
+                return;
+            }
+            ActiveSession session = this.activeSession;
+            if (!session.expectedPlayerIds.contains(playerId)) {
+                return;
+            }
+
+            PlayerRef playerRef = Universe.get().getPlayer(playerId);
+            if (playerRef == null || playerRef.getWorldUuid() == null || session.runWorldUuid == null) {
+                return;
+            }
+            if (!session.runWorldUuid.equals(playerRef.getWorldUuid())) {
+                return;
+            }
+
+            session.readyPlayerIds.add(playerId);
+            if (!session.readyPlayerIds.containsAll(session.expectedPlayerIds)) {
+                return;
+            }
+
+            session.phase = RunPhase.EXPLORATION;
+            session.startedAtEpochMillis = System.currentTimeMillis();
+            session.runEndsAtEpochMillis = session.startedAtEpochMillis + RUN_DURATION_MS;
+            session.crimsonStartAtEpochMillis = session.startedAtEpochMillis + DEFAULT_CRIMSON_DELAY_MS;
+
+            runWorld = Universe.get().getWorld(session.runWorldUuid);
+            if (runWorld == null) {
+                return;
+            }
+            snapshot = session.snapshot();
+        }
+
+        RescueObjectiveManager.get().spawnRescueOnRunStart(runWorld, snapshot);
+        PlayerRef readyPlayer = Universe.get().getPlayer(playerId);
+        if (readyPlayer != null) {
+            RunStartCameraManager.get().playSpawnIntro(readyPlayer);
+        }
     }
 
     public synchronized boolean isRunWorld(@Nonnull UUID worldUuid) {
@@ -600,6 +644,7 @@ public final class GameSessionManager {
     public enum RunPhase {
         IDLE,
         PREPARING,
+        WAITING_FOR_PLAYERS_READY,
         EXPLORATION,
         CRIMSON_ACTIVE,
         ENDING
@@ -623,6 +668,10 @@ public final class GameSessionManager {
         @Nullable
         private UUID runWorldUuid;
         @Nonnull
+        private final Set<UUID> expectedPlayerIds = new LinkedHashSet<>();
+        @Nonnull
+        private final Set<UUID> readyPlayerIds = new LinkedHashSet<>();
+        @Nonnull
         private RunPhase phase = RunPhase.IDLE;
         private long startedAtEpochMillis;
         private long runEndsAtEpochMillis;
@@ -644,6 +693,7 @@ public final class GameSessionManager {
             this.crimsonProfiles = copyProfiles(crimsonProfiles);
             this.runSpawnTransform = runSpawnTransform;
             this.returnSpawnTransform = returnSpawnTransform;
+            this.expectedPlayerIds.add(starterPlayerId);
         }
 
         @Nonnull

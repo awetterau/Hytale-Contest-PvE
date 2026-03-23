@@ -1,22 +1,28 @@
 package dev.hytalemodding.state.run;
 
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.vector.Transform;
 import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.protocol.InteractionType;
 import com.hypixel.hytale.protocol.MouseButtonState;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerMouseButtonEvent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.state.transition.GameFlowConfigManager;
 import dev.hytalemodding.state.transition.SpawnPointZoneConfigManager;
 import dev.hytalemodding.state.transition.RunHubTransferService;
+import dev.hytalemodding.ui.dev.DoorRunZoneSelectPage;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -75,7 +81,7 @@ public final class GameDoorInteractionHandler {
 
         GameSessionManager.ActiveSessionSnapshot session = GameSessionManager.get().getActiveSession();
         if (session == null) {
-            tryStartFromDoor(playerRef, playerWorld);
+            openDoorZoneSelection(playerRef);
             return true;
         }
 
@@ -85,6 +91,36 @@ public final class GameDoorInteractionHandler {
         }
         playerRef.sendMessage(Message.raw("[DoorDebug] Active run exists but you are not in run world."));
         return false;
+    }
+
+    public static void openDoorZoneSelection(@Nonnull PlayerRef playerRef) {
+        SpawnPointZoneManager.refreshForPlayer(playerRef);
+        DoorRunZoneSelectionManager.ensureSelectedZoneOrDefault(playerRef.getUuid());
+        Ref<EntityStore> ref = playerRef.getReference();
+        if (ref == null || !ref.isValid()) {
+            return;
+        }
+        Store<EntityStore> store = ref.getStore();
+        if (store == null) {
+            return;
+        }
+        Player player = store.getComponent(ref, Player.getComponentType());
+        if (player == null) {
+            return;
+        }
+        player.getPageManager().openCustomPage(ref, store, new DoorRunZoneSelectPage(playerRef));
+    }
+
+    public static void tryStartFromDoorSelection(@Nonnull PlayerRef playerRef) {
+        UUID playerWorldUuid = playerRef.getWorldUuid();
+        if (playerWorldUuid == null) {
+            return;
+        }
+        World templateWorld = Universe.get().getWorld(playerWorldUuid);
+        if (templateWorld == null) {
+            return;
+        }
+        tryStartFromDoor(playerRef, templateWorld);
     }
 
     private static void tryStartFromDoor(@Nonnull PlayerRef playerRef, @Nonnull World templateWorld) {
@@ -111,9 +147,10 @@ public final class GameDoorInteractionHandler {
             return;
         }
 
-        Integer selectedZone = DoorRunZoneSelectionManager.getSelectedZone(playerRef.getUuid());
+        SpawnPointZoneManager.refreshForPlayer(playerRef);
+        Integer selectedZone = DoorRunZoneSelectionManager.ensureSelectedZoneOrDefault(playerRef.getUuid());
         if (selectedZone == null) {
-            playerRef.sendMessage(Message.raw("Select a door zone in /spawnui before using Game_Start_Door."));
+            playerRef.sendMessage(Message.raw("No spawn zones with registered SpawnPoint_Block entries are available."));
             System.out.println("[GameDoorDebug] start rejected: missing selected door zone");
             return;
         }
@@ -126,20 +163,23 @@ public final class GameDoorInteractionHandler {
             return;
         }
 
-        DoorRunZoneSelectionManager.consumeSelectedZone(playerRef.getUuid());
         Transform baseSpawn = config.getBaseSpawn();
+        List<UUID> lockedPlayerIds = collectRunStartPlayerIds(playerRef);
+        RunStartMovementLockManager.get().unlockPlayers(lockedPlayerIds);
+        RunStartMovementLockManager.get().lockPlayerForIntro(playerRef);
         System.out.println("[GameDoorDebug] start requested by=" + playerRef.getUuid() + " template=" + runTemplateWorld.getName() + " zone=" + selectedZone);
 
         GameSessionManager.get().startSession(playerRef, runTemplateWorld, spawnSelection.transform(), baseSpawn).whenComplete((result, throwable) -> {
             if (throwable != null) {
                 String reason = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
                 SpawnPointZoneManager.releaseReservedSpawn(playerRef.getUuid());
+                RunStartMovementLockManager.get().unlockPlayers(lockedPlayerIds);
                 playerRef.sendMessage(Message.raw("Failed to start run: " + reason));
                 System.out.println("[GameDoorDebug] start failed: " + reason);
                 return;
             }
-            System.out.println("[GameDoorDebug] start success runWorld=" + result.runWorldName() + " location=" + SpawnPointZoneManager.getFormattedLocationLabel(selectedZone.intValue(), spawnSelection.locationIndex()));
-            playerRef.sendMessage(Message.raw("Run started from " + SpawnPointZoneManager.getFormattedLocationLabel(selectedZone.intValue(), spawnSelection.locationIndex()) + ". Reach the door to extract."));
+            System.out.println("[GameDoorDebug] start prepared runWorld=" + result.runWorldName() + " location=" + SpawnPointZoneManager.getFormattedLocationLabel(selectedZone.intValue(), spawnSelection.locationIndex()));
+            playerRef.sendMessage(Message.raw("Loading run from " + SpawnPointZoneManager.getFormattedLocationLabel(selectedZone.intValue(), spawnSelection.locationIndex()) + ". The timer will start when gameplay is ready."));
         });
     }
 
@@ -204,5 +244,10 @@ public final class GameDoorInteractionHandler {
         long now = System.currentTimeMillis();
         Long last = LAST_USE_BY_PLAYER.put(playerId, now);
         return last != null && now - last < USE_COOLDOWN_MS;
+    }
+
+    @Nonnull
+    private static List<UUID> collectRunStartPlayerIds(@Nonnull PlayerRef playerRef) {
+        return List.of(playerRef.getUuid());
     }
 }

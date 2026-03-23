@@ -51,15 +51,11 @@ public class GameResetCommand extends AbstractPlayerCommand {
 
             context.sendMessage(
                     Message.raw(
-                            "Run reset complete. Active world: '"
+                            "Run reset complete. Active world prepared: '"
                                     + result.runWorldName()
-                                    + "'. Crimson timer target: "
-                                    + result.crimsonStartAtEpochMillis()
+                                    + "'. Waiting for client gameplay ready before the timer starts."
                     )
             );
         });
     }
 }
-
-
-
