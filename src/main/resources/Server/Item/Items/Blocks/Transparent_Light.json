@@ -1,0 +1,30 @@
+{
+  "BlockType": {
+    "Material": "Empty",
+    "DrawType": "Empty",
+    "Opacity": "Transparent",
+
+    "Light": {
+      "Color": "#888"
+    },
+    "Support": {
+      "Down": [
+        {
+          "Support": "Ignored"
+        }
+      ]
+    },
+
+    "Gathering": {
+      "Soft": {
+        "ItemId": "Furniture_Crude_Torch"
+      }
+    }
+  },
+
+  "PlayerAnimationsId": "Block",
+  "Icon": "Icons/ItemsGenerated/Furniture_Crude_Torch.png",
+  "Categories": [
+    "Furniture.Lighting"
+  ]
+}

@@ -20,13 +20,13 @@
     "UIComponentList": {},
     "Transform": {
       "Position": {
-        "X": 54.9946403503418,
-        "Y": 207.0,
-        "Z": 13.892847061157227
+        "X": -21.695451736450195,
+        "Y": 244.73904418945312,
+        "Z": 446.32330322265625
       },
       "Rotation": {
         "Pitch": 0.0,
-        "Yaw": -1.353447437286377,
+        "Yaw": 0.14383172988891602,
         "Roll": 0.0
       }
     },
@@ -35,9 +35,9 @@
     },
     "Velocity": {
       "Velocity": {
-        "X": 0.0,
-        "Y": 0.0,
-        "Z": 0.0
+        "X": 2.670187506160687,
+        "Y": 7.66157562037697,
+        "Z": 15.718658281203586
       }
     },
     "Player": {
@@ -55,6 +55,20 @@
             "0": {
               "Id": "Weapon_Arrow_Crude",
               "Quantity": 94,
+              "Durability": 0.0,
+              "MaxDurability": 0.0,
+              "OverrideDroppedItemAnimation": false
+            },
+            "33": {
+              "Id": "CDHL_Hidden_Light",
+              "Quantity": 1,
+              "Durability": 0.0,
+              "MaxDurability": 0.0,
+              "OverrideDroppedItemAnimation": false
+            },
+            "2": {
+              "Id": "EditorTool_Selection",
+              "Quantity": 1,
               "Durability": 0.0,
               "MaxDurability": 0.0,
               "OverrideDroppedItemAnimation": false
@@ -87,7 +101,7 @@
               "MaxDurability": 80.0,
               "OverrideDroppedItemAnimation": false
             },
-            "21": {
+            "3": {
               "Id": "Game_Start_Door",
               "Quantity": 95,
               "Durability": 0.0,
@@ -120,8 +134,8 @@
           "Capacity": 9,
           "Items": {
             "0": {
-              "Id": "Game_Start_Door",
-              "Quantity": 97,
+              "Id": "EditorTool_Paste",
+              "Quantity": 1,
               "Durability": 0.0,
               "MaxDurability": 0.0,
               "OverrideDroppedItemAnimation": false
@@ -134,7 +148,7 @@
               "OverrideDroppedItemAnimation": false
             },
             "6": {
-              "Id": "Soil_Dirt",
+              "Id": "Furniture_Crude_Torch",
               "Quantity": 1,
               "Durability": 0.0,
               "MaxDurability": 0.0,
@@ -155,15 +169,22 @@
               "OverrideDroppedItemAnimation": false
             },
             "1": {
-              "Id": "Weapon_Axe_Copper",
+              "Id": "Rock_Stone_Brick_Beam",
               "Quantity": 1,
-              "Durability": 35.11999999999978,
-              "MaxDurability": 90.0,
+              "Durability": 0.0,
+              "MaxDurability": 0.0,
               "OverrideDroppedItemAnimation": false
             },
             "3": {
               "Id": "Ingredient_Life_Essence",
               "Quantity": 15,
+              "Durability": 0.0,
+              "MaxDurability": 0.0,
+              "OverrideDroppedItemAnimation": false
+            },
+            "7": {
+              "Id": "Transparent_Light",
+              "Quantity": 100,
               "Durability": 0.0,
               "MaxDurability": 0.0,
               "OverrideDroppedItemAnimation": false
@@ -185,7 +206,7 @@
         "Backpack": {
           "Id": "Empty"
         },
-        "ActiveHotbarSlot": 7,
+        "ActiveHotbarSlot": 1,
         "Tool": {
           "Id": "Simple",
           "Capacity": 23,
@@ -240,7 +261,7 @@
       },
       "PlayerData": {
         "BlockIdVersion": 11,
-        "World": "hub",
+        "World": "game",
         "KnownRecipes": [],
         "PerWorldData": {
           "run-session-default-1772766604673": {
@@ -419,6 +440,22 @@
             "DeathPositions": [],
             "UserMarkers": []
           },
+          "run-session-default-1772764450334": {
+            "LastPosition": {
+              "X": 61.287208557128906,
+              "Y": 80.0,
+              "Z": 0.9844091534614563,
+              "Pitch": -0.2312999963760376,
+              "Yaw": -1.8377758264541626,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
           "run-session-game-1773102314831": {
             "LastPosition": {
               "X": -2.0896248817443848,
@@ -446,22 +483,6 @@
                 "Day": 29
               }
             ],
-            "UserMarkers": []
-          },
-          "run-session-default-1772764450334": {
-            "LastPosition": {
-              "X": 61.287208557128906,
-              "Y": 80.0,
-              "Z": 0.9844091534614563,
-              "Pitch": -0.2312999963760376,
-              "Yaw": -1.8377758264541626,
-              "Roll": 0.0
-            },
-            "LastMovementStates": {
-              "Flying": false
-            },
-            "FirstSpawn": false,
-            "DeathPositions": [],
             "UserMarkers": []
           },
           "run-session-game-1774319169792": {
@@ -1410,6 +1431,22 @@
             "DeathPositions": [],
             "UserMarkers": []
           },
+          "run-session-game-1774371561299": {
+            "LastPosition": {
+              "X": -91.30252075195312,
+              "Y": 237.0,
+              "Z": 553.0335693359375,
+              "Pitch": -0.09225039184093475,
+              "Yaw": -2.9164998531341553,
+              "Roll": 0.0
+            },
+            "LastMovementStates": {
+              "Flying": false
+            },
+            "FirstSpawn": false,
+            "DeathPositions": [],
+            "UserMarkers": []
+          },
           "run-session-game-1772943297472": {
             "LastPosition": {
               "X": -2.8920743465423584,
@@ -1468,11 +1505,11 @@
           },
           "hub": {
             "LastPosition": {
-              "X": 54.9946403503418,
-              "Y": 207.0,
-              "Z": 13.892847061157227,
-              "Pitch": -0.4162482023239136,
-              "Yaw": -1.3561474084854126,
+              "X": 547.396240234375,
+              "Y": 178.0,
+              "Z": 94.3250961303711,
+              "Pitch": -0.23669740557670593,
+              "Yaw": -1.27715003490448,
               "Roll": 0.0
             },
             "LastMovementStates": {
@@ -1610,8 +1647,22 @@
             "Capacity": 9,
             "Items": {
               "0": {
-                "Id": "Game_Start_Door",
-                "Quantity": 99,
+                "Id": "EditorTool_Paste",
+                "Quantity": 1,
+                "Durability": 0.0,
+                "MaxDurability": 0.0,
+                "OverrideDroppedItemAnimation": false
+              },
+              "1": {
+                "Id": "Rock_Stone_Brick_Beam",
+                "Quantity": 1,
+                "Durability": 0.0,
+                "MaxDurability": 0.0,
+                "OverrideDroppedItemAnimation": false
+              },
+              "3": {
+                "Id": "Ingredient_Life_Essence",
+                "Quantity": 15,
                 "Durability": 0.0,
                 "MaxDurability": 0.0,
                 "OverrideDroppedItemAnimation": false
@@ -1623,8 +1674,15 @@
                 "MaxDurability": 0.0,
                 "OverrideDroppedItemAnimation": false
               },
+              "7": {
+                "Id": "Transparent_Light",
+                "Quantity": 100,
+                "Durability": 0.0,
+                "MaxDurability": 0.0,
+                "OverrideDroppedItemAnimation": false
+              },
               "6": {
-                "Id": "Cloth_Block_Wool_Gray",
+                "Id": "Furniture_Crude_Torch",
                 "Quantity": 1,
                 "Durability": 0.0,
                 "MaxDurability": 0.0,
@@ -1637,30 +1695,16 @@
                 "MaxDurability": 0.0,
                 "OverrideDroppedItemAnimation": false
               },
-              "8": {
-                "Id": "Weapon_Gun",
-                "Quantity": 1,
-                "Durability": 0.0,
-                "MaxDurability": 0.0,
-                "OverrideDroppedItemAnimation": false
-              },
-              "1": {
-                "Id": "Weapon_Axe_Copper",
-                "Quantity": 1,
-                "Durability": 35.11999999999978,
-                "MaxDurability": 90.0,
-                "OverrideDroppedItemAnimation": false
-              },
-              "3": {
-                "Id": "Ingredient_Life_Essence",
-                "Quantity": 15,
-                "Durability": 0.0,
-                "MaxDurability": 0.0,
-                "OverrideDroppedItemAnimation": false
-              },
               "5": {
                 "Id": "Furniture_Crude_Sign",
                 "Quantity": 100,
+                "Durability": 0.0,
+                "MaxDurability": 0.0,
+                "OverrideDroppedItemAnimation": false
+              },
+              "8": {
+                "Id": "Weapon_Gun",
+                "Quantity": 1,
                 "Durability": 0.0,
                 "MaxDurability": 0.0,
                 "OverrideDroppedItemAnimation": false
@@ -1679,8 +1723,9 @@
         ],
         "CurrentHotbar": 0
       },
-      "GameMode": "Adventure"
+      "GameMode": "Creative"
     },
+    "Invulnerable": {},
     "HitboxCollision": {
       "HitboxCollisionConfigIndex": 1
     },
@@ -1743,7 +1788,7 @@
         },
         "StaminaRegenDelay": {
           "Id": "StaminaRegenDelay",
-          "Value": 0.0
+          "Value": -0.44999995827674866
         },
         "MagicCharges": {
           "Id": "MagicCharges",
@@ -1753,8 +1798,8 @@
     },
     "HeadRotation": {
       "Rotation": {
-        "Pitch": -0.4162482023239136,
-        "Yaw": -1.3561474084854126,
+        "Pitch": 0.17190316319465637,
+        "Yaw": 0.14383164048194885,
         "Roll": 0.0
       }
     }
