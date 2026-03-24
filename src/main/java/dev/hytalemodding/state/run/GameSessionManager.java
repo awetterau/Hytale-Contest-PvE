@@ -2,7 +2,9 @@ package dev.hytalemodding.state.run;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.math.vector.Transform;
+import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
@@ -11,10 +13,14 @@ import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.WorldConfig;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import dev.hytalemodding.redwave.RedCoreRegistry;
 import dev.hytalemodding.redwave.RedWaveConfig;
-import dev.hytalemodding.redwave.RedWaveManager;
 import dev.hytalemodding.redwave.RedCoreProfileRegistry;
+import dev.hytalemodding.redwave.RedWaveManager;
+import dev.hytalemodding.rooter.RooterManManager;
 import dev.hytalemodding.state.transition.CrimsonCoreConfigManager;
+import dev.hytalemodding.state.transition.PlayerSpawnSafety;
+import dev.hytalemodding.state.transition.SpawnPointZoneConfigManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -23,7 +29,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -32,12 +40,13 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ThreadLocalRandom;
 
 public final class GameSessionManager {
     private static final String RUN_WORLD_PREFIX = "run-session-";
     private static final long RUN_DURATION_MS = 5L * 60L * 1000L;
-    private static final long DEFAULT_CRIMSON_DELAY_MS = 15_000L;
     private static final float DEFAULT_CRIMSON_SPREAD_SECONDS = RUN_DURATION_MS / 1000.0f;
+    private static final int MAX_RUN_CRIMSON_RADIUS_BLOCKS = 24;
     private static final long PLAYER_TRANSFER_TIMEOUT_SECONDS = 15L;
     private static final long WORLD_COPY_TIMEOUT_SECONDS = 90L;
     private static final long WORLD_LOAD_TIMEOUT_SECONDS = 30L;
@@ -68,10 +77,8 @@ public final class GameSessionManager {
                 continue;
             }
             try {
-                System.out.println("[GameDoorDebug] startup cleanup removing loaded orphan world: " + worldName);
                 universe.removeWorld(worldName);
-            } catch (Exception e) {
-                System.out.println("[GameDoorDebug] startup cleanup failed removing loaded world " + worldName + ": " + e);
+            } catch (Exception ignored) {
             }
         }
 
@@ -84,14 +91,11 @@ public final class GameSessionManager {
                     .filter(path -> isRunSessionWorldName(path.getFileName().toString()))
                     .forEach(path -> {
                         try {
-                            System.out.println("[GameDoorDebug] startup cleanup deleting orphan world directory: " + path);
                             deleteDirectoryIfPresent(path);
-                        } catch (Exception e) {
-                            System.out.println("[GameDoorDebug] startup cleanup failed deleting directory " + path + ": " + e);
+                        } catch (Exception ignored) {
                         }
                     });
-        } catch (IOException e) {
-            System.out.println("[GameDoorDebug] startup cleanup failed listing world directories: " + e.getMessage());
+        } catch (IOException ignored) {
         }
     }
 
@@ -119,14 +123,9 @@ public final class GameSessionManager {
             @Nullable Transform runSpawnTransform,
             @Nullable Transform returnSpawnTransform
     ) {
-        System.out.println("[GameDoorDebug] startSession enter: player=" + starter.getUuid()
-                + " template=" + templateWorld.getName()
-                + " thread=" + Thread.currentThread().getName());
-
         final ActiveSession session;
         synchronized (this) {
             if (this.activeSession != null && this.activeSession.phase != RunPhase.IDLE) {
-                System.out.println("[GameDoorDebug] startSession rejected: active session phase=" + this.activeSession.phase);
                 return CompletableFuture.failedFuture(new IllegalStateException("A run is already active."));
             }
 
@@ -135,9 +134,10 @@ public final class GameSessionManager {
             Path runWorldPath = Universe.get().getPath().resolve("worlds").resolve(runWorldName);
 
             UUID templateWorldId = templateWorld.getWorldConfig().getUuid();
+            CrimsonCoreConfigManager.CrimsonCoreConfigState configuredState = CrimsonCoreConfigManager.get().getState(templateWorld.getName());
             List<RedCoreProfileRegistry.RedCoreProfile> configuredProfiles = RedCoreProfileRegistry.snapshot(templateWorldId);
             if (configuredProfiles.isEmpty()) {
-                configuredProfiles = CrimsonCoreConfigManager.get().getProfiles(templateWorld.getName());
+                configuredProfiles = configuredState.profiles();
                 if (!configuredProfiles.isEmpty()) {
                     RedCoreProfileRegistry.setProfiles(templateWorldId, configuredProfiles);
                 }
@@ -148,25 +148,24 @@ public final class GameSessionManager {
                 if (corePos == null) {
                     continue;
                 }
-                int effectiveRadius = normalizeRadius(profile.radiusBlocks());
+                int effectiveRadius = normalizeRunRadius(profile.radiusBlocks());
                 float effectiveStartSeconds = normalizeStartSeconds(profile.startSeconds());
                 validProfiles.add(new RedCoreProfileRegistry.RedCoreProfile(new Vector3i(corePos), effectiveRadius, effectiveStartSeconds));
             }
-            System.out.println("[GameDoorDebug] crimson profile check: templateWorldId=" + templateWorldId
-                    + " configured=" + configuredProfiles.size()
-                    + " valid=" + validProfiles.size());
             if (validProfiles.isEmpty()) {
                 return CompletableFuture.failedFuture(
                         new IllegalStateException("Configure crimson cores/radius/time in template world using /redui before /gamestart.")
                 );
             }
 
+            List<RedCoreProfileRegistry.RedCoreProfile> selectedProfiles = selectRunProfiles(validProfiles, configuredState.chooseCount());
+
             this.activeSession = new ActiveSession(
                     templateWorldName,
                     runWorldName,
                     runWorldPath,
                     starter.getUuid(),
-                    validProfiles,
+                    selectedProfiles,
                     copyTransformOrNull(runSpawnTransform),
                     copyTransformOrNull(returnSpawnTransform)
             );
@@ -176,36 +175,17 @@ public final class GameSessionManager {
 
         Universe universe = Universe.get();
         Path templatePath = universe.getPath().resolve("worlds").resolve(session.templateWorldName);
-        long startMs = System.currentTimeMillis();
-        System.out.println("[GameDoorDebug] session preparing: template=" + session.templateWorldName
-                + " runWorld=" + session.runWorldName
-                + " templatePath=" + templatePath
-                + " runPath=" + session.runWorldPath);
 
-        CompletableFuture<Void> copyFuture = CompletableFuture.runAsync(() -> {
-                    long copyStart = System.currentTimeMillis();
-                    System.out.println("[GameDoorDebug] copy start: " + templatePath + " -> " + session.runWorldPath);
-                    copyDirectory(templatePath, session.runWorldPath);
-                    long copyMs = System.currentTimeMillis() - copyStart;
-                    System.out.println("[GameDoorDebug] copy success in " + copyMs + "ms");
-                })
+        CompletableFuture<Void> copyFuture = CompletableFuture.runAsync(() -> copyDirectory(templatePath, session.runWorldPath))
                 .orTimeout(WORLD_COPY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
-        CompletableFuture<World> loadFuture = copyFuture.thenCompose(ignored -> {
-                    long loadStart = System.currentTimeMillis();
-                    System.out.println("[GameDoorDebug] world load start: runWorld=" + session.runWorldName);
-                    return loadAndInstantiateRunWorld(universe, session).whenComplete((world, err) -> {
-                        long loadMs = System.currentTimeMillis() - loadStart;
-                        if (err != null) {
-                            System.out.println("[GameDoorDebug] world load failed after " + loadMs + "ms: " + err);
-                            return;
-                        }
-                        System.out.println("[GameDoorDebug] world load success in " + loadMs + "ms: runWorld=" + world.getName());
-                    });
-                })
+        CompletableFuture<World> loadFuture = copyFuture.thenCompose(ignored -> loadAndInstantiateRunWorld(universe, session))
                 .orTimeout(WORLD_LOAD_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
         CompletableFuture<World> transferFuture = loadFuture.thenCompose(runWorld -> {
+            return CompletableFuture.runAsync(() -> scrubRunWorldMarkersAndUnusedCores(runWorld, session), runWorld)
+                    .thenApply(ignored -> runWorld);
+        }).thenCompose(runWorld -> {
             UUID playerWorldUuid = starter.getWorldUuid();
             World playerWorld = playerWorldUuid == null ? null : universe.getWorld(playerWorldUuid);
             if (playerWorld == null) {
@@ -213,18 +193,7 @@ public final class GameSessionManager {
                         new IllegalStateException("Starter player is not currently in a loaded world.")
                 );
             }
-            long transferStart = System.currentTimeMillis();
-            System.out.println("[GameDoorDebug] transfer start: player=" + starter.getUuid()
-                    + " from=" + playerWorld.getName() + " to=" + runWorld.getName());
             return movePlayerToWorld(starter, playerWorld, runWorld, session.runSpawnTransform)
-                    .whenComplete((ignored, err) -> {
-                        long transferMs = System.currentTimeMillis() - transferStart;
-                        if (err != null) {
-                            System.out.println("[GameDoorDebug] transfer failed after " + transferMs + "ms: " + err);
-                            return;
-                        }
-                        System.out.println("[GameDoorDebug] transfer success in " + transferMs + "ms");
-                    })
                     .thenApply(x -> runWorld);
         });
 
@@ -244,14 +213,6 @@ public final class GameSessionManager {
                             session.crimsonStartAtEpochMillis,
                             session.runEndsAtEpochMillis
                     );
-                })
-                .whenComplete((result, err) -> {
-                    long totalMs = System.currentTimeMillis() - startMs;
-                    if (err != null) {
-                        System.out.println("[GameDoorDebug] session start failed after " + totalMs + "ms: " + err);
-                        return;
-                    }
-                    System.out.println("[GameDoorDebug] session start success in " + totalMs + "ms: runWorld=" + result.runWorldName());
                 })
                 .exceptionallyCompose(throwable -> cleanupFailedStart(session, throwable));
     }
@@ -309,26 +270,32 @@ public final class GameSessionManager {
             transferFuture = CompletableFuture.completedFuture(null);
         }
 
-        return transferFuture
-                .thenRun(() -> {
+        return transferFuture.handle((ignored, throwable) -> {
+            synchronized (this) {
+                if (this.activeSession == session) {
+                    this.activeSession = null;
+                }
+            }
+
+            cleanupRunRuntime(session.runWorldUuid);
+
+            if (throwable != null) {
+                String error = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
+                return new EndSessionResult(false, session.runWorldName, session.templateWorldName, error);
+            }
+
+            CompletableFuture.runAsync(() -> {
+                try {
                     if (universe.getWorld(session.runWorldName) != null) {
                         universe.removeWorld(session.runWorldName);
                     }
                     deleteDirectoryIfPresent(session.runWorldPath);
-                })
-                .handle((ignored, throwable) -> {
-                    synchronized (this) {
-                        if (this.activeSession == session) {
-                            this.activeSession = null;
-                        }
-                    }
+                } catch (Exception cleanupIgnored) {
+                }
+            });
 
-                    if (throwable != null) {
-                        String error = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
-                        return new EndSessionResult(false, session.runWorldName, session.templateWorldName, error);
-                    }
-                    return new EndSessionResult(true, session.runWorldName, session.templateWorldName, "Run ended and cleaned up.");
-                });
+            return new EndSessionResult(true, session.runWorldName, session.templateWorldName, "Run ended.");
+        });
     }
 
     @Nonnull
@@ -390,7 +357,7 @@ public final class GameSessionManager {
             session.phase = RunPhase.EXPLORATION;
             session.startedAtEpochMillis = System.currentTimeMillis();
             session.runEndsAtEpochMillis = session.startedAtEpochMillis + RUN_DURATION_MS;
-            session.crimsonStartAtEpochMillis = session.startedAtEpochMillis + DEFAULT_CRIMSON_DELAY_MS;
+            session.crimsonStartAtEpochMillis = session.startedAtEpochMillis + computeCrimsonDelayMillis(session.crimsonProfiles);
 
             runWorld = Universe.get().getWorld(session.runWorldUuid);
             if (runWorld == null) {
@@ -418,25 +385,15 @@ public final class GameSessionManager {
         if (!Files.exists(configPath)) {
             configPath = session.runWorldPath.resolve("config.json");
         }
-        System.out.println("[GameDoorDebug] world config path: " + configPath + " exists=" + Files.exists(configPath));
 
         Path finalConfigPath = configPath;
         return WorldConfig.load(finalConfigPath)
                 .thenCompose(config -> {
-                    System.out.println("[GameDoorDebug] world config loaded: " + finalConfigPath);
                     config.setUuid(UUID.randomUUID());
                     config.setDisplayName("Run " + session.runWorldName);
                     config.setDeleteOnRemove(true);
                     config.markChanged();
-                    System.out.println("[GameDoorDebug] makeWorld start: " + session.runWorldName);
                     return universe.makeWorld(session.runWorldName, session.runWorldPath, config);
-                })
-                .whenComplete((world, err) -> {
-                    if (err != null) {
-                        System.out.println("[GameDoorDebug] makeWorld failed: " + err);
-                        return;
-                    }
-                    System.out.println("[GameDoorDebug] makeWorld success: " + world.getName());
                 });
     }
 
@@ -444,13 +401,11 @@ public final class GameSessionManager {
     private CompletableFuture<StartSessionResult> cleanupFailedStart(@Nonnull ActiveSession session, @Nonnull Throwable throwable) {
         Universe universe = Universe.get();
         try {
-            System.out.println("[GameDoorDebug] cleanup failed start: runWorld=" + session.runWorldName + " path=" + session.runWorldPath);
             if (universe.getWorld(session.runWorldName) != null) {
                 universe.removeWorld(session.runWorldName);
             }
             deleteDirectoryIfPresent(session.runWorldPath);
         } catch (Exception ignored) {
-            System.out.println("[GameDoorDebug] cleanup encountered exception: " + ignored);
         }
 
         synchronized (this) {
@@ -458,6 +413,8 @@ public final class GameSessionManager {
                 this.activeSession = null;
             }
         }
+
+        cleanupRunRuntime(session.runWorldUuid);
 
         Throwable cause = throwable instanceof CompletionException && throwable.getCause() != null
                 ? throwable.getCause()
@@ -493,9 +450,11 @@ public final class GameSessionManager {
             @Nullable Transform targetSpawn
     ) {
         CompletableFuture<Void> teleportCompleted = new CompletableFuture<>();
-        Transform destination = targetSpawn != null ? copyTransformOrNull(targetSpawn) : null;
+        Transform destination = PlayerSpawnSafety.sanitizeTransform(
+                targetSpawn != null ? copyTransformOrNull(targetSpawn) : playerRef.getTransform()
+        );
 
-        return CompletableFuture.runAsync(() -> {
+        return prewarmSpawnChunks(toWorld, destination).thenCompose(ignored -> CompletableFuture.runAsync(() -> {
                     UUID playerWorldUuid = playerRef.getWorldUuid();
                     if (playerWorldUuid == null) {
                         throw new IllegalStateException("Player has no current world before transfer.");
@@ -517,10 +476,10 @@ public final class GameSessionManager {
 
                     Teleport teleport = destination != null
                             ? Teleport.createForPlayer(toWorld, destination)
-                            : Teleport.createForPlayer(toWorld, playerRef.getTransform());
+                            : Teleport.createForPlayer(toWorld, PlayerSpawnSafety.sanitizeTransform(playerRef.getTransform()));
                     teleport.setOnComplete(teleportCompleted);
                     store.addComponent(playerRefHandle, Teleport.getComponentType(), teleport);
-                }, fromWorld)
+                }, fromWorld))
                 .thenCompose(ignored -> teleportCompleted)
                 .orTimeout(PLAYER_TRANSFER_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .thenApply(ignored -> null)
@@ -537,6 +496,29 @@ public final class GameSessionManager {
                     return CompletableFuture.<Void>failedFuture(new IllegalStateException(detail, cause));
                 })
                 .thenCompose(future -> future);
+    }
+
+    @Nonnull
+    private static CompletableFuture<Void> prewarmSpawnChunks(@Nonnull World world, @Nullable Transform targetSpawn) {
+        if (targetSpawn == null) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        Transform sanitized = PlayerSpawnSafety.sanitizeTransform(copyTransformOrNull(targetSpawn));
+        Vector3d position = sanitized.getPosition();
+        int blockX = (int) Math.floor(position.getX());
+        int blockZ = (int) Math.floor(position.getZ());
+        int centerChunkX = ChunkUtil.chunkCoordinate(blockX);
+        int centerChunkZ = ChunkUtil.chunkCoordinate(blockZ);
+
+        ArrayList<CompletableFuture<?>> futures = new ArrayList<>(25);
+        for (int dz = -2; dz <= 2; dz++) {
+            for (int dx = -2; dx <= 2; dx++) {
+                long chunkIndex = ChunkUtil.indexChunk(centerChunkX + dx, centerChunkZ + dz);
+                futures.add(world.getChunkStore().getChunkReferenceAsync(chunkIndex));
+            }
+        }
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 
     private static void copyDirectory(@Nonnull Path source, @Nonnull Path target) {
@@ -627,8 +609,8 @@ public final class GameSessionManager {
         return new Transform(transform.getPosition().clone(), transform.getRotation().clone());
     }
 
-    private static int normalizeRadius(int configuredRadius) {
-        if (configuredRadius < RedWaveConfig.MIN_RADIUS_BLOCKS || configuredRadius > RedWaveConfig.MAX_RADIUS_BLOCKS) {
+    private static int normalizeRunRadius(int configuredRadius) {
+        if (configuredRadius < RedWaveConfig.MIN_RADIUS_BLOCKS || configuredRadius > MAX_RUN_CRIMSON_RADIUS_BLOCKS) {
             return RedWaveConfig.DEFAULT_UI_RADIUS_BLOCKS;
         }
         return configuredRadius;
@@ -639,6 +621,109 @@ public final class GameSessionManager {
             return RedWaveConfig.DEFAULT_UI_START_SECONDS;
         }
         return configuredSeconds;
+    }
+
+    private static long computeCrimsonDelayMillis(@Nonnull List<RedCoreProfileRegistry.RedCoreProfile> profiles) {
+        if (profiles.isEmpty()) {
+            return 0L;
+        }
+
+        float earliestSeconds = DEFAULT_CRIMSON_SPREAD_SECONDS;
+        for (RedCoreProfileRegistry.RedCoreProfile profile : profiles) {
+            if (profile == null) {
+                continue;
+            }
+            earliestSeconds = Math.min(earliestSeconds, normalizeStartSeconds(profile.startSeconds()));
+        }
+        return Math.max(0L, (long) (earliestSeconds * 1000.0f));
+    }
+
+    private static void cleanupRunRuntime(@Nullable UUID runWorldUuid) {
+        if (runWorldUuid == null) {
+            return;
+        }
+        RedWaveManager.clearRuntime(runWorldUuid);
+        RedCoreRegistry.clear(runWorldUuid);
+        RedCoreProfileRegistry.clear(runWorldUuid);
+        RooterManManager.get().clearRuntimeForWorld(runWorldUuid);
+    }
+
+    private static void scrubRunWorldMarkersAndUnusedCores(@Nonnull World runWorld, @Nonnull ActiveSession session) {
+        scrubSpawnPointBlocks(runWorld, session.templateWorldName);
+        scrubUnusedCrimsonCoreBlocks(runWorld, session.templateWorldName, session.crimsonProfiles);
+    }
+
+    private static void scrubSpawnPointBlocks(@Nonnull World runWorld, @Nonnull String templateWorldName) {
+        SpawnPointZoneConfigManager.SpawnZoneState spawnState = SpawnPointZoneConfigManager.load(templateWorldName);
+        for (LinkedHashMap<Integer, ArrayList<SpawnPointZoneConfigManager.SpawnPointEntry>> locationMap : spawnState.zones().values()) {
+            for (ArrayList<SpawnPointZoneConfigManager.SpawnPointEntry> entries : locationMap.values()) {
+                for (SpawnPointZoneConfigManager.SpawnPointEntry entry : entries) {
+                    if (!entry.dimension().equalsIgnoreCase(templateWorldName)) {
+                        continue;
+                    }
+                    runWorld.setBlock(entry.position().x, entry.position().y, entry.position().z, "Empty");
+                }
+            }
+        }
+    }
+
+    private static void scrubUnusedCrimsonCoreBlocks(
+            @Nonnull World runWorld,
+            @Nonnull String templateWorldName,
+            @Nonnull List<RedCoreProfileRegistry.RedCoreProfile> selectedProfiles
+    ) {
+        List<RedCoreProfileRegistry.RedCoreProfile> savedProfiles = CrimsonCoreConfigManager.get().getState(templateWorldName).profiles();
+        for (RedCoreProfileRegistry.RedCoreProfile savedProfile : savedProfiles) {
+            if (containsProfile(selectedProfiles, savedProfile.corePos())) {
+                continue;
+            }
+            Vector3i pos = savedProfile.corePos();
+            var type = runWorld.getBlockType(pos.x, pos.y, pos.z);
+            if (type != null && RedWaveConfig.isCoreBlockId(type.getId())) {
+                runWorld.setBlock(pos.x, pos.y, pos.z, "Empty");
+            }
+        }
+    }
+
+    private static boolean containsProfile(@Nonnull List<RedCoreProfileRegistry.RedCoreProfile> profiles, @Nonnull Vector3i pos) {
+        for (RedCoreProfileRegistry.RedCoreProfile profile : profiles) {
+            if (profile.corePos().equals(pos)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Nonnull
+    private static List<RedCoreProfileRegistry.RedCoreProfile> selectRunProfiles(
+            @Nonnull List<RedCoreProfileRegistry.RedCoreProfile> validProfiles,
+            int configuredChooseCount
+    ) {
+        if (validProfiles.isEmpty()) {
+            return List.of();
+        }
+
+        int chooseCount = configuredChooseCount;
+        if (chooseCount < 1) {
+            chooseCount = 1;
+        }
+        chooseCount = Math.min(chooseCount, validProfiles.size());
+        if (chooseCount >= validProfiles.size()) {
+            return copyProfiles(validProfiles);
+        }
+
+        ArrayList<RedCoreProfileRegistry.RedCoreProfile> shuffled = new ArrayList<>(validProfiles.size());
+        for (RedCoreProfileRegistry.RedCoreProfile profile : validProfiles) {
+            shuffled.add(new RedCoreProfileRegistry.RedCoreProfile(new Vector3i(profile.corePos()), profile.radiusBlocks(), profile.startSeconds()));
+        }
+        Collections.shuffle(shuffled, ThreadLocalRandom.current());
+
+        ArrayList<RedCoreProfileRegistry.RedCoreProfile> selected = new ArrayList<>(shuffled.subList(0, chooseCount));
+        selected.sort(Comparator
+                .comparingInt((RedCoreProfileRegistry.RedCoreProfile p) -> p.corePos().x)
+                .thenComparingInt(p -> p.corePos().y)
+                .thenComparingInt(p -> p.corePos().z));
+        return selected;
     }
 
     public enum RunPhase {

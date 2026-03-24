@@ -20,6 +20,7 @@ import dev.hytalemodding.commands.npc.NpcRolesCommand;
 import dev.hytalemodding.commands.npc.NpcSpawnCommand;
 import dev.hytalemodding.commands.npc.SpawnRooterCommand;
 import dev.hytalemodding.commands.quest.QuestDevCommand;
+import dev.hytalemodding.commands.quest.QuestLogCommand;
 import dev.hytalemodding.commands.redwave.RedCoreCommand;
 import dev.hytalemodding.commands.redwave.RedRadiusCommand;
 import dev.hytalemodding.commands.redwave.RedStartCommand;
@@ -58,6 +59,7 @@ import dev.hytalemodding.state.run.GameDoorInteractionHandler;
 import dev.hytalemodding.state.run.GameDoorUseInteraction;
 import dev.hytalemodding.state.run.GameRunDirectorSystem;
 import dev.hytalemodding.state.run.GameSessionManager;
+import dev.hytalemodding.state.run.BlightBeastKillTrackerSystem;
 import dev.hytalemodding.state.run.RescueObjectiveManager;
 import dev.hytalemodding.state.run.RescueObjectiveSystem;
 import dev.hytalemodding.state.run.RunDeathHandler;
@@ -65,6 +67,7 @@ import dev.hytalemodding.state.run.RunStartCameraSystem;
 import dev.hytalemodding.state.run.RunStartMovementLockSystem;
 import dev.hytalemodding.state.run.SpawnPointDetectionSystem;
 import dev.hytalemodding.state.run.SpawnPointPlacementHandler;
+import dev.hytalemodding.state.transition.PlayerSpawnSafety;
 
 import javax.annotation.Nonnull;
 import java.util.Set;
@@ -94,6 +97,7 @@ public class ExamplePlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new SpawnRooterCommand());
         this.getCommandRegistry().registerCommand(new NpcDevCommand());
         this.getCommandRegistry().registerCommand(new QuestDevCommand());
+        this.getCommandRegistry().registerCommand(new QuestLogCommand());
         this.getCommandRegistry().registerCommand(new PlotDevCommand());
         this.getCommandRegistry().registerCommand(new DevPanelCommand());
         this.getCommandRegistry().registerCommand(new MapOpenCommand());
@@ -109,6 +113,7 @@ public class ExamplePlugin extends JavaPlugin {
                 BasePlotUseInteraction.CODEC
         );
         this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, GameSessionManager.get()::onPlayerReady);
+        this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, PlayerSpawnSafety::onPlayerReady);
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, GameDoorInteractionHandler::onPlayerInteract);
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, BasePlotInteractionHandler::onPlayerInteract);
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, RescueObjectiveManager.get()::onPlayerInteract);
@@ -146,6 +151,7 @@ public class ExamplePlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new RunStartCameraSystem());
         this.getEntityStoreRegistry().registerSystem(new RunStartMovementLockSystem());
         this.getEntityStoreRegistry().registerSystem(new RunDeathHandler());
+        this.getEntityStoreRegistry().registerSystem(new BlightBeastKillTrackerSystem());
         this.getEntityStoreRegistry().registerSystem(new BaseHousingSystem());
         this.getEntityStoreRegistry().registerSystem(new DevDebugHudSystem());
 

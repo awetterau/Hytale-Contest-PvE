@@ -1,6 +1,7 @@
 package dev.hytalemodding.map;
 
 import com.hypixel.hytale.protocol.Packet;
+import com.hypixel.hytale.protocol.packets.player.JoinWorld;
 import com.hypixel.hytale.protocol.packets.worldmap.MapChunk;
 import com.hypixel.hytale.protocol.packets.worldmap.MapImage;
 import com.hypixel.hytale.protocol.packets.worldmap.MapMarker;
@@ -11,6 +12,7 @@ import com.hypixel.hytale.server.core.io.adapter.PacketFilter;
 import com.hypixel.hytale.server.core.io.adapter.PlayerPacketFilter;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import dev.hytalemodding.debug.CrashTrace;
 
 import javax.annotation.Nonnull;
 import javax.imageio.ImageIO;
@@ -19,6 +21,7 @@ import java.io.InputStream;
 import java.util.logging.Level;
 
 public final class MapReplacementPacketController {
+    private static final boolean ENABLED = false;
     // Toggle this off to remove map interaction lock behavior.
     private static final boolean LOCK_WORLD_MAP_INTERACTION = true;
     private static final float LOCKED_MAP_SCALE = 32.0F;
@@ -45,6 +48,9 @@ public final class MapReplacementPacketController {
     }
 
     public void register() {
+        if (!ENABLED) {
+            return;
+        }
         this.outboundFilter = PacketAdapters.registerOutbound((PlayerPacketFilter) this::handleOutbound);
     }
 
@@ -59,6 +65,9 @@ public final class MapReplacementPacketController {
     }
 
     public void validateCustomMapAssetRegistration() {
+        if (!ENABLED) {
+            return;
+        }
         // **MOVE `custom_map.png` TO: `Assets/Common/UI/Custom/Textures/custom_map.png` (source path: `src/main/resources/Common/UI/Custom/Textures/custom_map.png`).**
         try (InputStream in = this.plugin.getClassLoader().getResourceAsStream(CUSTOM_MAP_RESOURCE_PATH)) {
             if (in == null) {
@@ -72,11 +81,43 @@ public final class MapReplacementPacketController {
     }
 
     private boolean handleOutbound(@Nonnull PlayerRef playerRef, @Nonnull Packet packet) {
+        if (packet instanceof JoinWorld) {
+            CrashTrace.beginJoinTrace(playerRef, playerRef.getWorldUuid() == null ? null : playerRef.getTransform() == null ? "<unknown>" : null);
+            CrashTrace.log(playerRef, "packet", "sent JoinWorld");
+            return false;
+        }
         if (LOCK_WORLD_MAP_INTERACTION && packet instanceof UpdateWorldMapSettings settings) {
+            CrashTrace.logLimited(
+                    playerRef,
+                    "world-map-settings",
+                    4,
+                    "packet",
+                    "UpdateWorldMapSettings before lock default=" + settings.defaultScale
+                            + " min=" + settings.minScale
+                            + " max=" + settings.maxScale
+            );
             applyMapLockSettings(settings);
+            CrashTrace.logLimited(
+                    playerRef,
+                    "world-map-settings-locked",
+                    4,
+                    "packet",
+                    "UpdateWorldMapSettings after lock default=" + settings.defaultScale
+                            + " min=" + settings.minScale
+                            + " max=" + settings.maxScale
+            );
             return false;
         }
         if (packet instanceof UpdateWorldMap updateWorldMap && updateWorldMap.chunks != null) {
+            CrashTrace.logLimited(
+                    playerRef,
+                    "world-map",
+                    8,
+                    "packet",
+                    "UpdateWorldMap chunks=" + updateWorldMap.chunks.length
+                            + " markersAdded=" + (updateWorldMap.addedMarkers == null ? 0 : updateWorldMap.addedMarkers.length)
+                            + " markersRemoved=" + (updateWorldMap.removedMarkers == null ? 0 : updateWorldMap.removedMarkers.length)
+            );
             BufferedImage overlayImage = loadOverlayImage();
             if (overlayImage == null) {
                 return false;
@@ -102,6 +143,15 @@ public final class MapReplacementPacketController {
                 if (chunk == null || chunk.image == null || chunk.image.data == null) {
                     continue;
                 }
+                CrashTrace.logLimited(
+                        playerRef,
+                        "world-map-chunk",
+                        8,
+                        "packet",
+                        "chunk=(" + chunk.chunkX + "," + chunk.chunkZ + ") image="
+                                + chunk.image.width + "x" + chunk.image.height
+                                + " data=" + chunk.image.data.length
+                );
                 int sampleChunkX = chunk.chunkX;
                 int sampleChunkZ = chunk.chunkZ;
                 if (LOCK_WORLD_MAP_CENTER_WORKAROUND) {

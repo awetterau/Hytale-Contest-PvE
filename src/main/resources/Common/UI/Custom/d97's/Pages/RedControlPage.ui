@@ -1,8 +1,8 @@
 Group {
-  Anchor: (Left: 34, Top: 90, Width: 622, Height: 600);
+  Anchor: (Left: 56, Top: 66, Width: 720, Height: 660);
 
   Button #PrevCoreButton {
-    Anchor: (Left: 0, Top: 210, Width: 76, Height: 42);
+    Anchor: (Left: 0, Top: 236, Width: 96, Height: 48);
     Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button.png"));
     Label #PrevCoreButtonLabel {
       Text: "No cores";
@@ -11,119 +11,142 @@ Group {
   }
 
   Button #NextCoreButton {
-    Anchor: (Right: 0, Top: 210, Width: 76, Height: 42);
+    Anchor: (Right: 0, Top: 236, Width: 96, Height: 48);
     Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button.png"));
     Label #NextCoreButtonLabel {
       Text: "No cores";
       Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
     }
   }
-  
+
   Group {
     Background: (PatchStyle(TexturePath: "../Textures/UI_D97_BackGround.png"));
-    Anchor: (Left: 86, Top: 40, Right: 86, Bottom: 0);
-
+    Anchor: (Left: 108, Top: 18, Right: 108, Bottom: 0);
 
     Label {
-      Anchor: (Left: 12, Top: 12, Right: 12, Height: 22);
-      Text: "Red Control";
+      Anchor: (Left: 20, Top: 16, Right: 20, Height: 24);
+      Text: "Crimson Control";
       Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true);
     }
 
     Label #ActiveCoreLabel {
-      Anchor: (Left: 12, Top: 60, Right: 12, Height: 26);
-      Text: "Active Core: Not set";
-      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 25);
+      Anchor: (Left: 20, Top: 54, Right: 20, Height: 28);
+      Text: "Selected Candidate: Not set";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 23);
     }
 
-    Label #RadiusValueLabel {
-      Anchor: (Left: 12, Top: 97, Right: 12, Height: 18);
-      Text: "Current Radius: 6";
-      Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
-    }
-    Label #StartValueLabel {
-      Anchor: (Left: 12, Top: 115, Right: 12, Height: 18);
-      Text: "Current Start Seconds: 9";
+    Label #CandidateSummaryLabel {
+      Anchor: (Left: 20, Top: 88, Right: 20, Height: 18);
+      Text: "Saved candidates: 0 | Starts per run: 0";
       Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
     }
 
     Button #SetCoreButton {
-      Anchor: (Left: 20, Top: 154, Right: 20, Height: 38);
+      Anchor: (Left: 22, Top: 122, Right: 22, Height: 34);
       Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
       Label {
-        Text: "Set Core";
+        Text: "Add Candidate From Current Position";
         Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
       }
     }
 
-    Button #RadiusMinusButton {
-      Anchor: (Left: 20, Top: 200, Width: 60, Height: 38);
+    Button #RemoveCoreButton {
+      Anchor: (Left: 22, Top: 162, Right: 22, Height: 34);
       Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
-      Label { Text: "-1"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+      Label {
+        Text: "Remove Selected Candidate";
+        Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
+      }
     }
 
-    Label #RadiusRowLabel {
-      Anchor: (Left: 90, Top: 200, Right: 90, Height: 22);
-      Text: "Adjust radius with +/-";
-      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true);
+    Group {
+      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button.png"));
+      Anchor: (Left: 22, Top: 214, Right: 22, Height: 216);
+
+      Label {
+        Anchor: (Left: 16, Top: 12, Right: 16, Height: 22);
+        Text: "Global Run Settings";
+        Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true);
+      }
+
+      Label #RadiusRowLabel {
+        Anchor: (Left: 20, Top: 50, Width: 180, Height: 18);
+        Text: "Radius";
+        Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
+      }
+
+      Label #RadiusValueLabel {
+        Anchor: (Left: 20, Top: 70, Width: 250, Height: 18);
+        Text: "Global Radius: 6";
+        Style: (HorizontalAlignment: Start, VerticalAlignment: Center);
+      }
+
+      NumberField #RadiusInput {
+        Anchor: (Right: 20, Top: 58, Width: 164, Height: 30);
+        Value: 6;
+      }
+
+      Label #StartRowLabel {
+        Anchor: (Left: 20, Top: 104, Width: 180, Height: 18);
+        Text: "Spread Seconds";
+        Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
+      }
+
+      Label #StartValueLabel {
+        Anchor: (Left: 20, Top: 124, Width: 250, Height: 18);
+        Text: "Global Spread Seconds: 9";
+        Style: (HorizontalAlignment: Start, VerticalAlignment: Center);
+      }
+
+      NumberField #StartInput {
+        Anchor: (Right: 20, Top: 112, Width: 164, Height: 30);
+        Value: 9;
+      }
+
+      Label #ChooseRowLabel {
+        Anchor: (Left: 20, Top: 158, Width: 230, Height: 18);
+        Text: "Active Core Count Per Run";
+        Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
+      }
+
+      Label #ChooseCountValueLabel {
+        Anchor: (Left: 20, Top: 178, Width: 270, Height: 18);
+        Text: "Global Active Core Count: 1";
+        Style: (HorizontalAlignment: Start, VerticalAlignment: Center);
+      }
+
+      NumberField #ChooseCountInput {
+        Anchor: (Right: 20, Top: 166, Width: 164, Height: 30);
+        Value: 1;
+      }
     }
 
-    Label #RadiusBigValueLabel {
-      Anchor: (Left: 90, Top: 222, Right: 90, Height: 20);
-      Text: "6";
-      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 20);
-    }
-
-    Button #RadiusPlusButton {
-      Anchor: (Right: 20, Top: 200, Width: 60, Height: 38);
-      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
-      Label { Text: "+1"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
-    }
-
-    Button #StartMinusButton {
-      Anchor: (Left: 20, Top: 262, Width: 60, Height: 38);
-      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
-      Label { Text: "-1"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
-    }
-
-    Label #StartRowLabel {
-      Anchor: (Left: 90, Top: 262, Right: 90, Height: 22);
-      Text: "Adjust start seconds with +/-";
-      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true);
-    }
-
-    Label #StartBigValueLabel {
-      Anchor: (Left: 90, Top: 284, Right: 90, Height: 20);
-      Text: "9";
-      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 20);
-    }
-
-    Button #StartPlusButton {
-      Anchor: (Right: 20, Top: 262, Width: 60, Height: 38);
-      Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
-      Label { Text: "+1"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+    Label {
+      Anchor: (Left: 24, Top: 438, Right: 24, Height: 30);
+      Text: "Global settings apply to every saved candidate in this world.";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
     }
 
     Button #StartWaveButton {
-      Anchor: (Left: 20, Top: 316, Right: 20, Height: 38);
+      Anchor: (Left: 22, Top: 478, Right: 22, Height: 34);
       Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
       Label {
-        Text: "Start Wave";
+        Text: "Start Selected Candidate Now";
         Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
       }
     }
 
     Button #UndoButton {
-      Anchor: (Left: 20, Top: 362, Right: 20, Height: 38);
+      Anchor: (Left: 22, Top: 518, Right: 22, Height: 34);
       Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
       Label {
-        Text: "Undo";
+        Text: "Undo Selected Candidate";
         Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
       }
     }
 
     Button #GlobalUndoButton {
-      Anchor: (Left: 20, Top: 408, Right: 20, Height: 38);
+      Anchor: (Left: 22, Top: 558, Right: 22, Height: 34);
       Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
       Label {
         Text: "Global Undo";
@@ -132,7 +155,7 @@ Group {
     }
 
     Button #CloseButton {
-      Anchor: (Left: 20, Top: 454, Right: 20, Height: 38);
+      Anchor: (Left: 22, Top: 598, Right: 22, Height: 34);
       Background: (PatchStyle(TexturePath: "../Textures/UI_D97_Button_Light.png"));
       Label {
         Text: "Close";

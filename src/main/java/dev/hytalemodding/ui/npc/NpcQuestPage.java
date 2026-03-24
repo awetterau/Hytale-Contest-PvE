@@ -16,11 +16,14 @@ import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.npc.NpcDialogueManager;
+import dev.hytalemodding.npc.NpcDefinitionRegistry;
+import dev.hytalemodding.npc.NpcArchetype;
 import dev.hytalemodding.quest.QuestDefinition;
 import dev.hytalemodding.quest.QuestDefinitionRegistry;
 import dev.hytalemodding.quest.QuestProgressManager;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.List;
 
 public class NpcQuestPage extends InteractiveCustomUIPage<NpcQuestPage.Data> {
@@ -44,31 +47,55 @@ public class NpcQuestPage extends InteractiveCustomUIPage<NpcQuestPage.Data> {
     public void build(@Nonnull Ref<EntityStore> ref, @Nonnull UICommandBuilder ui, @Nonnull UIEventBuilder events, @Nonnull Store<EntityStore> store) {
         NpcDialogueManager.get().keepDialogueActive(this.playerRef);
         NpcDialogueManager.get().setTalkAnimation(this.playerRef, false);
-        List<QuestDefinition> quests = QuestDefinitionRegistry.get().getBySource("npc", this.npcKey);
-        if (this.questIndex < 0) {
-            this.questIndex = 0;
-        }
-        if (!quests.isEmpty() && this.questIndex >= quests.size()) {
-            this.questIndex = quests.size() - 1;
-        }
+        List<QuestDefinition> quests = getVisibleQuests();
+        this.questIndex = resolveSelectedQuestIndex(quests);
         QuestDefinition selected = quests.isEmpty() ? null : quests.get(this.questIndex);
+        NpcArchetype archetype = NpcDefinitionRegistry.get().getArchetype(this.npcKey);
+        String npcName = archetype == null ? this.npcKey : archetype.displayName;
         ui.append("Pages/NpcQuest.ui");
-        ui.set("#QuestHeader.Text", this.npcKey + " Quest Board");
+        ui.set("#QuestHeader.Text", npcName + " Quest Board");
         if (selected == null) {
             ui.set("#QuestTitle.Text", "No quests available");
             ui.set("#QuestSummary.Text", "This NPC currently has no quest definitions.");
             ui.set("#QuestStatus.Text", "Status: N/A");
+            ui.set("#QuestProgressSection.Visible", false);
             ui.set("#AcceptQuestBtn.Visible", false);
             ui.set("#CompleteQuestBtn.Visible", false);
             ui.set("#PrevQuestBtn.Visible", false);
             ui.set("#NextQuestBtn.Visible", false);
         } else {
             QuestProgressManager.QuestProgress progress = QuestProgressManager.get().getOrCreate(selected.questId);
+            boolean canComplete = QuestProgressManager.get().canComplete(selected.questId, this.playerRef);
             ui.set("#QuestTitle.Text", selected.title);
             ui.set("#QuestSummary.Text", selected.summary + "\nQuest ID: " + selected.questId);
             ui.set("#QuestStatus.Text", "Status: " + (progress.completed ? "Completed" : (progress.accepted ? "Accepted" : "Not accepted")));
-            ui.set("#AcceptQuestBtn.Visible", !progress.completed);
-            ui.set("#CompleteQuestBtn.Visible", progress.accepted && !progress.completed);
+            List<String> progressLines = QuestProgressManager.get().getProgressLines(selected);
+            boolean hasProgressView = !progressLines.isEmpty();
+            ui.set("#QuestProgressSection.Visible", hasProgressView);
+            if (hasProgressView) {
+                boolean showMissionProgress = selected.requiredSuccessfulExtractions > 0;
+                boolean showKillProgress = selected.requiredNpcKills > 0;
+                ui.set("#MissionProgressGroup.Visible", showMissionProgress);
+                ui.set("#BeastProgressGroup.Visible", showKillProgress);
+                ui.set("#QuestProgressText.Visible", !(showMissionProgress || showKillProgress));
+                ui.set("#QuestProgressText.Text", String.join("\n", progressLines));
+                if (showMissionProgress) {
+                    ui.set("#MissionProgressBar.Value", (float) QuestProgressManager.get().getSuccessfulExtractionRatio(selected));
+                    ui.set("#MissionProgressLabel.Text",
+                            "Missions extracted: " + progress.successfulExtractions + "/" + selected.requiredSuccessfulExtractions);
+                }
+                if (showKillProgress) {
+                    ui.set("#BeastProgressBar.Value", (float) QuestProgressManager.get().getTrackedNpcKillRatio(selected));
+                    ui.set("#BeastProgressLabel.Text",
+                            "Blight Beasts slain: " + progress.trackedNpcKills + "/" + selected.requiredNpcKills);
+                }
+            } else {
+                ui.set("#MissionProgressGroup.Visible", false);
+                ui.set("#BeastProgressGroup.Visible", false);
+                ui.set("#QuestProgressText.Visible", false);
+            }
+            ui.set("#AcceptQuestBtn.Visible", !progress.accepted && !progress.completed);
+            ui.set("#CompleteQuestBtn.Visible", progress.accepted && !progress.completed && canComplete);
             ui.set("#PrevQuestBtn.Visible", quests.size() > 1);
             ui.set("#NextQuestBtn.Visible", quests.size() > 1);
         }
@@ -82,7 +109,7 @@ public class NpcQuestPage extends InteractiveCustomUIPage<NpcQuestPage.Data> {
     @Override
     public void handleDataEvent(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull Data data) {
         String action = data.action == null ? "" : data.action.trim().toLowerCase();
-        List<QuestDefinition> quests = QuestDefinitionRegistry.get().getBySource("npc", this.npcKey);
+        List<QuestDefinition> quests = getVisibleQuests();
         if ("prev".equals(action) && quests.size() > 1) {
             this.questIndex = this.questIndex <= 0 ? quests.size() - 1 : this.questIndex - 1;
             refresh(ref, store);
@@ -110,9 +137,12 @@ public class NpcQuestPage extends InteractiveCustomUIPage<NpcQuestPage.Data> {
                 return;
             }
             boolean ok = QuestProgressManager.get().complete(quest.questId, this.playerRef);
+            String failureReason = QuestProgressManager.get().describeIncompleteObjectives(quest);
             this.playerRef.sendMessage(Message.raw(ok
                     ? "Quest completed: " + quest.title
-                    : "Quest completion failed. Required objective items are missing."));
+                    : failureReason.isBlank()
+                    ? "Quest completion failed. Required objective items are missing."
+                    : "Quest completion failed. Missing: " + failureReason + "."));
             refresh(ref, store);
             return;
         }
@@ -132,6 +162,42 @@ public class NpcQuestPage extends InteractiveCustomUIPage<NpcQuestPage.Data> {
         UIEventBuilder eventBuilder = new UIEventBuilder();
         build(ref, commandBuilder, eventBuilder, store);
         sendUpdate(commandBuilder, eventBuilder, true);
+    }
+
+    @Nonnull
+    private List<QuestDefinition> getVisibleQuests() {
+        List<QuestDefinition> all = QuestDefinitionRegistry.get().getBySource("npc", this.npcKey);
+        List<QuestDefinition> visible = new ArrayList<>();
+        for (QuestDefinition definition : all) {
+            QuestProgressManager.QuestProgress progress = QuestProgressManager.get().getOrCreate(definition.questId);
+            if (progress.accepted || progress.completed || QuestProgressManager.get().arePrerequisitesMet(definition)) {
+                visible.add(definition);
+            }
+        }
+        return List.copyOf(visible);
+    }
+
+    private int resolveSelectedQuestIndex(@Nonnull List<QuestDefinition> quests) {
+        if (quests.isEmpty()) {
+            return 0;
+        }
+        if (this.questIndex < 0 || this.questIndex >= quests.size()) {
+            this.questIndex = 0;
+        }
+
+        QuestDefinition current = quests.get(this.questIndex);
+        QuestProgressManager.QuestProgress currentProgress = QuestProgressManager.get().getOrCreate(current.questId);
+        if (!currentProgress.completed) {
+            return this.questIndex;
+        }
+
+        for (int i = 0; i < quests.size(); i++) {
+            QuestProgressManager.QuestProgress progress = QuestProgressManager.get().getOrCreate(quests.get(i).questId);
+            if (!progress.completed) {
+                return i;
+            }
+        }
+        return this.questIndex;
     }
 
     private static void openPage(

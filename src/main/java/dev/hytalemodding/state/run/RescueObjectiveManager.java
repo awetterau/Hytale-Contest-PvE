@@ -243,7 +243,6 @@ public final class RescueObjectiveManager {
         objective.escortConfirmed = true;
         if (announce) {
             playerRef.sendMessage(Message.raw("Rescue NPC follow started."));
-            System.out.println("[RescueDebug] follow signal from interaction player=" + playerRef.getUuid());
         }
     }
 
@@ -261,7 +260,6 @@ public final class RescueObjectiveManager {
         }
         boolean following = objective.escortConfirmed || objective.state == RescueState.FOLLOWING || isNpcFollowingNow(objective);
         if (!following) {
-            System.out.println("[RescueDebug] queue rejected: npc is not actively following");
             return false;
         }
 
@@ -269,7 +267,6 @@ public final class RescueObjectiveManager {
         this.objectives.remove(runWorldId);
         this.pendingRescueNpcKey = objective.npcKey;
         this.pendingBaseSpawn = true;
-        System.out.println("[RescueDebug] queued rescue transfer npc=" + objective.npcKey + " player=" + extractingPlayerId + " world=" + runWorldId);
         return true;
     }
 
@@ -294,11 +291,6 @@ public final class RescueObjectiveManager {
         CompletableFuture<QueuedRescueSpawnResult> result = new CompletableFuture<>();
         destinationWorld.execute(() -> {
             boolean success = spawnBaseNpcNowInternal(destinationWorld, destinationTransform, pendingNpc);
-            if (success) {
-                System.out.println("[RescueDebug] base spawn success npc=" + pendingNpc + " world=" + destinationWorld.getName());
-            } else {
-                System.out.println("[RescueDebug] base spawn failed npc=" + pendingNpc + " world=" + destinationWorld.getName());
-            }
             this.baseSpawnInProgress = false;
             result.complete(new QueuedRescueSpawnResult(
                     pendingNpc,
@@ -471,7 +463,6 @@ public final class RescueObjectiveManager {
             objective.spawnedOnce = true;
             objective.spawning = false;
         }
-        System.out.println("[RescueDebug] spawned rescue npc key=" + objective.npcKey + " role=" + objective.runRescueRoleName + " at " + spawnPos);
         sendRunWorldMessage(session.runWorldUuid(), "Rescue NPC spawned (" + objective.npcKey + ").");
     }
 

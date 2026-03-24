@@ -30,7 +30,6 @@ public final class RunHubTransferService {
             if (spawnErr != null) {
                 String reason = spawnErr.getMessage();
                 playerRef.sendMessage(Message.raw("Rescue transfer failed: " + reason));
-                System.out.println("[GameDoorDebug] rescue transfer failed: " + reason);
                 return;
             }
             if (result == null || result.npcKey() == null || result.npcKey().isBlank()) {
@@ -40,12 +39,10 @@ public final class RunHubTransferService {
             if (!result.spawned()) {
                 String reason = result.reason() == null ? "spawn returned false" : result.reason();
                 playerRef.sendMessage(Message.raw("Rescue transfer failed for " + result.npcKey() + ": " + reason));
-                System.out.println("[GameDoorDebug] rescue transfer failed npc=" + result.npcKey() + ": " + reason);
                 return;
             }
             RescueObjectiveManager.get().setNpcRescued(result.npcKey(), true);
             playerRef.sendMessage(Message.raw(result.npcKey() + " rescued and added to base."));
-            System.out.println("[GameDoorDebug] rescue transfer success npc=" + result.npcKey());
         });
     }
 }

@@ -18,6 +18,7 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.state.transition.GameFlowConfigManager;
 import dev.hytalemodding.state.transition.SpawnPointZoneConfigManager;
 import dev.hytalemodding.state.transition.RunHubTransferService;
+import dev.hytalemodding.quest.QuestProgressManager;
 import dev.hytalemodding.ui.dev.DoorRunZoneSelectPage;
 
 import javax.annotation.Nonnull;
@@ -77,8 +78,6 @@ public final class GameDoorInteractionHandler {
             return false;
         }
 
-        System.out.println("[GameDoorDebug] trigger accepted: player=" + playerRef.getUuid() + " world=" + playerWorld.getName() + " block=" + target);
-
         GameSessionManager.ActiveSessionSnapshot session = GameSessionManager.get().getActiveSession();
         if (session == null) {
             openDoorZoneSelection(playerRef);
@@ -128,7 +127,6 @@ public final class GameDoorInteractionHandler {
         String hubWorldName = config.getHubWorldName();
         if (!isHubWorld(templateWorld)) {
             playerRef.sendMessage(Message.raw("Use the game door from hub world '" + hubWorldName + "'."));
-            System.out.println("[GameDoorDebug] start rejected: wrong world " + templateWorld.getName() + " expected " + hubWorldName);
             return;
         }
 
@@ -136,14 +134,12 @@ public final class GameDoorInteractionHandler {
         World runTemplateWorld = Universe.get().getWorld(templateWorldName);
         if (runTemplateWorld == null) {
             playerRef.sendMessage(Message.raw("Run template world not loaded: " + templateWorldName));
-            System.out.println("[GameDoorDebug] start rejected: template world missing " + templateWorldName);
             return;
         }
 
         boolean hasBaseSpawn = config.hasBaseSpawn();
         if (!hasBaseSpawn) {
             playerRef.sendMessage(Message.raw("Setup missing: /setbasespawn"));
-            System.out.println("[GameDoorDebug] start rejected: missing base spawn config");
             return;
         }
 
@@ -151,7 +147,6 @@ public final class GameDoorInteractionHandler {
         Integer selectedZone = DoorRunZoneSelectionManager.ensureSelectedZoneOrDefault(playerRef.getUuid());
         if (selectedZone == null) {
             playerRef.sendMessage(Message.raw("No spawn zones with registered SpawnPoint_Block entries are available."));
-            System.out.println("[GameDoorDebug] start rejected: missing selected door zone");
             return;
         }
 
@@ -159,7 +154,6 @@ public final class GameDoorInteractionHandler {
                 SpawnPointZoneManager.reserveRandomSpawnForPlayer(runTemplateWorld, selectedZone.intValue(), playerRef.getUuid(), playerRef.getTransform());
         if (spawnSelection == null) {
             playerRef.sendMessage(Message.raw("Selected door zone " + SpawnPointZoneManager.getFormattedZoneLabel(selectedZone.intValue()) + " has no registered SpawnPoint_Block entries."));
-            System.out.println("[GameDoorDebug] start rejected: selected zone has no spawn points zone=" + selectedZone);
             return;
         }
 
@@ -167,7 +161,6 @@ public final class GameDoorInteractionHandler {
         List<UUID> lockedPlayerIds = collectRunStartPlayerIds(playerRef);
         RunStartMovementLockManager.get().unlockPlayers(lockedPlayerIds);
         RunStartMovementLockManager.get().lockPlayerForIntro(playerRef);
-        System.out.println("[GameDoorDebug] start requested by=" + playerRef.getUuid() + " template=" + runTemplateWorld.getName() + " zone=" + selectedZone);
 
         GameSessionManager.get().startSession(playerRef, runTemplateWorld, spawnSelection.transform(), baseSpawn).whenComplete((result, throwable) -> {
             if (throwable != null) {
@@ -175,10 +168,8 @@ public final class GameDoorInteractionHandler {
                 SpawnPointZoneManager.releaseReservedSpawn(playerRef.getUuid());
                 RunStartMovementLockManager.get().unlockPlayers(lockedPlayerIds);
                 playerRef.sendMessage(Message.raw("Failed to start run: " + reason));
-                System.out.println("[GameDoorDebug] start failed: " + reason);
                 return;
             }
-            System.out.println("[GameDoorDebug] start prepared runWorld=" + result.runWorldName() + " location=" + SpawnPointZoneManager.getFormattedLocationLabel(selectedZone.intValue(), spawnSelection.locationIndex()));
             playerRef.sendMessage(Message.raw("Loading run from " + SpawnPointZoneManager.getFormattedLocationLabel(selectedZone.intValue(), spawnSelection.locationIndex()) + ". The timer will start when gameplay is ready."));
         });
     }
@@ -192,7 +183,6 @@ public final class GameDoorInteractionHandler {
         World hubWorld = Universe.get().getWorld(hubWorldName);
         if (hubWorld == null) {
             playerRef.sendMessage(Message.raw("Hub world is unavailable: " + hubWorldName));
-            System.out.println("[GameDoorDebug] extract rejected: hub world missing " + hubWorldName);
             return;
         }
 
@@ -201,18 +191,16 @@ public final class GameDoorInteractionHandler {
         if (!queuedRescue) {
             playerRef.sendMessage(Message.raw("Rescue transfer not queued (already rescued or objective not ready)."));
         }
-        System.out.println("[GameDoorDebug] extract requested by=" + playerRef.getUuid() + " runWorld=" + session.runWorldName() + " queuedRescue=" + queuedRescue);
 
         GameSessionManager.get().endSession(baseSpawn, hubWorld).whenComplete((result, throwable) -> {
             if (throwable != null) {
                 String reason = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
                 playerRef.sendMessage(Message.raw("Failed to extract: " + reason));
-                System.out.println("[GameDoorDebug] extract failed: " + reason);
                 return;
             }
             SpawnPointZoneManager.releaseReservedSpawn(playerRef.getUuid());
-            System.out.println("[GameDoorDebug] extract success: " + result.message());
             playerRef.sendMessage(Message.raw("Extraction complete."));
+            QuestProgressManager.get().incrementSuccessfulExtraction();
             if (queuedRescue) {
                 RunHubTransferService.get().spawnQueuedRescueInBase(playerRef, hubWorld, baseSpawn);
             }

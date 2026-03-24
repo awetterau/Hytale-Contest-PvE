@@ -46,7 +46,6 @@ public class DoorRunZoneSelectPage extends InteractiveCustomUIPage<DoorRunZoneSe
         SpawnPointZoneManager.refreshForPlayer(this.playerRef);
         DoorRunZoneSelectionManager.ensureSelectedZoneOrDefault(this.playerRef.getUuid());
         ui.append("d97's/Pages/DoorRunZoneSelectPage.ui");
-        ui.set("#SelectedDoorZoneLabel.Text", "Selected door zone: " + DoorRunZoneSelectionManager.getSelectedZoneLabel(this.playerRef.getUuid()));
 
         int zoneCount = SpawnPointZoneManager.getZoneCount();
         for (int zoneIndex = 0; zoneIndex < MAX_ZONE_BUTTONS; zoneIndex++) {
@@ -60,7 +59,6 @@ public class DoorRunZoneSelectPage extends InteractiveCustomUIPage<DoorRunZoneSe
         }
 
         events.addEventBinding(CustomUIEventBindingType.Activating, "#CancelButton", EventData.of("Action", "cancel"), false);
-        events.addEventBinding(CustomUIEventBindingType.Activating, "#CloseButton", EventData.of("Action", "start"), false);
     }
 
     @Override
@@ -78,7 +76,7 @@ public class DoorRunZoneSelectPage extends InteractiveCustomUIPage<DoorRunZoneSe
         if (eventData.contains("door_zone_")) {
             int zoneIndex = parseTrailingIndex(eventData, "door_zone_");
             if (zoneIndex >= 0) {
-                setZone(player, ref, store, zoneIndex);
+                setZoneAndStart(player, ref, store, zoneIndex);
             }
             return;
         }
@@ -86,21 +84,18 @@ public class DoorRunZoneSelectPage extends InteractiveCustomUIPage<DoorRunZoneSe
             close();
             return;
         }
-        if (eventData.contains("start")) {
-            close();
-            GameDoorInteractionHandler.tryStartFromDoorSelection(this.playerRef);
-        }
     }
 
-    private void setZone(
+    private void setZoneAndStart(
             @Nonnull Player player,
             @Nonnull Ref<EntityStore> ref,
             @Nonnull Store<EntityStore> store,
             int zoneIndex
     ) {
         DoorRunZoneSelectionManager.setSelectedZone(this.playerRef.getUuid(), zoneIndex);
-        player.sendMessage(Message.raw("Door run zone selected: " + DoorRunZoneSelectionManager.getSelectedZoneLabel(this.playerRef.getUuid()) + ". Press Start to begin loading the run."));
-        player.getPageManager().openCustomPage(ref, store, new DoorRunZoneSelectPage(this.playerRef));
+        player.sendMessage(Message.raw("Door run zone selected: " + DoorRunZoneSelectionManager.getSelectedZoneLabel(this.playerRef.getUuid()) + ". Loading run."));
+        close();
+        GameDoorInteractionHandler.tryStartFromDoorSelection(this.playerRef);
     }
 
     private int parseTrailingIndex(@Nonnull String eventData, @Nonnull String prefix) {

@@ -45,16 +45,11 @@ public final class GameDoorUseInteraction extends SimpleBlockInteraction {
             return;
         }
 
-        System.out.println("[GameDoorDebug] interaction fired: player=" + playerRef.getUuid() + " block=" + targetBlock);
-        player.sendMessage(Message.raw("[DoorDebug] Interaction fired at " + targetBlock.x + ", " + targetBlock.y + ", " + targetBlock.z));
-
         boolean handled = GameDoorInteractionHandler.handleDoorTrigger(playerRef, targetBlock);
         if (handled) {
             context.getState().state = InteractionState.Finished;
             return;
         }
-
-        player.sendMessage(Message.raw("[DoorDebug] Door trigger rejected. Check setup or world state."));
         context.getState().state = InteractionState.Failed;
     }
 

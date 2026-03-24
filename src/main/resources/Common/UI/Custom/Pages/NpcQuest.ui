@@ -60,6 +60,63 @@
           Style: (FontSize: 16, TextColor: #444444, Wrap: true, HorizontalAlignment: Start, VerticalAlignment: Start);
         }
 
+        Group #QuestProgressSection {
+          LayoutMode: Top;
+          Anchor: (Height: 206, Bottom: 18);
+
+          Label #QuestProgressHeader {
+            Text: "PROGRESS";
+            Anchor: (Height: 24, Bottom: 8);
+            Style: (FontSize: 20, TextColor: #222222, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+          }
+
+          Group #MissionProgressGroup {
+            LayoutMode: Top;
+            Anchor: (Height: 48, Bottom: 8);
+
+            Label #MissionProgressLabel {
+              Text: "Missions extracted: 0/0";
+              Anchor: (Height: 20, Bottom: 6);
+              Style: (FontSize: 14, TextColor: #444444, HorizontalAlignment: Start, VerticalAlignment: Center);
+            }
+
+            ProgressBar #MissionProgressBar {
+              Value: 0.0;
+              Anchor: (Height: 20);
+              Background: #2a2a2a(0.45);
+              OutlineColor: #111111;
+              OutlineSize: 1;
+              Bar: #315f96(1.0);
+            }
+          }
+
+          Group #BeastProgressGroup {
+            LayoutMode: Top;
+            Anchor: (Height: 48, Bottom: 8);
+
+            Label #BeastProgressLabel {
+              Text: "Blight Beasts slain: 0/0";
+              Anchor: (Height: 20, Bottom: 6);
+              Style: (FontSize: 14, TextColor: #444444, HorizontalAlignment: Start, VerticalAlignment: Center);
+            }
+
+            ProgressBar #BeastProgressBar {
+              Value: 0.0;
+              Anchor: (Height: 20);
+              Background: #2a2a2a(0.45);
+              OutlineColor: #111111;
+              OutlineSize: 1;
+              Bar: #8b1e24(1.0);
+            }
+          }
+
+          Label #QuestProgressText {
+            Text: "";
+            Anchor: (Height: 62);
+            Style: (FontSize: 15, TextColor: #444444, Wrap: true, HorizontalAlignment: Start, VerticalAlignment: Start);
+          }
+        }
+
         Label {
           Text: "ACTIONS";
           Anchor: (Height: 24, Bottom: 12);

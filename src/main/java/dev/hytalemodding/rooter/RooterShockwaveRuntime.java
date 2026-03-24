@@ -322,4 +322,12 @@ final class RooterShockwaveRuntime {
         }
         list.removeIf(mover -> moverIds.contains(mover.id));
     }
+
+    static void clearWorld(@Nonnull UUID worldId) {
+        WAVES_BY_WORLD.remove(worldId);
+        RESTORES_BY_WORLD.remove(worldId);
+        SHIFTS_BY_WORLD.remove(worldId);
+        MELEE_BY_WORLD.remove(worldId);
+        WAVE_MOVERS_BY_WORLD.remove(worldId);
+    }
 }

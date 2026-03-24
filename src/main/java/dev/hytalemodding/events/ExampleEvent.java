@@ -2,6 +2,7 @@ package dev.hytalemodding.events;
 
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 
 public class ExampleEvent {

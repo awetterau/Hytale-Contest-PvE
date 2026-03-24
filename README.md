@@ -233,7 +233,7 @@ This plugin currently has 4 main systems:
   Opens/closes the Red control page.
 
 - `/redcore`  
-  Places a `Crimson_Core` under the player and sets it as current selection.
+  Places a `Crimson_Core` under the player and saves it as a crimson candidate location.
 - `/redradius <blocks>`  
   Sets expansion radius for the current selected core.
 - `/redstart <seconds>`  
@@ -243,12 +243,14 @@ This plugin currently has 4 main systems:
 
 ## Crimson multi-core workflow (UI)
 1. Run `/redui` to open the panel.
-2. Press **Set Core** at each location where you want a new `Crimson_Core`.
-3. Use left/right side buttons to switch active core.
-4. Radius and start seconds in the panel apply to the currently selected core only.
-5. **Start Wave** starts spread only for the selected core.
-6. **Undo** reverts only the selected core history.
-7. **Global Undo** reverts crimson conversions for all cores and blocks new wave starts until it finishes.
+2. Press **Set Core** at each location where you want a candidate `Crimson_Core`.
+3. Use left/right side buttons to switch the selected candidate.
+4. Radius and spread seconds in the panel apply to the currently selected candidate only.
+5. Use the active-core-count controls to choose how many saved candidates should activate in each run.
+6. On run start, the system randomly picks that many saved candidates from the template world and only those selected cores spread crimson in the run.
+7. **Start Wave** starts spread only for the selected candidate.
+8. **Undo** reverts only the selected candidate history.
+9. **Global Undo** reverts crimson conversions for all active cores and blocks new wave starts until it finishes.
 
 ### Misc command
 - `/example`

@@ -63,6 +63,10 @@ public final class RedCoreProfileRegistry {
         return byKey;
     }
 
+    public static void clear(@Nonnull UUID worldId) {
+        PROFILES_BY_WORLD.remove(worldId);
+    }
+
     @Nonnull
     private static String key(@Nonnull Vector3i corePos) {
         return corePos.x + ":" + corePos.y + ":" + corePos.z;

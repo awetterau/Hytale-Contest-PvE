@@ -1,0 +1,350 @@
+Group #QuestLogRoot {
+  Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0);
+  LayoutMode: Middle;
+  Background: #000000(0.2);
+
+  Group #QuestLogPanel {
+    Anchor: (Width: 1260, Height: 760);
+    LayoutMode: Top;
+    Padding: (Left: 24, Right: 24, Top: 22, Bottom: 20);
+    Background: #07101b;
+
+    Label {
+      Text: "Quest Log";
+      Anchor: (Height: 40, Bottom: 14);
+      Style: (FontSize: 30, TextColor: #f3f8ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+    }
+
+    Label #QuestLogStatus {
+      Text: "Active quests: 0";
+      Anchor: (Height: 26, Bottom: 16);
+      Style: (FontSize: 16, TextColor: #cbd4df, HorizontalAlignment: Start, VerticalAlignment: Center);
+    }
+
+    Group #QuestRows {
+      FlexWeight: 1;
+      LayoutMode: Top;
+      Background: #0c1727(0.95);
+      Padding: (Left: 18, Right: 18, Top: 18, Bottom: 18);
+
+      Group #QuestLogEmptyState {
+        Anchor: (Height: 88, Bottom: 12);
+        LayoutMode: Middle;
+        Background: #132033(0.9);
+
+        Label {
+          Text: "You do not currently have any accepted quests.";
+          Anchor: (Height: 28);
+          Style: (FontSize: 18, TextColor: #d2d8df, HorizontalAlignment: Center, VerticalAlignment: Center);
+        }
+      }
+
+      Group #QuestRow1 {
+        Anchor: (Height: 122, Bottom: 12);
+        LayoutMode: Left;
+        Background: #132033(0.9);
+        Padding: (Left: 18, Right: 18, Top: 16, Bottom: 16);
+
+        Group {
+          FlexWeight: 1;
+          LayoutMode: Top;
+
+          Label #QuestRow1Title {
+            Text: "Quest Title";
+            Anchor: (Height: 28, Bottom: 8);
+            Style: (FontSize: 24, TextColor: #f6f1e5, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+          }
+
+          Label #QuestRow1Summary {
+            Text: "";
+            FlexWeight: 1;
+            Style: (FontSize: 15, TextColor: #d2d8df, Wrap: true, HorizontalAlignment: Start, VerticalAlignment: Start);
+          }
+
+          Label #QuestRow1Progress {
+            Text: "";
+            Anchor: (Height: 38, Top: 8);
+            Style: (FontSize: 14, TextColor: #c7d2de, Wrap: true, HorizontalAlignment: Start, VerticalAlignment: Start);
+          }
+        }
+
+        Group {
+          Anchor: (Width: 120, Top: 0, Bottom: 0, Left: 16);
+          LayoutMode: Middle;
+
+          Group {
+            Anchor: (Width: 96, Height: 96);
+
+            CircularProgressBar #QuestRow1Circle {
+              Value: 0.0;
+              Color: #d4bb67;
+              Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0);
+              Background: #31465f(1.0);
+              OutlineColor: #607995;
+              OutlineSize: 2;
+            }
+
+            Group #QuestRow1CircleCutout {
+              Anchor: (Top: 24, Bottom: 24, Left: 24, Right: 24);
+              Background: #132033(1.0);
+            }
+
+            Label #QuestRow1Percent {
+              Text: "0%";
+              Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0);
+              Style: (FontSize: 18, TextColor: #f6f1e5, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center);
+            }
+          }
+        }
+      }
+
+      Group #QuestRow2 {
+        Anchor: (Height: 122, Bottom: 12);
+        LayoutMode: Left;
+        Background: #132033(0.9);
+        Padding: (Left: 18, Right: 18, Top: 16, Bottom: 16);
+
+        Group {
+          FlexWeight: 1;
+          LayoutMode: Top;
+
+          Label #QuestRow2Title {
+            Text: "Quest Title";
+            Anchor: (Height: 28, Bottom: 8);
+            Style: (FontSize: 24, TextColor: #f6f1e5, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+          }
+
+          Label #QuestRow2Summary {
+            Text: "";
+            FlexWeight: 1;
+            Style: (FontSize: 15, TextColor: #d2d8df, Wrap: true, HorizontalAlignment: Start, VerticalAlignment: Start);
+          }
+
+          Label #QuestRow2Progress {
+            Text: "";
+            Anchor: (Height: 38, Top: 8);
+            Style: (FontSize: 14, TextColor: #c7d2de, Wrap: true, HorizontalAlignment: Start, VerticalAlignment: Start);
+          }
+        }
+
+        Group {
+          Anchor: (Width: 120, Top: 0, Bottom: 0, Left: 16);
+          LayoutMode: Middle;
+
+          Group {
+            Anchor: (Width: 96, Height: 96);
+
+            CircularProgressBar #QuestRow2Circle {
+              Value: 0.0;
+              Color: #d4bb67;
+              Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0);
+              Background: #31465f(1.0);
+              OutlineColor: #607995;
+              OutlineSize: 2;
+            }
+
+            Group #QuestRow2CircleCutout {
+              Anchor: (Top: 24, Bottom: 24, Left: 24, Right: 24);
+              Background: #132033(1.0);
+            }
+
+            Label #QuestRow2Percent {
+              Text: "0%";
+              Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0);
+              Style: (FontSize: 18, TextColor: #f6f1e5, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center);
+            }
+          }
+        }
+      }
+
+      Group #QuestRow3 {
+        Anchor: (Height: 122, Bottom: 12);
+        LayoutMode: Left;
+        Background: #132033(0.9);
+        Padding: (Left: 18, Right: 18, Top: 16, Bottom: 16);
+
+        Group {
+          FlexWeight: 1;
+          LayoutMode: Top;
+
+          Label #QuestRow3Title {
+            Text: "Quest Title";
+            Anchor: (Height: 28, Bottom: 8);
+            Style: (FontSize: 24, TextColor: #f6f1e5, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+          }
+
+          Label #QuestRow3Summary {
+            Text: "";
+            FlexWeight: 1;
+            Style: (FontSize: 15, TextColor: #d2d8df, Wrap: true, HorizontalAlignment: Start, VerticalAlignment: Start);
+          }
+
+          Label #QuestRow3Progress {
+            Text: "";
+            Anchor: (Height: 38, Top: 8);
+            Style: (FontSize: 14, TextColor: #c7d2de, Wrap: true, HorizontalAlignment: Start, VerticalAlignment: Start);
+          }
+        }
+
+        Group {
+          Anchor: (Width: 120, Top: 0, Bottom: 0, Left: 16);
+          LayoutMode: Middle;
+
+          Group {
+            Anchor: (Width: 96, Height: 96);
+
+            CircularProgressBar #QuestRow3Circle {
+              Value: 0.0;
+              Color: #d4bb67;
+              Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0);
+              Background: #31465f(1.0);
+              OutlineColor: #607995;
+              OutlineSize: 2;
+            }
+
+            Group #QuestRow3CircleCutout {
+              Anchor: (Top: 24, Bottom: 24, Left: 24, Right: 24);
+              Background: #132033(1.0);
+            }
+
+            Label #QuestRow3Percent {
+              Text: "0%";
+              Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0);
+              Style: (FontSize: 18, TextColor: #f6f1e5, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center);
+            }
+          }
+        }
+      }
+
+      Group #QuestRow4 {
+        Anchor: (Height: 122, Bottom: 12);
+        LayoutMode: Left;
+        Background: #132033(0.9);
+        Padding: (Left: 18, Right: 18, Top: 16, Bottom: 16);
+
+        Group {
+          FlexWeight: 1;
+          LayoutMode: Top;
+
+          Label #QuestRow4Title {
+            Text: "Quest Title";
+            Anchor: (Height: 28, Bottom: 8);
+            Style: (FontSize: 24, TextColor: #f6f1e5, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+          }
+
+          Label #QuestRow4Summary {
+            Text: "";
+            FlexWeight: 1;
+            Style: (FontSize: 15, TextColor: #d2d8df, Wrap: true, HorizontalAlignment: Start, VerticalAlignment: Start);
+          }
+
+          Label #QuestRow4Progress {
+            Text: "";
+            Anchor: (Height: 38, Top: 8);
+            Style: (FontSize: 14, TextColor: #c7d2de, Wrap: true, HorizontalAlignment: Start, VerticalAlignment: Start);
+          }
+        }
+
+        Group {
+          Anchor: (Width: 120, Top: 0, Bottom: 0, Left: 16);
+          LayoutMode: Middle;
+
+          Group {
+            Anchor: (Width: 96, Height: 96);
+
+            CircularProgressBar #QuestRow4Circle {
+              Value: 0.0;
+              Color: #d4bb67;
+              Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0);
+              Background: #31465f(1.0);
+              OutlineColor: #607995;
+              OutlineSize: 2;
+            }
+
+            Group #QuestRow4CircleCutout {
+              Anchor: (Top: 24, Bottom: 24, Left: 24, Right: 24);
+              Background: #132033(1.0);
+            }
+
+            Label #QuestRow4Percent {
+              Text: "0%";
+              Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0);
+              Style: (FontSize: 18, TextColor: #f6f1e5, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center);
+            }
+          }
+        }
+      }
+
+      Group #QuestRow5 {
+        Anchor: (Height: 122);
+        LayoutMode: Left;
+        Background: #132033(0.9);
+        Padding: (Left: 18, Right: 18, Top: 16, Bottom: 16);
+
+        Group {
+          FlexWeight: 1;
+          LayoutMode: Top;
+
+          Label #QuestRow5Title {
+            Text: "Quest Title";
+            Anchor: (Height: 28, Bottom: 8);
+            Style: (FontSize: 24, TextColor: #f6f1e5, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+          }
+
+          Label #QuestRow5Summary {
+            Text: "";
+            FlexWeight: 1;
+            Style: (FontSize: 15, TextColor: #d2d8df, Wrap: true, HorizontalAlignment: Start, VerticalAlignment: Start);
+          }
+
+          Label #QuestRow5Progress {
+            Text: "";
+            Anchor: (Height: 38, Top: 8);
+            Style: (FontSize: 14, TextColor: #c7d2de, Wrap: true, HorizontalAlignment: Start, VerticalAlignment: Start);
+          }
+        }
+
+        Group {
+          Anchor: (Width: 120, Top: 0, Bottom: 0, Left: 16);
+          LayoutMode: Middle;
+
+          Group {
+            Anchor: (Width: 96, Height: 96);
+
+            CircularProgressBar #QuestRow5Circle {
+              Value: 0.0;
+              Color: #d4bb67;
+              Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0);
+              Background: #31465f(1.0);
+              OutlineColor: #607995;
+              OutlineSize: 2;
+            }
+
+            Group #QuestRow5CircleCutout {
+              Anchor: (Top: 24, Bottom: 24, Left: 24, Right: 24);
+              Background: #132033(1.0);
+            }
+
+            Label #QuestRow5Percent {
+              Text: "0%";
+              Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0);
+              Style: (FontSize: 18, TextColor: #f6f1e5, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center);
+            }
+          }
+        }
+      }
+    }
+
+    Group {
+      Anchor: (Height: 44, Top: 14);
+      LayoutMode: Left;
+
+      Group { FlexWeight: 1; }
+
+      Button #CloseBtn {
+        Anchor: (Width: 110, Height: 36);
+        Label { Text: "Close"; Style: (FontSize: 14, TextColor: #f0f4ff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); }
+      }
+    }
+  }
+}

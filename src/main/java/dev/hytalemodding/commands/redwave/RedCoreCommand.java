@@ -12,10 +12,13 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.redwave.RedWaveConfig;
+import dev.hytalemodding.redwave.RedCoreProfileRegistry;
 import dev.hytalemodding.redwave.RedCoreRegistry;
 import dev.hytalemodding.redwave.RedWaveManager;
+import dev.hytalemodding.state.transition.CrimsonCoreConfigManager;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 
 public class RedCoreCommand extends AbstractPlayerCommand {
     public RedCoreCommand() {
@@ -41,8 +44,22 @@ public class RedCoreCommand extends AbstractPlayerCommand {
         world.setBlock(corePos.x, corePos.y, corePos.z, RedWaveConfig.CORE_BLOCK_ID);
         RedCoreRegistry.register(world.getWorldConfig().getUuid(), corePos);
         RedWaveManager.setCore(playerRef.getUuid(), world.getWorldConfig().getUuid(), corePos);
+        CrimsonCoreConfigManager.CrimsonCoreConfigState existing = CrimsonCoreConfigManager.get().getState(world.getName());
+        ArrayList<RedCoreProfileRegistry.RedCoreProfile> profiles = new ArrayList<>(existing.profiles());
+        boolean found = false;
+        for (RedCoreProfileRegistry.RedCoreProfile profile : profiles) {
+            if (profile.corePos().equals(corePos)) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            profiles.add(new RedCoreProfileRegistry.RedCoreProfile(new Vector3i(corePos), existing.radiusBlocks(), existing.spreadSeconds()));
+            int chooseCount = existing.chooseCount() <= 0 ? 1 : Math.min(existing.chooseCount(), profiles.size());
+            CrimsonCoreConfigManager.get().setState(world.getName(), new CrimsonCoreConfigManager.CrimsonCoreConfigState(chooseCount, existing.radiusBlocks(), existing.spreadSeconds(), profiles));
+        }
         context.sendMessage(Message.raw(
-                "Crimson core set and cyan wool placed at: " + corePos.x + ", " + corePos.y + ", " + corePos.z
+                "Crimson core saved at: " + corePos.x + ", " + corePos.y + ", " + corePos.z
         ));
     }
 }

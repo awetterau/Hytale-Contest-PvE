@@ -2,6 +2,7 @@ package dev.hytalemodding.commands.redwave;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
@@ -10,10 +11,14 @@ import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayer
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import dev.hytalemodding.redwave.RedCoreProfileRegistry;
 import dev.hytalemodding.redwave.RedWaveConfig;
 import dev.hytalemodding.redwave.RedWaveManager;
+import dev.hytalemodding.state.transition.CrimsonCoreConfigManager;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.UUID;
 
 public class RedRadiusCommand extends AbstractPlayerCommand {
     @Nonnull
@@ -41,6 +46,25 @@ public class RedRadiusCommand extends AbstractPlayerCommand {
         }
 
         RedWaveManager.setRadius(playerRef.getUuid(), world.getWorldConfig().getUuid(), radius);
+        RedWaveManager.Selection selection = RedWaveManager.getSelection(playerRef.getUuid());
+        UUID worldId = world.getWorldConfig().getUuid();
+        if (selection != null && worldId.equals(selection.worldId()) && selection.corePos() != null) {
+            Vector3i selectedCore = selection.corePos();
+            CrimsonCoreConfigManager.CrimsonCoreConfigState existing = CrimsonCoreConfigManager.get().getState(world.getName());
+            ArrayList<RedCoreProfileRegistry.RedCoreProfile> profiles = new ArrayList<>();
+            boolean updated = false;
+            for (RedCoreProfileRegistry.RedCoreProfile profile : existing.profiles()) {
+                if (profile.corePos().equals(selectedCore)) {
+                    profiles.add(new RedCoreProfileRegistry.RedCoreProfile(new Vector3i(selectedCore), radius, existing.spreadSeconds()));
+                    updated = true;
+                } else {
+                    profiles.add(new RedCoreProfileRegistry.RedCoreProfile(new Vector3i(profile.corePos()), radius, existing.spreadSeconds()));
+                }
+            }
+            if (updated) {
+                CrimsonCoreConfigManager.get().setState(world.getName(), new CrimsonCoreConfigManager.CrimsonCoreConfigState(existing.chooseCount(), radius, existing.spreadSeconds(), profiles));
+            }
+        }
         context.sendMessage(Message.raw("Crimson radius set to " + radius + " blocks around core."));
     }
 }

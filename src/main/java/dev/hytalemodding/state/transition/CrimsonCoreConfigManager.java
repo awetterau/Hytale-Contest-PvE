@@ -2,6 +2,7 @@ package dev.hytalemodding.state.transition;
 
 import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.universe.Universe;
+import dev.hytalemodding.redwave.RedWaveConfig;
 import dev.hytalemodding.redwave.RedCoreProfileRegistry;
 
 import javax.annotation.Nonnull;
@@ -30,13 +31,31 @@ public final class CrimsonCoreConfigManager {
         return INSTANCE;
     }
 
+    public record CrimsonCoreConfigState(
+            int chooseCount,
+            int radiusBlocks,
+            float spreadSeconds,
+            @Nonnull List<RedCoreProfileRegistry.RedCoreProfile> profiles
+    ) {
+    }
+
     @Nonnull
     public synchronized List<RedCoreProfileRegistry.RedCoreProfile> getProfiles(@Nonnull String worldName) {
+        return this.getState(worldName).profiles();
+    }
+
+    @Nonnull
+    public synchronized CrimsonCoreConfigState getState(@Nonnull String worldName) {
         Properties properties = loadProperties();
         String worldKey = normalizeWorldName(worldName);
         Integer count = readInt(properties.getProperty(prefix(worldKey) + ".count"));
         if (count == null || count <= 0) {
-            return List.of();
+            return new CrimsonCoreConfigState(
+                    0,
+                    RedWaveConfig.DEFAULT_UI_RADIUS_BLOCKS,
+                    RedWaveConfig.DEFAULT_UI_START_SECONDS,
+                    List.of()
+            );
         }
 
         ArrayList<RedCoreProfileRegistry.RedCoreProfile> profiles = new ArrayList<>();
@@ -53,31 +72,36 @@ public final class CrimsonCoreConfigManager {
             profiles.add(new RedCoreProfileRegistry.RedCoreProfile(new Vector3i(x, y, z), radius, seconds.floatValue()));
         }
 
-        profiles.sort(Comparator
-                .comparingInt((RedCoreProfileRegistry.RedCoreProfile p) -> p.corePos().x)
-                .thenComparingInt(p -> p.corePos().y)
-                .thenComparingInt(p -> p.corePos().z));
-        return profiles;
+        ArrayList<RedCoreProfileRegistry.RedCoreProfile> sorted = copyAndSortProfiles(profiles);
+        Integer configuredChooseCount = readInt(properties.getProperty(prefix(worldKey) + ".chooseCount"));
+        Integer configuredRadius = readInt(properties.getProperty(prefix(worldKey) + ".radius"));
+        Double configuredSpreadSeconds = readDouble(properties.getProperty(prefix(worldKey) + ".spreadSeconds"));
+        int radius = configuredRadius == null
+                ? inferGlobalRadius(sorted)
+                : normalizeRadius(configuredRadius);
+        float spreadSeconds = configuredSpreadSeconds == null
+                ? inferGlobalSpreadSeconds(sorted)
+                : normalizeSpreadSeconds(configuredSpreadSeconds.floatValue());
+        ArrayList<RedCoreProfileRegistry.RedCoreProfile> normalizedProfiles = new ArrayList<>(sorted.size());
+        for (RedCoreProfileRegistry.RedCoreProfile profile : sorted) {
+            normalizedProfiles.add(new RedCoreProfileRegistry.RedCoreProfile(new Vector3i(profile.corePos()), radius, spreadSeconds));
+        }
+        return new CrimsonCoreConfigState(normalizeChooseCount(configuredChooseCount, normalizedProfiles.size()), radius, spreadSeconds, normalizedProfiles);
     }
 
     public synchronized void setProfiles(@Nonnull String worldName, @Nonnull List<RedCoreProfileRegistry.RedCoreProfile> profiles) {
+        CrimsonCoreConfigState existing = this.getState(worldName);
+        int chooseCount = normalizeChooseCount(existing.chooseCount(), profiles.size());
+        this.setState(worldName, new CrimsonCoreConfigState(chooseCount, existing.radiusBlocks(), existing.spreadSeconds(), profiles));
+    }
+
+    public synchronized void setState(@Nonnull String worldName, @Nonnull CrimsonCoreConfigState state) {
         Properties properties = loadProperties();
         String worldKey = normalizeWorldName(worldName);
 
         clearWorld(properties, worldKey);
 
-        ArrayList<RedCoreProfileRegistry.RedCoreProfile> cleaned = new ArrayList<>();
-        for (RedCoreProfileRegistry.RedCoreProfile profile : profiles) {
-            if (profile == null || profile.corePos() == null) {
-                continue;
-            }
-            cleaned.add(new RedCoreProfileRegistry.RedCoreProfile(new Vector3i(profile.corePos()), profile.radiusBlocks(), profile.startSeconds()));
-        }
-
-        cleaned.sort(Comparator
-                .comparingInt((RedCoreProfileRegistry.RedCoreProfile p) -> p.corePos().x)
-                .thenComparingInt(p -> p.corePos().y)
-                .thenComparingInt(p -> p.corePos().z));
+        ArrayList<RedCoreProfileRegistry.RedCoreProfile> cleaned = copyAndSortProfiles(state.profiles());
 
         if (cleaned.isEmpty()) {
             saveProperties(properties);
@@ -85,6 +109,9 @@ public final class CrimsonCoreConfigManager {
         }
 
         properties.setProperty(prefix(worldKey) + ".count", Integer.toString(cleaned.size()));
+        properties.setProperty(prefix(worldKey) + ".chooseCount", Integer.toString(normalizeChooseCount(state.chooseCount(), cleaned.size())));
+        properties.setProperty(prefix(worldKey) + ".radius", Integer.toString(normalizeRadius(state.radiusBlocks())));
+        properties.setProperty(prefix(worldKey) + ".spreadSeconds", Float.toString(normalizeSpreadSeconds(state.spreadSeconds())));
         for (int i = 0; i < cleaned.size(); i++) {
             RedCoreProfileRegistry.RedCoreProfile profile = cleaned.get(i);
             Vector3i pos = profile.corePos();
@@ -92,11 +119,68 @@ public final class CrimsonCoreConfigManager {
             properties.setProperty(base + ".x", Integer.toString(pos.x));
             properties.setProperty(base + ".y", Integer.toString(pos.y));
             properties.setProperty(base + ".z", Integer.toString(pos.z));
-            properties.setProperty(base + ".radius", Integer.toString(profile.radiusBlocks()));
-            properties.setProperty(base + ".startSeconds", Float.toString(profile.startSeconds()));
+            properties.setProperty(base + ".radius", Integer.toString(normalizeRadius(state.radiusBlocks())));
+            properties.setProperty(base + ".startSeconds", Float.toString(normalizeSpreadSeconds(state.spreadSeconds())));
         }
 
         saveProperties(properties);
+    }
+
+    @Nonnull
+    private static ArrayList<RedCoreProfileRegistry.RedCoreProfile> copyAndSortProfiles(@Nonnull List<RedCoreProfileRegistry.RedCoreProfile> profiles) {
+        ArrayList<RedCoreProfileRegistry.RedCoreProfile> cleaned = new ArrayList<>();
+        for (RedCoreProfileRegistry.RedCoreProfile profile : profiles) {
+            if (profile == null || profile.corePos() == null) {
+                continue;
+            }
+            cleaned.add(new RedCoreProfileRegistry.RedCoreProfile(new Vector3i(profile.corePos()), profile.radiusBlocks(), profile.startSeconds()));
+        }
+        cleaned.sort(Comparator
+                .comparingInt((RedCoreProfileRegistry.RedCoreProfile p) -> p.corePos().x)
+                .thenComparingInt(p -> p.corePos().y)
+                .thenComparingInt(p -> p.corePos().z));
+        return cleaned;
+    }
+
+    private static int normalizeChooseCount(Integer chooseCount, int profileCount) {
+        if (profileCount <= 0) {
+            return 0;
+        }
+        if (chooseCount == null) {
+            return profileCount;
+        }
+        if (chooseCount < 1) {
+            return 1;
+        }
+        return Math.min(chooseCount, profileCount);
+    }
+
+    private static int normalizeRadius(int radius) {
+        if (radius < RedWaveConfig.MIN_RADIUS_BLOCKS || radius > RedWaveConfig.MAX_RADIUS_BLOCKS) {
+            return RedWaveConfig.DEFAULT_UI_RADIUS_BLOCKS;
+        }
+        return radius;
+    }
+
+    private static float normalizeSpreadSeconds(float spreadSeconds) {
+        if (spreadSeconds <= 0.0f || Float.isNaN(spreadSeconds) || Float.isInfinite(spreadSeconds)) {
+            return RedWaveConfig.DEFAULT_UI_START_SECONDS;
+        }
+        return spreadSeconds;
+    }
+
+    private static int inferGlobalRadius(@Nonnull List<RedCoreProfileRegistry.RedCoreProfile> profiles) {
+        if (profiles.isEmpty()) {
+            return RedWaveConfig.DEFAULT_UI_RADIUS_BLOCKS;
+        }
+        return normalizeRadius(profiles.get(0).radiusBlocks());
+    }
+
+    private static float inferGlobalSpreadSeconds(@Nonnull List<RedCoreProfileRegistry.RedCoreProfile> profiles) {
+        if (profiles.isEmpty()) {
+            return RedWaveConfig.DEFAULT_UI_START_SECONDS;
+        }
+        return normalizeSpreadSeconds(profiles.get(0).startSeconds());
     }
 
     private static void clearWorld(@Nonnull Properties properties, @Nonnull String worldKey) {

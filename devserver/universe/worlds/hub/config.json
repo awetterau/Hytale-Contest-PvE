@@ -32,7 +32,7 @@
   "IsBlockTicking": true,
   "IsPvpEnabled": false,
   "IsFallDamageEnabled": false,
-  "IsGameTimePaused": false,
+  "IsGameTimePaused": true,
   "GameTime": "0001-01-01T15:26:39.783856274Z",
   "ClientEffects": {
     "SunHeightPercent": 100.0,

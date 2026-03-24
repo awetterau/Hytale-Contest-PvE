@@ -308,6 +308,10 @@ public final class BaseHousingManager {
             return;
         }
 
+        reconcileInvalidAssignments(worldName);
+
+        ensureStaticHubResidentsInWorld(world);
+
         Collection<PlotData> snapshot = new ArrayList<>(this.plots.values());
         for (PlotData plot : snapshot) {
             if (!plot.worldName.equalsIgnoreCase(worldName) || !plot.purchased || plot.assignedNpcKey != null) {
@@ -333,14 +337,95 @@ public final class BaseHousingManager {
             if (!isNpcRescued(npcKey)) {
                 continue;
             }
-            ensureNpcAtHome(world, npcKey, plot.homeTransform);
-            NpcArchetype archetype = NpcDefinitionRegistry.get().getArchetype(npcKey);
-            String roleName = archetype == null ? null : archetype.hubRole;
-            if (roleName != null && !roleName.isBlank()) {
-                boolean reachedWorkshop = isNpcCloseTo(world, roleName, plot.homeTransform.getPosition(), 2.25);
-                this.hubNpcManager.promoteToWorkingIfReady(npcKey, reachedWorkshop);
+            try {
+                ensureNpcAtHome(world, npcKey, plot.homeTransform);
+                NpcArchetype archetype = NpcDefinitionRegistry.get().getArchetype(npcKey);
+                String roleName = archetype == null ? null : archetype.hubRole;
+                if (roleName != null && !roleName.isBlank()) {
+                    boolean reachedWorkshop = isNpcCloseTo(world, roleName, plot.homeTransform.getPosition(), 2.25);
+                    this.hubNpcManager.promoteToWorkingIfReady(npcKey, reachedWorkshop);
+                }
+            } catch (Exception e) {
+                System.out.println("[BaseHousing] Skipping invalid hub NPC assignment plot=" + plot.id + " npc=" + npcKey + ": " + e.getMessage());
             }
         }
+    }
+
+    private void reconcileInvalidAssignments(@Nonnull String worldName) {
+        boolean changed = false;
+        for (Map.Entry<String, PlotData> entry : this.plots.entrySet()) {
+            PlotData plot = entry.getValue();
+            if (plot == null || !plot.worldName.equalsIgnoreCase(worldName) || plot.assignedNpcKey == null) {
+                continue;
+            }
+
+            String npcKey = normalizeOrDefault(plot.assignedNpcKey, "");
+            if (npcKey.isEmpty()) {
+                this.plots.put(entry.getKey(), plot.withAssignment(null, plot.purchased, plot.buildingLevel));
+                changed = true;
+                continue;
+            }
+
+            NpcArchetype archetype = NpcDefinitionRegistry.get().getArchetype(npcKey);
+            String npcPlotType = archetype == null || archetype.plotType == null
+                    ? normalizeOrDefault(npcKey, "")
+                    : normalizeOrDefault(archetype.plotType, "");
+            boolean valid = plot.purchased
+                    && isNpcRescued(npcKey)
+                    && isSupportedProfession(npcKey)
+                    && !npcPlotType.isEmpty()
+                    && npcPlotType.equalsIgnoreCase(normalizeOrDefault(plot.plotType, BLACKSMITH_PLOT_TYPE))
+                    && archetype != null
+                    && archetype.hubRole != null
+                    && !archetype.hubRole.isBlank();
+
+            if (valid) {
+                continue;
+            }
+
+            System.out.println("[BaseHousing] Clearing stale assignment plot=" + plot.id
+                    + " npc=" + npcKey
+                    + " purchased=" + plot.purchased
+                    + " rescued=" + isNpcRescued(npcKey)
+                    + " plotType=" + plot.plotType
+                    + " npcPlotType=" + npcPlotType);
+            this.plots.put(entry.getKey(), plot.withAssignment(null, plot.purchased, plot.buildingLevel));
+            this.hubNpcManager.clearAssignment(npcKey);
+            changed = true;
+        }
+
+        if (changed) {
+            saveQuietly();
+        }
+    }
+
+    private void ensureStaticHubResidentsInWorld(@Nonnull World world) {
+        if (!hasActivePlayerInWorld(world)) {
+            return;
+        }
+        for (NpcArchetype archetype : NpcDefinitionRegistry.get().getAll()) {
+            if (!archetype.alwaysInHub || archetype.hubRole == null || archetype.hubRole.isBlank()) {
+                continue;
+            }
+            Transform target = resolveStaticHubTransform(archetype);
+            if (target == null) {
+                continue;
+            }
+            ensureRoleAtTransform(world, archetype.hubRole, target);
+        }
+    }
+
+    private static boolean hasActivePlayerInWorld(@Nonnull World world) {
+        for (var playerRef : Universe.get().getPlayers()) {
+            if (playerRef == null || !playerRef.isValid() || playerRef.getWorldUuid() == null) {
+                continue;
+            }
+            World playerWorld = Universe.get().getWorld(playerRef.getWorldUuid());
+            if (playerWorld != null && playerWorld.getName().equalsIgnoreCase(world.getName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public synchronized boolean isNpcWorking(@Nonnull String npcKey) {
@@ -416,7 +501,10 @@ public final class BaseHousingManager {
         if (archetype == null || archetype.hubRole == null || archetype.hubRole.isBlank()) {
             return;
         }
-        String roleName = archetype.hubRole;
+        ensureRoleAtTransform(world, archetype.hubRole, homeTransform);
+    }
+
+    private void ensureRoleAtTransform(@Nonnull World world, @Nonnull String roleName, @Nonnull Transform targetTransform) {
         Store<EntityStore> store = world.getEntityStore().getStore();
         Collection<Ref<EntityStore>> all = findAllNpcByRole(store, roleName);
         Ref<EntityStore> existing = null;
@@ -441,7 +529,7 @@ public final class BaseHousingManager {
                 return;
             }
             this.lastBlacksmithSpawnAttemptMs = now;
-            spawnNpc(world, roleName, homeTransform);
+            spawnNpc(world, roleName, targetTransform);
             return;
         }
 
@@ -454,8 +542,8 @@ public final class BaseHousingManager {
             return;
         }
 
-        Vector3d home = homeTransform.getPosition();
-        npc.saveLeashInformation(new Vector3d(home), new Vector3f(homeTransform.getRotation()));
+        Vector3d home = targetTransform.getPosition();
+        npc.saveLeashInformation(new Vector3d(home), new Vector3f(targetTransform.getRotation()));
         store.putComponent(existing, NPCEntity.getComponentType(), npc);
 
         Vector3d pos = transform.getPosition();
@@ -466,6 +554,26 @@ public final class BaseHousingManager {
         if (distSq > 4.0 && npc.getRole() != null && npc.getRole().getStateSupport() != null && !npc.getRole().getStateSupport().isInBusyState()) {
             npc.getRole().getStateSupport().setState(existing, "Idle", null, store);
         }
+    }
+
+    @Nullable
+    private Transform resolveStaticHubTransform(@Nonnull NpcArchetype archetype) {
+        if (archetype.hubSpawnTransform != null) {
+            return copyTransform(archetype.hubSpawnTransform);
+        }
+        Transform baseSpawn = GameFlowConfigManager.get().getBaseSpawn();
+        if (baseSpawn == null) {
+            return null;
+        }
+        Vector3d basePos = baseSpawn.getPosition();
+        Vector3f baseRot = baseSpawn.getRotation();
+        Vector3d forward = Transform.getDirection(0.0f, baseRot.getY());
+        Vector3d pos = new Vector3d(
+                basePos.getX() - forward.getX() * 2.0,
+                basePos.getY(),
+                basePos.getZ() - forward.getZ() * 2.0
+        );
+        return new Transform(pos, new Vector3f(baseRot));
     }
 
     private static void spawnNpc(@Nonnull World world, @Nonnull String roleName, @Nonnull Transform transform) {

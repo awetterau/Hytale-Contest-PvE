@@ -57,6 +57,10 @@ public final class RedCoreRegistry {
         return snapshot;
     }
 
+    public static void clear(@Nonnull UUID worldId) {
+        CORES_BY_WORLD.remove(worldId);
+    }
+
     @Nonnull
     private static String key(@Nonnull Vector3i pos) {
         return pos.x + ":" + pos.y + ":" + pos.z;

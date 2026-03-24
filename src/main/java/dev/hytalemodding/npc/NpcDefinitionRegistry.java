@@ -1,5 +1,9 @@
 package dev.hytalemodding.npc;
 
+import com.hypixel.hytale.math.vector.Transform;
+import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.math.vector.Vector3f;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -121,6 +125,8 @@ public final class NpcDefinitionRegistry {
         List<String> followStateAliases = parseCsv(p.getProperty(prefix + "followStateAliases"));
         boolean animalRoutesToFarmer = Boolean.parseBoolean(p.getProperty(prefix + "animal.routeToFarmer", "false"));
         String farmerNpcKey = normalizeNullable(p.getProperty(prefix + "animal.farmerNpcKey"));
+        boolean alwaysInHub = Boolean.parseBoolean(p.getProperty(prefix + "alwaysInHub", "false"));
+        Transform hubSpawnTransform = readTransform(p, prefix + "hubSpawn.");
 
         return new NpcArchetype(
                 key,
@@ -137,7 +143,9 @@ public final class NpcDefinitionRegistry {
                 defaultTradeUnlocks,
                 followStateAliases,
                 animalRoutesToFarmer,
-                farmerNpcKey
+                farmerNpcKey,
+                alwaysInHub,
+                hubSpawnTransform
         );
     }
 
@@ -175,9 +183,37 @@ public final class NpcDefinitionRegistry {
                 List.of("basic_armor_trade"),
                 List.of("follow"),
                 false,
+                null,
+                false,
                 null
         );
         this.byNpcKey.put(fallback.npcKey, fallback);
+    }
+
+    @Nullable
+    private static Transform readTransform(@Nonnull Properties p, @Nonnull String prefix) {
+        Double x = readDouble(p.getProperty(prefix + "x"));
+        Double y = readDouble(p.getProperty(prefix + "y"));
+        Double z = readDouble(p.getProperty(prefix + "z"));
+        if (x == null || y == null || z == null) {
+            return null;
+        }
+        float pitch = readDouble(p.getProperty(prefix + "pitch")) == null ? 0.0f : readDouble(p.getProperty(prefix + "pitch")).floatValue();
+        float yaw = readDouble(p.getProperty(prefix + "yaw")) == null ? 0.0f : readDouble(p.getProperty(prefix + "yaw")).floatValue();
+        float roll = readDouble(p.getProperty(prefix + "roll")) == null ? 0.0f : readDouble(p.getProperty(prefix + "roll")).floatValue();
+        return new Transform(new Vector3d(x, y, z), new Vector3f(pitch, yaw, roll));
+    }
+
+    @Nullable
+    private static Double readDouble(@Nullable String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return Double.parseDouble(raw.trim());
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
     }
 
     @Nonnull

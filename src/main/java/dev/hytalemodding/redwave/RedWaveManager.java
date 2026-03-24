@@ -120,6 +120,14 @@ public final class RedWaveManager {
         ACTIVE_WAVES.remove(worldId);
     }
 
+    public static void clearRuntime(@Nonnull UUID worldId) {
+        ACTIVE_WAVES.remove(worldId);
+        ACTIVE_UNDO_SESSIONS.remove(worldId);
+        UNDO_HISTORY_BY_CORE.remove(worldId);
+        UNDO_PROCESSES.remove(worldId);
+        WORLD_READY_FLAGS.remove(worldId);
+    }
+
     public static void clearWave(@Nonnull UUID worldId, @Nonnull Vector3i corePos) {
         ConcurrentHashMap<String, ActiveWave> waves = ACTIVE_WAVES.get(worldId);
         if (waves == null) {

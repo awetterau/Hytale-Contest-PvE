@@ -115,6 +115,29 @@ public final class QuestDefinitionRegistry {
         String sourceType = p.getProperty(prefix + "sourceType");
         String sourceId = p.getProperty(prefix + "sourceId");
         String nextQuestId = p.getProperty(prefix + "nextQuestId");
+        String narrativeIntent = p.getProperty(prefix + "narrativeIntent");
+        String playerFantasy = p.getProperty(prefix + "playerFantasy");
+        String pitch = p.getProperty(prefix + "pitch");
+        String offerText = p.getProperty(prefix + "offerText");
+        String inProgressText = p.getProperty(prefix + "inProgressText");
+        String completionText = p.getProperty(prefix + "completionText");
+        String journalSummary = p.getProperty(prefix + "journalSummary");
+        String hudMarkerText = p.getProperty(prefix + "hudMarkerText");
+        String completionCheckText = p.getProperty(prefix + "completionCheckText");
+        String immediateRewardsText = p.getProperty(prefix + "immediateRewardsText");
+        String targetPlayerLevel = p.getProperty(prefix + "targetPlayerLevel");
+        String expectedDuration = p.getProperty(prefix + "expectedDuration");
+        String difficultyNotes = p.getProperty(prefix + "difficultyNotes");
+        String requiredAssets = p.getProperty(prefix + "requiredAssets");
+        String requiredEncounters = p.getProperty(prefix + "requiredEncounters");
+        String requiredLocations = p.getProperty(prefix + "requiredLocations");
+        String requiredUi = p.getProperty(prefix + "requiredUi");
+        int requiredSuccessfulExtractions = parseInt(p.getProperty(prefix + "progress.requiredSuccessfulExtractions"), 0);
+        int requiredNpcKills = parseInt(p.getProperty(prefix + "progress.requiredNpcKills"), 0);
+        String trackedNpcRoleName = p.getProperty(prefix + "progress.trackedNpcRole");
+        List<String> requiredCompletedQuests = parseCsv(p.getProperty(prefix + "requirements.completedQuests"));
+        boolean canBeMissed = Boolean.parseBoolean(p.getProperty(prefix + "canBeMissed", "false"));
+        boolean repeatable = Boolean.parseBoolean(p.getProperty(prefix + "repeatable", "false"));
         List<String> rewardSetFlags = parseCsv(p.getProperty(prefix + "rewards.setFlags"));
         List<String> rewardRescueNpcs = parseCsv(p.getProperty(prefix + "rewards.rescueNpcs"));
         List<String> rewardUnlockCrafts = parseCsv(p.getProperty(prefix + "rewards.unlockCrafts"));
@@ -132,6 +155,29 @@ public final class QuestDefinitionRegistry {
                 sourceType,
                 sourceId,
                 nextQuestId,
+                narrativeIntent,
+                playerFantasy,
+                pitch,
+                offerText,
+                inProgressText,
+                completionText,
+                journalSummary,
+                hudMarkerText,
+                completionCheckText,
+                immediateRewardsText,
+                targetPlayerLevel,
+                expectedDuration,
+                difficultyNotes,
+                requiredAssets,
+                requiredEncounters,
+                requiredLocations,
+                requiredUi,
+                requiredSuccessfulExtractions,
+                requiredNpcKills,
+                trackedNpcRoleName,
+                requiredCompletedQuests,
+                canBeMissed,
+                repeatable,
                 rewardSetFlags,
                 rewardRescueNpcs,
                 rewardUnlockCrafts,
@@ -186,6 +232,17 @@ public final class QuestDefinitionRegistry {
             out.add(new QuestDefinition.ItemAmount(itemId, amount));
         }
         return List.copyOf(out);
+    }
+
+    private static int parseInt(@Nullable String raw, int fallback) {
+        if (raw == null || raw.isBlank()) {
+            return fallback;
+        }
+        try {
+            return Integer.parseInt(raw.trim());
+        } catch (NumberFormatException ignored) {
+            return fallback;
+        }
     }
 }
 

@@ -19,6 +19,48 @@ public final class QuestDefinition {
     public final String sourceId;
     @Nullable
     public final String nextQuestId;
+    @Nullable
+    public final String narrativeIntent;
+    @Nullable
+    public final String playerFantasy;
+    @Nullable
+    public final String pitch;
+    @Nullable
+    public final String offerText;
+    @Nullable
+    public final String inProgressText;
+    @Nullable
+    public final String completionText;
+    @Nullable
+    public final String journalSummary;
+    @Nullable
+    public final String hudMarkerText;
+    @Nullable
+    public final String completionCheckText;
+    @Nullable
+    public final String immediateRewardsText;
+    @Nullable
+    public final String targetPlayerLevel;
+    @Nullable
+    public final String expectedDuration;
+    @Nullable
+    public final String difficultyNotes;
+    @Nullable
+    public final String requiredAssets;
+    @Nullable
+    public final String requiredEncounters;
+    @Nullable
+    public final String requiredLocations;
+    @Nullable
+    public final String requiredUi;
+    public final int requiredSuccessfulExtractions;
+    public final int requiredNpcKills;
+    @Nullable
+    public final String trackedNpcRoleName;
+    @Nonnull
+    public final java.util.List<String> requiredCompletedQuests;
+    public final boolean canBeMissed;
+    public final boolean repeatable;
     @Nonnull
     public final java.util.List<String> rewardSetFlags;
     @Nonnull
@@ -40,6 +82,29 @@ public final class QuestDefinition {
             @Nullable String sourceType,
             @Nullable String sourceId,
             @Nullable String nextQuestId,
+            @Nullable String narrativeIntent,
+            @Nullable String playerFantasy,
+            @Nullable String pitch,
+            @Nullable String offerText,
+            @Nullable String inProgressText,
+            @Nullable String completionText,
+            @Nullable String journalSummary,
+            @Nullable String hudMarkerText,
+            @Nullable String completionCheckText,
+            @Nullable String immediateRewardsText,
+            @Nullable String targetPlayerLevel,
+            @Nullable String expectedDuration,
+            @Nullable String difficultyNotes,
+            @Nullable String requiredAssets,
+            @Nullable String requiredEncounters,
+            @Nullable String requiredLocations,
+            @Nullable String requiredUi,
+            int requiredSuccessfulExtractions,
+            int requiredNpcKills,
+            @Nullable String trackedNpcRoleName,
+            @Nonnull java.util.List<String> requiredCompletedQuests,
+            boolean canBeMissed,
+            boolean repeatable,
             @Nonnull java.util.List<String> rewardSetFlags,
             @Nonnull java.util.List<String> rewardRescueNpcs,
             @Nonnull java.util.List<String> rewardUnlockCrafts,
@@ -55,6 +120,29 @@ public final class QuestDefinition {
         this.sourceType = normalizeNullable(sourceType);
         this.sourceId = normalizeNullable(sourceId);
         this.nextQuestId = normalizeNullable(nextQuestId);
+        this.narrativeIntent = normalizeNullable(narrativeIntent);
+        this.playerFantasy = normalizeNullable(playerFantasy);
+        this.pitch = normalizeNullable(pitch);
+        this.offerText = normalizeNullable(offerText);
+        this.inProgressText = normalizeNullable(inProgressText);
+        this.completionText = normalizeNullable(completionText);
+        this.journalSummary = normalizeNullable(journalSummary);
+        this.hudMarkerText = normalizeNullable(hudMarkerText);
+        this.completionCheckText = normalizeNullable(completionCheckText);
+        this.immediateRewardsText = normalizeNullable(immediateRewardsText);
+        this.targetPlayerLevel = normalizeNullable(targetPlayerLevel);
+        this.expectedDuration = normalizeNullable(expectedDuration);
+        this.difficultyNotes = normalizeNullable(difficultyNotes);
+        this.requiredAssets = normalizeNullable(requiredAssets);
+        this.requiredEncounters = normalizeNullable(requiredEncounters);
+        this.requiredLocations = normalizeNullable(requiredLocations);
+        this.requiredUi = normalizeNullable(requiredUi);
+        this.requiredSuccessfulExtractions = Math.max(0, requiredSuccessfulExtractions);
+        this.requiredNpcKills = Math.max(0, requiredNpcKills);
+        this.trackedNpcRoleName = normalizeNullable(trackedNpcRoleName);
+        this.requiredCompletedQuests = java.util.List.copyOf(requiredCompletedQuests);
+        this.canBeMissed = canBeMissed;
+        this.repeatable = repeatable;
         this.rewardSetFlags = java.util.List.copyOf(rewardSetFlags);
         this.rewardRescueNpcs = java.util.List.copyOf(rewardRescueNpcs);
         this.rewardUnlockCrafts = java.util.List.copyOf(rewardUnlockCrafts);

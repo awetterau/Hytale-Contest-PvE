@@ -60,6 +60,7 @@ public final class RooterManManager {
         if (snapshot != null
                 && snapshot.runWorldUuid() != null
                 && snapshot.runWorldUuid().equals(worldId)
+                && snapshot.phase() == GameSessionManager.RunPhase.CRIMSON_ACTIVE
                 && config.getTemplateWorld().equalsIgnoreCase(snapshot.templateWorldName())) {
             tryAutoSpawnBoss(store, world, snapshot);
         } else {
@@ -216,6 +217,15 @@ public final class RooterManManager {
     private void cleanupAll() {
         this.sessions.clear();
         this.spawnedByRunWorld.clear();
+    }
+
+    public void clearRuntimeForWorld(@Nonnull UUID worldId) {
+        this.spawnedByRunWorld.remove(worldId);
+        this.sessions.entrySet().removeIf(entry -> {
+            BossSession session = entry.getValue();
+            return session == null || worldId.equals(session.worldId);
+        });
+        RooterShockwaveRuntime.clearWorld(worldId);
     }
 
     private static boolean isRooterBossRole(@Nullable String roleName) {

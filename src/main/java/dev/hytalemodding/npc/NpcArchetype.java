@@ -2,6 +2,7 @@ package dev.hytalemodding.npc;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import com.hypixel.hytale.math.vector.Transform;
 import java.util.Locale;
 import java.util.List;
 import java.util.Set;
@@ -36,6 +37,9 @@ public final class NpcArchetype {
     public final boolean animalRoutesToFarmer;
     @Nullable
     public final String farmerNpcKey;
+    public final boolean alwaysInHub;
+    @Nullable
+    public final Transform hubSpawnTransform;
 
     public NpcArchetype(
             @Nonnull String npcKey,
@@ -52,7 +56,9 @@ public final class NpcArchetype {
             @Nonnull List<String> defaultTradeUnlocks,
             @Nonnull List<String> followStateAliases,
             boolean animalRoutesToFarmer,
-            @Nullable String farmerNpcKey
+            @Nullable String farmerNpcKey,
+            boolean alwaysInHub,
+            @Nullable Transform hubSpawnTransform
     ) {
         this.npcKey = normalizeKey(npcKey);
         this.category = category;
@@ -69,6 +75,10 @@ public final class NpcArchetype {
         this.followStateAliases = defaultLowercase(followStateAliases);
         this.animalRoutesToFarmer = animalRoutesToFarmer;
         this.farmerNpcKey = normalizeNullable(farmerNpcKey);
+        this.alwaysInHub = alwaysInHub;
+        this.hubSpawnTransform = hubSpawnTransform == null
+                ? null
+                : new Transform(hubSpawnTransform.getPosition(), hubSpawnTransform.getRotation());
     }
 
     @Nonnull

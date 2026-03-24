@@ -18,19 +18,7 @@ public class GameTimerHud extends CustomUIHud {
     public void build(@Nonnull UICommandBuilder ui) {
         if (visible) {
             ui.append("GameTimerHud.ui");
-            ui.appendInline(
-                    "#GameTimerHud",
-                    "Label #TimerLabel {\n"
-                            + "  Text: \"" + timeString + "\";\n"
-                            + "  Style: (\n"
-                            + "    FontSize: 24,\n"
-                            + "    TextColor: #ffffff,\n"
-                            + "    HorizontalAlignment: Center,\n"
-                            + "    VerticalAlignment: Center,\n"
-                            + "    RenderBold: true\n"
-                            + "  );\n"
-                            + "}"
-            );
+            ui.set("#TimerLabel.Text", timeString);
         }
     }
 
