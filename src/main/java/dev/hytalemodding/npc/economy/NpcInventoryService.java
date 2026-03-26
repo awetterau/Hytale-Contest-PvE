@@ -39,6 +39,14 @@ public final class NpcInventoryService {
         return true;
     }
 
+    public static int countItem(@Nonnull PlayerRef playerRef, @Nonnull String itemId) {
+        Inventory inventory = getInventory(playerRef);
+        if (inventory == null) {
+            return 0;
+        }
+        return countInContainer(inventory.getHotbar(), itemId) + countInContainer(inventory.getStorage(), itemId);
+    }
+
     public static boolean executeTransaction(
             @Nonnull PlayerRef playerRef,
             @Nonnull List<NpcEconomyDefinition.ItemAmount> costs,

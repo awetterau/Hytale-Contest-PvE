@@ -36,6 +36,13 @@ public final class QuestDefinitionRegistry {
         System.out.println("[QuestDefs] Loaded quest definitions: " + this.byQuestId.size());
     }
 
+    public synchronized void reload() {
+        this.byQuestId.clear();
+        this.loaded = true;
+        loadFromResource();
+        System.out.println("[QuestDefs] Reloaded quest definitions: " + this.byQuestId.size());
+    }
+
     @Nullable
     public QuestDefinition getQuest(@Nonnull String questId) {
         initialize();

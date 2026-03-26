@@ -25,6 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class QuestProgressManager {
     private static final String PLUGIN_CONFIG_DIR = "HytaleModding-ExamplePlugin";
     private static final String CONFIG_FILE_NAME = "quest-progress.properties";
+    private static final String BLACKSMITH_HAMMER_QUEST_ID = "retrieve_blacksmith_tools";
+    private static final String BLACKSMITH_HAMMER_ITEM_ID = "Tool_Hammer_Iron";
     private static final QuestProgressManager INSTANCE = new QuestProgressManager();
 
     private final ConcurrentHashMap<String, QuestProgress> byQuestId = new ConcurrentHashMap<>();
@@ -157,10 +159,18 @@ public final class QuestProgressManager {
     }
 
     public synchronized boolean incrementSuccessfulExtraction() {
+        return incrementSuccessfulExtraction(null);
+    }
+
+    public synchronized boolean incrementSuccessfulExtraction(@Nullable PlayerRef playerRef) {
         ensureLoaded();
         boolean changed = false;
         for (QuestDefinition definition : QuestDefinitionRegistry.get().getAll()) {
             if (definition.requiredSuccessfulExtractions <= 0) {
+                continue;
+            }
+            if (BLACKSMITH_HAMMER_QUEST_ID.equals(definition.questId)
+                    && (playerRef == null || NpcInventoryService.countItem(playerRef, BLACKSMITH_HAMMER_ITEM_ID) <= 0)) {
                 continue;
             }
             QuestProgress progress = getOrCreate(definition.questId);

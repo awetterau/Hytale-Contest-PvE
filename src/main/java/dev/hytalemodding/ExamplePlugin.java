@@ -23,6 +23,7 @@ import dev.hytalemodding.commands.npc.NpcSpawnCommand;
 import dev.hytalemodding.commands.npc.SpawnRooterCommand;
 import dev.hytalemodding.commands.quest.QuestDevCommand;
 import dev.hytalemodding.commands.quest.QuestLogCommand;
+import dev.hytalemodding.commands.quest.SetQuestChestCommand;
 import dev.hytalemodding.commands.redwave.RedCoreCommand;
 import dev.hytalemodding.commands.redwave.RedRadiusCommand;
 import dev.hytalemodding.commands.redwave.RedStartCommand;
@@ -39,8 +40,12 @@ import dev.hytalemodding.game.DevDebugHudSystem;
 import dev.hytalemodding.loot.LifeEssenceChestBreakCleanupSystem;
 import dev.hytalemodding.loot.LifeEssenceChestOpenSystem;
 import dev.hytalemodding.loot.LifeEssenceContainerKey;
+import dev.hytalemodding.loot.LootChestRuntime;
+import dev.hytalemodding.loot.QuestChestConfigManager;
+import dev.hytalemodding.loot.QuestChestPositionManager;
 import dev.hytalemodding.map.MapReplacementPacketController;
 import dev.hytalemodding.map.BlacksmithSharedMarkerManager;
+import dev.hytalemodding.map.QuestChestMarkerPacketController;
 import dev.hytalemodding.map.SpawnMarkerPacketController;
 import dev.hytalemodding.npc.NpcDefinitionRegistry;
 import dev.hytalemodding.npc.NpcProgressManager;
@@ -80,13 +85,12 @@ import dev.hytalemodding.state.run.SpawnPointPlacementHandler;
 import dev.hytalemodding.state.transition.PlayerSpawnSafety;
 
 import javax.annotation.Nonnull;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class ExamplePlugin extends JavaPlugin {
     private RescueInteractionPacketWatcher rescueInteractionPacketWatcher;
     private MapReplacementPacketController mapReplacementPacketController;
     private SpawnMarkerPacketController spawnMarkerPacketController;
+    private QuestChestMarkerPacketController questChestMarkerPacketController;
 
     public ExamplePlugin(@Nonnull JavaPluginInit init) {
         super(init);
@@ -117,6 +121,7 @@ public class ExamplePlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new NpcDevCommand());
         this.getCommandRegistry().registerCommand(new QuestDevCommand());
         this.getCommandRegistry().registerCommand(new QuestLogCommand());
+        this.getCommandRegistry().registerCommand(new SetQuestChestCommand());
         this.getCommandRegistry().registerCommand(new DevPanelCommand());
         this.getCommandRegistry().registerCommand(new MapOpenCommand());
         this.getCommandRegistry().registerCommand(new PasteBlacksmithBuildCommand());
@@ -158,6 +163,8 @@ public class ExamplePlugin extends JavaPlugin {
         QuestDefinitionRegistry.get().initialize();
         QuestProgressManager.get().initialize();
         QuestFlagManager.get().initialize();
+        QuestChestConfigManager.get().initialize();
+        QuestChestPositionManager.get().initialize();
         RooterConfig.get().initialize();
         RooterManManager.get().initialize();
         BlacksmithSharedMarkerManager.sync();
@@ -166,9 +173,11 @@ public class ExamplePlugin extends JavaPlugin {
         this.mapReplacementPacketController.validateCustomMapAssetRegistration();
         this.spawnMarkerPacketController = new SpawnMarkerPacketController(this);
         this.spawnMarkerPacketController.register();
+        this.questChestMarkerPacketController = new QuestChestMarkerPacketController(this);
+        this.questChestMarkerPacketController.register();
         this.rescueInteractionPacketWatcher = new RescueInteractionPacketWatcher();
         this.rescueInteractionPacketWatcher.register();
-        Set<LifeEssenceContainerKey> processedLifeEssenceContainers = ConcurrentHashMap.newKeySet();
+        java.util.Set<LifeEssenceContainerKey> processedLifeEssenceContainers = LootChestRuntime.get().processedChests();
         this.getEntityStoreRegistry().registerSystem(new LifeEssenceChestOpenSystem(processedLifeEssenceContainers));
         this.getEntityStoreRegistry().registerSystem(new LifeEssenceChestBreakCleanupSystem(processedLifeEssenceContainers));
         this.getEntityStoreRegistry().registerSystem(new GameRunDirectorSystem());
@@ -210,6 +219,10 @@ public class ExamplePlugin extends JavaPlugin {
         if (this.spawnMarkerPacketController != null) {
             this.spawnMarkerPacketController.unregister();
             this.spawnMarkerPacketController = null;
+        }
+        if (this.questChestMarkerPacketController != null) {
+            this.questChestMarkerPacketController.unregister();
+            this.questChestMarkerPacketController = null;
         }
     }
 }

@@ -66,8 +66,8 @@ public final class QuestDevCommand extends AbstractPlayerCommand {
                 context.sendMessage(Message.raw("Quest reset."));
             }
             case "reload" -> {
-                QuestDefinitionRegistry.get().initialize();
-                context.sendMessage(Message.raw("Quest definitions are loaded (restart required to fully reload in this build)."));
+                QuestDefinitionRegistry.get().reload();
+                context.sendMessage(Message.raw("Quest definitions reloaded."));
             }
             case "flags" -> context.sendMessage(Message.raw("Quest flags: " + String.join(",", QuestFlagManager.get().getFlags())));
             default -> context.sendMessage(Message.raw("Usage: /questdev <list|accept|complete|reset|reload|flags> ..."));

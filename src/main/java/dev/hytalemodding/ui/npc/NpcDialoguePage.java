@@ -23,6 +23,7 @@ import dev.hytalemodding.npc.NpcDialogueManager;
 import dev.hytalemodding.npc.NpcProgressManager;
 import dev.hytalemodding.npc.economy.NpcEconomyDefinition;
 import dev.hytalemodding.npc.economy.NpcEconomyRegistry;
+import dev.hytalemodding.quest.QuestProgressManager;
 
 import javax.annotation.Nonnull;
 
@@ -58,11 +59,17 @@ public class NpcDialoguePage extends InteractiveCustomUIPage<NpcDialoguePage.Dat
         HubNpcManager.NpcData npcData = BaseHousingManager.get().getNpcData(this.npcKey);
         boolean hasAssignedPlot = npcData.assignedPlotId != null;
         boolean requiresWorkshop = archetype != null && archetype.plotType != null && !archetype.plotType.isBlank();
+        boolean preWorkshopQuestUnlocked = archetype != null
+                && archetype.prePlotQuestId != null
+                && !archetype.prePlotQuestId.isBlank()
+                && !QuestProgressManager.get().isCompleted(archetype.prePlotQuestId);
         boolean preWorkshopUpgradeOnly = BaseHousingManager.get().canUsePreWorkshopUpgrade(this.npcKey);
         boolean servicesUnlocked = !requiresWorkshop || hasAssignedPlot;
         boolean hasTradeUnlocks = !NpcProgressManager.get().getUnlockedTrades(this.npcKey).isEmpty();
         boolean canTrade = archetype != null && archetype.services.canTrade && servicesUnlocked && hasTradeUnlocks;
-        boolean canQuest = archetype != null && archetype.services.canGiveQuests && servicesUnlocked;
+        boolean canQuest = archetype != null
+                && archetype.services.canGiveQuests
+                && (servicesUnlocked || preWorkshopQuestUnlocked);
         boolean canUpgrade = archetype != null && archetype.services.canUpgrade && (servicesUnlocked || preWorkshopUpgradeOnly);
         NpcEconomyDefinition economy = NpcEconomyRegistry.get().getNpc(this.npcKey);
         String readyText = economy == null ? (name + " is ready. What do you need?") : economy.readyDialogueText;
@@ -89,15 +96,30 @@ public class NpcDialoguePage extends InteractiveCustomUIPage<NpcDialoguePage.Dat
         HubNpcManager.NpcData npcData = BaseHousingManager.get().getNpcData(this.npcKey);
         NpcArchetype archetype = NpcDefinitionRegistry.get().getArchetype(this.npcKey);
         boolean requiresWorkshop = archetype != null && archetype.plotType != null && !archetype.plotType.isBlank();
+        boolean preWorkshopQuestUnlocked = archetype != null
+                && archetype.prePlotQuestId != null
+                && !archetype.prePlotQuestId.isBlank()
+                && !QuestProgressManager.get().isCompleted(archetype.prePlotQuestId);
         boolean preWorkshopUpgradeOnly = BaseHousingManager.get().canUsePreWorkshopUpgrade(this.npcKey);
-        if (("trade".equals(action) || "quests".equals(action))
+        if ("trade".equals(action)
                 && requiresWorkshop
                 && npcData.assignedPlotId == null) {
             this.playerRef.sendMessage(Message.raw("The blacksmith needs a workshop before those services unlock."));
             return;
         }
-        if ("upgrades".equals(action) && !preWorkshopUpgradeOnly && requiresWorkshop && npcData.assignedPlotId == null) {
+        if ("quests".equals(action)
+                && requiresWorkshop
+                && npcData.assignedPlotId == null
+                && !preWorkshopQuestUnlocked) {
             this.playerRef.sendMessage(Message.raw("The blacksmith needs a workshop before those services unlock."));
+            return;
+        }
+        if ("upgrades".equals(action) && !preWorkshopUpgradeOnly && requiresWorkshop && npcData.assignedPlotId == null) {
+            if (archetype != null && archetype.prePlotQuestId != null && !archetype.prePlotQuestId.isBlank()) {
+                this.playerRef.sendMessage(Message.raw("Complete the blacksmith's prerequisite quest before workshop upgrades unlock."));
+            } else {
+                this.playerRef.sendMessage(Message.raw("The blacksmith needs a workshop before those services unlock."));
+            }
             return;
         }
         if ("trade".equals(action)) {

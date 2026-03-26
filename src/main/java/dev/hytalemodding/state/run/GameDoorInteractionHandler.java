@@ -223,7 +223,7 @@ public final class GameDoorInteractionHandler {
             }
             SpawnPointZoneManager.releaseReservedSpawn(playerRef.getUuid());
             playerRef.sendMessage(Message.raw("Extraction complete."));
-            QuestProgressManager.get().incrementSuccessfulExtraction();
+            QuestProgressManager.get().incrementSuccessfulExtraction(playerRef);
             if (queuedRescue) {
                 RunHubTransferService.get().spawnQueuedRescueInBase(playerRef, hubWorld, baseSpawn);
             }

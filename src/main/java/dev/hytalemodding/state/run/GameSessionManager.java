@@ -11,6 +11,7 @@ import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
+import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -25,6 +26,12 @@ import dev.hytalemodding.redwave.RedCoreProfileRegistry;
 import dev.hytalemodding.redwave.RedWaveManager;
 import dev.hytalemodding.rooter.RooterConfig;
 import dev.hytalemodding.rooter.RooterManManager;
+import dev.hytalemodding.loot.LifeEssenceContainerKey;
+import dev.hytalemodding.loot.LootChestAccess;
+import dev.hytalemodding.loot.LootChestRuntime;
+import dev.hytalemodding.loot.QuestChestConfigManager;
+import dev.hytalemodding.loot.QuestChestPositionManager;
+import dev.hytalemodding.quest.QuestProgressManager;
 import dev.hytalemodding.state.transition.CrimsonCoreConfigManager;
 import dev.hytalemodding.state.transition.PlayerSpawnSafety;
 import dev.hytalemodding.state.transition.SpawnPointZoneConfigManager;
@@ -196,7 +203,7 @@ public final class GameSessionManager {
             return CompletableFuture.runAsync(() -> scrubRunWorldMarkersAndUnusedCores(runWorld, session), runWorld)
                     .thenApply(ignored -> runWorld);
         }).thenCompose(runWorld -> {
-            return CompletableFuture.runAsync(() -> customizeRunWorld(runWorld), runWorld)
+            return CompletableFuture.runAsync(() -> customizeRunWorld(runWorld, session), runWorld)
                     .thenApply(ignored -> runWorld);
         }).thenCompose(runWorld -> {
             UUID playerWorldUuid = starter.getWorldUuid();
@@ -667,6 +674,7 @@ public final class GameSessionManager {
         RedCoreRegistry.clear(runWorldUuid);
         RedCoreProfileRegistry.clear(runWorldUuid);
         RooterManManager.get().clearRuntimeForWorld(runWorldUuid);
+        LootChestRuntime.get().clearWorld(runWorldUuid);
     }
 
     private static void scrubRunWorldMarkersAndUnusedCores(@Nonnull World runWorld, @Nonnull ActiveSession session) {
@@ -674,10 +682,56 @@ public final class GameSessionManager {
         scrubUnusedCrimsonCoreBlocks(runWorld, session.templateWorldName, session.crimsonProfiles);
     }
 
-    private static void customizeRunWorld(@Nonnull World runWorld) {
+    private static void customizeRunWorld(@Nonnull World runWorld, @Nonnull ActiveSession session) {
         runWorld.getWorldConfig().setIsAllNPCFrozen(false);
         runWorld.getWorldConfig().markChanged();
+        configureQuestChest(runWorld, session.templateWorldName);
         replaceRandomBlightBeastWithRooter(runWorld);
+    }
+
+    private static void configureQuestChest(@Nonnull World runWorld, @Nonnull String templateWorldName) {
+        QuestChestConfigManager.QuestChestDefinition definition = QuestChestConfigManager.get().getForTemplateWorld(templateWorldName);
+        if (definition == null || runWorld.getWorldConfig() == null || runWorld.getWorldConfig().getUuid() == null) {
+            return;
+        }
+        Vector3i pos = QuestChestPositionManager.get().getPosition(definition.chestId(), templateWorldName);
+        if (pos == null) {
+            return;
+        }
+        UUID worldUuid = runWorld.getWorldConfig().getUuid();
+        QuestProgressManager.QuestProgress questProgress = QuestProgressManager.get().getOrCreate(definition.questId());
+        boolean shouldPlaceHammer = questProgress.accepted && !questProgress.completed;
+        LootChestRuntime runtime = LootChestRuntime.get();
+        LootChestAccess.ResolvedChest chest = LootChestAccess.resolveChest(runWorld, pos);
+        if (chest == null || chest.blockId() == null || !definition.blockId().equalsIgnoreCase(chest.blockId())) {
+            return;
+        }
+
+        ItemStack contents = shouldPlaceHammer
+                ? new ItemStack(definition.rewardItemId(), definition.rewardAmount())
+                : new ItemStack(definition.fallbackItemId(), randomInRange(definition.fallbackMinAmount(), definition.fallbackMaxAmount()));
+        if (!LootChestAccess.populate(chest, List.of(contents))) {
+            return;
+        }
+        runtime.processedChests().add(LifeEssenceContainerKey.of(worldUuid, pos));
+        if (shouldPlaceHammer) {
+            runtime.registerQuestChest(new LootChestRuntime.QuestChestState(
+                    worldUuid,
+                    pos,
+                    definition.markerId(),
+                    definition.markerName(),
+                    definition.markerIcon(),
+                    definition.markerColor(),
+                    true
+            ));
+        }
+    }
+
+    private static int randomInRange(int min, int max) {
+        if (max <= min) {
+            return Math.max(1, min);
+        }
+        return ThreadLocalRandom.current().nextInt(min, max + 1);
     }
 
     private static void replaceRandomBlightBeastWithRooter(@Nonnull World runWorld) {

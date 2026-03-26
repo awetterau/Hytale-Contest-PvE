@@ -510,7 +510,14 @@ public final class BaseHousingManager {
 
     public synchronized boolean canUsePreWorkshopUpgrade(@Nonnull String npcKey) {
         ensureLoaded();
-        return isBlacksmithAwaitingWorkshop(npcKey);
+        if (!isBlacksmithAwaitingWorkshop(npcKey)) {
+            return false;
+        }
+        NpcArchetype archetype = NpcDefinitionRegistry.get().getArchetype(npcKey);
+        if (archetype == null || archetype.prePlotQuestId == null || archetype.prePlotQuestId.isBlank()) {
+            return true;
+        }
+        return QuestProgressManager.get().isCompleted(archetype.prePlotQuestId);
     }
 
     public synchronized boolean isWorkshopBuilt(@Nonnull String npcKey) {
@@ -535,6 +542,13 @@ public final class BaseHousingManager {
         ensureLoaded();
         if (!isNpcRescued(BLACKSMITH_KEY)) {
             return AssignmentResult.fail("Blacksmith is not rescued yet.");
+        }
+        NpcArchetype blacksmith = NpcDefinitionRegistry.get().getArchetype(BLACKSMITH_KEY);
+        if (blacksmith != null
+                && blacksmith.prePlotQuestId != null
+                && !blacksmith.prePlotQuestId.isBlank()
+                && !QuestProgressManager.get().isCompleted(blacksmith.prePlotQuestId)) {
+            return AssignmentResult.fail("Complete '" + blacksmith.prePlotQuestId + "' before building the blacksmith workshop.");
         }
         if (isBlacksmithWorkshopBuilt()) {
             return AssignmentResult.fail("Blacksmith workshop is already built.");
@@ -596,6 +610,7 @@ public final class BaseHousingManager {
         if (world == null || !GameFlowConfigManager.get().getHubWorldName().equalsIgnoreCase(world.getName())) {
             return;
         }
+        syncBlacksmithRescueStateFromHub(world);
         ensureBlacksmithHubFlow(world);
     }
 
@@ -774,6 +789,18 @@ public final class BaseHousingManager {
         ensureNpcAtHome(world, BLACKSMITH_KEY, BLACKSMITH_WORKSHOP_HOME, BLACKSMITH_HOME_RADIUS_SQUARED);
         boolean reachedWorkshop = isNpcCloseTo(world, BLACKSMITH_ROLE, BLACKSMITH_WORKSHOP_HOME.getPosition(), BLACKSMITH_HOME_RADIUS_SQUARED);
         this.hubNpcManager.promoteToWorkingIfReady(BLACKSMITH_KEY, reachedWorkshop);
+    }
+
+    private void syncBlacksmithRescueStateFromHub(@Nonnull World world) {
+        if (isNpcRescued(BLACKSMITH_KEY)) {
+            return;
+        }
+        Ref<EntityStore> blacksmithRef = findNpcByRole(world.getEntityStore().getStore(), BLACKSMITH_ROLE);
+        if (blacksmithRef == null || !blacksmithRef.isValid()) {
+            return;
+        }
+        NpcProgressManager.get().setNpcRescued(BLACKSMITH_KEY, true);
+        GameFlowConfigManager.get().setNpcRescued(BLACKSMITH_KEY, true);
     }
 
     @Nullable

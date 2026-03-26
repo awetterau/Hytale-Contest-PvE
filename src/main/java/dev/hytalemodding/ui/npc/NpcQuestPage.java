@@ -21,6 +21,7 @@ import dev.hytalemodding.npc.NpcArchetype;
 import dev.hytalemodding.quest.QuestDefinition;
 import dev.hytalemodding.quest.QuestDefinitionRegistry;
 import dev.hytalemodding.quest.QuestProgressManager;
+import dev.hytalemodding.domain.housing.BaseHousingManager;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -143,6 +144,11 @@ public class NpcQuestPage extends InteractiveCustomUIPage<NpcQuestPage.Data> {
                     : failureReason.isBlank()
                     ? "Quest completion failed. Required objective items are missing."
                     : "Quest completion failed. Missing: " + failureReason + "."));
+            if (ok) {
+                this.internalNavigation = true;
+                openPage(ref, store, new NpcDialoguePage(this.playerRef, this.npcKey));
+                return;
+            }
             refresh(ref, store);
             return;
         }
@@ -167,6 +173,25 @@ public class NpcQuestPage extends InteractiveCustomUIPage<NpcQuestPage.Data> {
     @Nonnull
     private List<QuestDefinition> getVisibleQuests() {
         List<QuestDefinition> all = QuestDefinitionRegistry.get().getBySource("npc", this.npcKey);
+        NpcArchetype archetype = NpcDefinitionRegistry.get().getArchetype(this.npcKey);
+        boolean requiresWorkshop = archetype != null && archetype.plotType != null && !archetype.plotType.isBlank();
+        boolean workshopBuilt = BaseHousingManager.get().isWorkshopBuilt(this.npcKey);
+        if (requiresWorkshop
+                && !workshopBuilt
+                && archetype != null
+                && archetype.prePlotQuestId != null
+                && !archetype.prePlotQuestId.isBlank()
+                && !QuestProgressManager.get().isCompleted(archetype.prePlotQuestId)) {
+            QuestDefinition prerequisiteQuest = QuestDefinitionRegistry.get().getQuest(archetype.prePlotQuestId);
+            if (prerequisiteQuest == null) {
+                return List.of();
+            }
+            QuestProgressManager.QuestProgress progress = QuestProgressManager.get().getOrCreate(prerequisiteQuest.questId);
+            if (progress.accepted || progress.completed || QuestProgressManager.get().arePrerequisitesMet(prerequisiteQuest)) {
+                return List.of(prerequisiteQuest);
+            }
+            return List.of();
+        }
         List<QuestDefinition> visible = new ArrayList<>();
         for (QuestDefinition definition : all) {
             QuestProgressManager.QuestProgress progress = QuestProgressManager.get().getOrCreate(definition.questId);
