@@ -1017,7 +1017,6 @@ public final class BaseHousingManager {
     private boolean isBlacksmithAwaitingWorkshop(@Nonnull String npcKey) {
         String normalizedNpc = normalizeOrDefault(npcKey, "");
         return BLACKSMITH_KEY.equalsIgnoreCase(normalizedNpc)
-                && isNpcRescued(BLACKSMITH_KEY)
                 && !isBlacksmithWorkshopBuilt();
     }
 
