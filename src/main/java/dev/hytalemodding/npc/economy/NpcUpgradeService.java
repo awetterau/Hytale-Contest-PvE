@@ -1,6 +1,7 @@
 package dev.hytalemodding.npc.economy;
 
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import dev.hytalemodding.domain.housing.BaseHousingManager;
 import dev.hytalemodding.npc.NpcProgressManager;
 import dev.hytalemodding.quest.QuestFlagManager;
 
@@ -39,10 +40,24 @@ public final class NpcUpgradeService {
         if (!NpcInventoryService.canAfford(playerRef, upgrade.cost)) {
             return Result.fail("Not enough materials.");
         }
+
+        boolean blacksmithWorkshopUpgrade = "blacksmith".equalsIgnoreCase(npcKey) && upgrade.targetTier == 1;
+        if (blacksmithWorkshopUpgrade) {
+            BaseHousingManager.AssignmentResult precheck = BaseHousingManager.get().beginBlacksmithWorkshopUpgradePrecheck(playerRef);
+            if (!precheck.success) {
+                return Result.fail(precheck.message);
+            }
+        }
         if (!NpcInventoryService.executeTransaction(playerRef, upgrade.cost, java.util.List.of())) {
             return Result.fail("Upgrade transaction failed.");
         }
 
+        if (blacksmithWorkshopUpgrade) {
+            BaseHousingManager.AssignmentResult workshopResult = BaseHousingManager.get().beginBlacksmithWorkshopUpgrade(playerRef);
+            if (!workshopResult.success) {
+                return Result.fail(workshopResult.message);
+            }
+        }
         NpcProgressManager.get().setUpgradeTier(npcKey, upgrade.targetTier);
         if (!upgrade.grantCrafts.isEmpty()) {
             NpcProgressManager.get().grantCraftUnlocks(npcKey, java.util.List.copyOf(upgrade.grantCrafts));
@@ -53,7 +68,10 @@ public final class NpcUpgradeService {
         for (String flag : upgrade.setFlags) {
             QuestFlagManager.get().setFlag(flag);
         }
-        return Result.ok("Upgrade applied: " + upgrade.title + ".");
+        if (blacksmithWorkshopUpgrade) {
+            return Result.ok("Blacksmith workshop construction will begin shortly.", true);
+        }
+        return Result.ok("Upgrade applied: " + upgrade.title + ".", false);
     }
 
     public boolean canUpgrade(@Nonnull String npcKey, @Nonnull NpcEconomyDefinition.UpgradeDefinition upgrade) {
@@ -77,15 +95,15 @@ public final class NpcUpgradeService {
         return true;
     }
 
-    public record Result(boolean success, @Nonnull String message) {
+    public record Result(boolean success, @Nonnull String message, boolean closeUiOnSuccess) {
         @Nonnull
-        public static Result ok(@Nonnull String message) {
-            return new Result(true, message);
+        public static Result ok(@Nonnull String message, boolean closeUiOnSuccess) {
+            return new Result(true, message, closeUiOnSuccess);
         }
 
         @Nonnull
         public static Result fail(@Nonnull String message) {
-            return new Result(false, message);
+            return new Result(false, message, false);
         }
     }
 }

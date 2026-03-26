@@ -1,26 +1,34 @@
 package dev.hytalemodding.state.run;
 
 import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.RemoveReason;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.math.vector.Transform;
 import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
+import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.WorldConfig;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.server.npc.NPCPlugin;
+import com.hypixel.hytale.server.npc.asset.builder.BuilderInfo;
+import com.hypixel.hytale.server.npc.entities.NPCEntity;
 import dev.hytalemodding.redwave.RedCoreRegistry;
 import dev.hytalemodding.redwave.RedWaveConfig;
 import dev.hytalemodding.redwave.RedCoreProfileRegistry;
 import dev.hytalemodding.redwave.RedWaveManager;
+import dev.hytalemodding.rooter.RooterConfig;
 import dev.hytalemodding.rooter.RooterManManager;
 import dev.hytalemodding.state.transition.CrimsonCoreConfigManager;
 import dev.hytalemodding.state.transition.PlayerSpawnSafety;
 import dev.hytalemodding.state.transition.SpawnPointZoneConfigManager;
+import it.unimi.dsi.fastutil.Pair;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -43,7 +51,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class GameSessionManager {
+    private static final String BLIGHT_BEAST_ROLE = "Blight_Beast";
     private static final String RUN_WORLD_PREFIX = "run-session-";
+    private static final long CRIMSON_START_DELAY_MS = 10_000L;
     private static final long RUN_DURATION_MS = 5L * 60L * 1000L;
     private static final float DEFAULT_CRIMSON_SPREAD_SECONDS = RUN_DURATION_MS / 1000.0f;
     private static final int MAX_RUN_CRIMSON_RADIUS_BLOCKS = 24;
@@ -186,6 +196,9 @@ public final class GameSessionManager {
             return CompletableFuture.runAsync(() -> scrubRunWorldMarkersAndUnusedCores(runWorld, session), runWorld)
                     .thenApply(ignored -> runWorld);
         }).thenCompose(runWorld -> {
+            return CompletableFuture.runAsync(() -> customizeRunWorld(runWorld), runWorld)
+                    .thenApply(ignored -> runWorld);
+        }).thenCompose(runWorld -> {
             UUID playerWorldUuid = starter.getWorldUuid();
             World playerWorld = playerWorldUuid == null ? null : universe.getWorld(playerWorldUuid);
             if (playerWorld == null) {
@@ -224,23 +237,24 @@ public final class GameSessionManager {
 
     @Nonnull
     public CompletableFuture<EndSessionResult> endSession(@Nullable Transform returnSpawnOverride, @Nullable World ignoredFallbackWorld) {
-        return endSessionInternal(returnSpawnOverride, ignoredFallbackWorld);
+        return endSessionInternal(returnSpawnOverride, ignoredFallbackWorld, false);
     }
 
     @Nonnull
     public CompletableFuture<EndSessionResult> endSessionAndWipeInventory(@Nullable Transform returnSpawnOverride, @Nullable World ignoredFallbackWorld) {
-        return endSessionInternal(returnSpawnOverride, ignoredFallbackWorld);
+        return endSessionInternal(returnSpawnOverride, ignoredFallbackWorld, true);
     }
 
     @Nonnull
     public CompletableFuture<EndSessionResult> endSession(@Nullable Transform returnSpawnOverride) {
-        return endSessionInternal(returnSpawnOverride, null);
+        return endSessionInternal(returnSpawnOverride, null, false);
     }
 
     @Nonnull
     private CompletableFuture<EndSessionResult> endSessionInternal(
             @Nullable Transform returnSpawnOverride,
-            @Nullable World fallbackWorldOverride
+            @Nullable World fallbackWorldOverride,
+            boolean wipeInventory
     ) {
         final ActiveSession session;
         synchronized (this) {
@@ -259,6 +273,7 @@ public final class GameSessionManager {
         if (fallbackWorld == null) {
             fallbackWorld = universe.getDefaultWorld();
         }
+        List<PlayerRef> affectedPlayers = runWorld == null ? List.of() : collectPlayersInWorld(runWorld.getWorldConfig().getUuid());
 
         CompletableFuture<Void> transferFuture;
         if (runWorld != null && fallbackWorld != null) {
@@ -282,6 +297,10 @@ public final class GameSessionManager {
             if (throwable != null) {
                 String error = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
                 return new EndSessionResult(false, session.runWorldName, session.templateWorldName, error);
+            }
+
+            if (wipeInventory) {
+                wipeInventories(affectedPlayers);
             }
 
             CompletableFuture.runAsync(() -> {
@@ -357,7 +376,7 @@ public final class GameSessionManager {
             session.phase = RunPhase.EXPLORATION;
             session.startedAtEpochMillis = System.currentTimeMillis();
             session.runEndsAtEpochMillis = session.startedAtEpochMillis + RUN_DURATION_MS;
-            session.crimsonStartAtEpochMillis = session.startedAtEpochMillis + computeCrimsonDelayMillis(session.crimsonProfiles);
+            session.crimsonStartAtEpochMillis = session.startedAtEpochMillis + CRIMSON_START_DELAY_MS;
 
             runWorld = Universe.get().getWorld(session.runWorldUuid);
             if (runWorld == null) {
@@ -623,19 +642,21 @@ public final class GameSessionManager {
         return configuredSeconds;
     }
 
-    private static long computeCrimsonDelayMillis(@Nonnull List<RedCoreProfileRegistry.RedCoreProfile> profiles) {
-        if (profiles.isEmpty()) {
-            return 0L;
-        }
-
-        float earliestSeconds = DEFAULT_CRIMSON_SPREAD_SECONDS;
-        for (RedCoreProfileRegistry.RedCoreProfile profile : profiles) {
-            if (profile == null) {
-                continue;
+    private static List<PlayerRef> collectPlayersInWorld(@Nonnull UUID worldUuid) {
+        ArrayList<PlayerRef> players = new ArrayList<>();
+        for (PlayerRef playerRef : Universe.get().getPlayers()) {
+            UUID playerWorldUuid = playerRef.getWorldUuid();
+            if (playerWorldUuid != null && playerWorldUuid.equals(worldUuid)) {
+                players.add(playerRef);
             }
-            earliestSeconds = Math.min(earliestSeconds, normalizeStartSeconds(profile.startSeconds()));
         }
-        return Math.max(0L, (long) (earliestSeconds * 1000.0f));
+        return List.copyOf(players);
+    }
+
+    private static void wipeInventories(@Nonnull List<PlayerRef> playerRefs) {
+        for (PlayerRef playerRef : playerRefs) {
+            dev.hytalemodding.npc.economy.NpcInventoryService.clearAll(playerRef);
+        }
     }
 
     private static void cleanupRunRuntime(@Nullable UUID runWorldUuid) {
@@ -651,6 +672,71 @@ public final class GameSessionManager {
     private static void scrubRunWorldMarkersAndUnusedCores(@Nonnull World runWorld, @Nonnull ActiveSession session) {
         scrubSpawnPointBlocks(runWorld, session.templateWorldName);
         scrubUnusedCrimsonCoreBlocks(runWorld, session.templateWorldName, session.crimsonProfiles);
+    }
+
+    private static void customizeRunWorld(@Nonnull World runWorld) {
+        runWorld.getWorldConfig().setIsAllNPCFrozen(false);
+        runWorld.getWorldConfig().markChanged();
+        replaceRandomBlightBeastWithRooter(runWorld);
+    }
+
+    private static void replaceRandomBlightBeastWithRooter(@Nonnull World runWorld) {
+        Store<EntityStore> store = runWorld.getEntityStore().getStore();
+        ArrayList<Ref<EntityStore>> candidates = new ArrayList<>();
+        ArrayList<Transform> candidateTransforms = new ArrayList<>();
+
+        store.forEachChunk(NPCEntity.getComponentType(), (chunk, buffer) -> {
+            int size = chunk.size();
+            for (int i = 0; i < size; i++) {
+                NPCEntity npc = chunk.getComponent(i, NPCEntity.getComponentType());
+                if (npc == null || !BLIGHT_BEAST_ROLE.equalsIgnoreCase(npc.getRoleName())) {
+                    continue;
+                }
+                Ref<EntityStore> npcRef = chunk.getReferenceTo(i);
+                if (npcRef == null || !npcRef.isValid()) {
+                    continue;
+                }
+                TransformComponent transform = chunk.getComponent(i, TransformComponent.getComponentType());
+                if (transform == null) {
+                    continue;
+                }
+                candidates.add(npcRef);
+                candidateTransforms.add(new Transform(
+                        new Vector3d(transform.getPosition()),
+                        new Vector3f(transform.getRotation())
+                ));
+            }
+        });
+
+        if (candidates.isEmpty()) {
+            return;
+        }
+
+        String rooterRole = RooterConfig.get().getBossRole();
+        NPCPlugin npcPlugin = NPCPlugin.get();
+        int roleIndex = npcPlugin.getIndex(rooterRole);
+        BuilderInfo roleInfo = npcPlugin.getRoleBuilderInfo(roleIndex);
+        if (roleInfo == null || !roleInfo.getBuilder().isSpawnable()) {
+            System.out.println("[GameSessionManager] Rooter replacement skipped; role unavailable: " + rooterRole);
+            return;
+        }
+
+        int selectedIndex = ThreadLocalRandom.current().nextInt(candidates.size());
+        Ref<EntityStore> beastRef = candidates.get(selectedIndex);
+        Transform spawnTransform = candidateTransforms.get(selectedIndex);
+
+        store.removeEntity(beastRef, RemoveReason.REMOVE);
+        Pair<Ref<EntityStore>, NPCEntity> spawned = npcPlugin.spawnEntity(
+                store,
+                roleIndex,
+                new Vector3d(spawnTransform.getPosition()),
+                new Vector3f(spawnTransform.getRotation()),
+                null,
+                null
+        );
+        if (spawned == null || spawned.first() == null || !spawned.first().isValid()) {
+            System.out.println("[GameSessionManager] Failed to replace Blight Beast with Rooter Man.");
+        }
     }
 
     private static void scrubSpawnPointBlocks(@Nonnull World runWorld, @Nonnull String templateWorldName) {

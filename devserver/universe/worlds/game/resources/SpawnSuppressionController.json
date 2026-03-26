@@ -1,3 +1,12 @@
 {
-  "SpawnSuppressorMap": {}
+  "SpawnSuppressorMap": {
+    "f6f3a246-21b9-36d4-9bc1-66786f9da999": {
+      "Position": {
+        "X": 2.5,
+        "Y": 81.0,
+        "Z": 2.5
+      },
+      "Suppression": "OneBlock_Spawn"
+    }
+  }
 }

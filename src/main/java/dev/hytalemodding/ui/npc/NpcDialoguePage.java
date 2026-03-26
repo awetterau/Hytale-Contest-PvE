@@ -58,11 +58,12 @@ public class NpcDialoguePage extends InteractiveCustomUIPage<NpcDialoguePage.Dat
         HubNpcManager.NpcData npcData = BaseHousingManager.get().getNpcData(this.npcKey);
         boolean hasAssignedPlot = npcData.assignedPlotId != null;
         boolean requiresWorkshop = archetype != null && archetype.plotType != null && !archetype.plotType.isBlank();
+        boolean preWorkshopUpgradeOnly = BaseHousingManager.get().canUsePreWorkshopUpgrade(this.npcKey);
         boolean servicesUnlocked = !requiresWorkshop || hasAssignedPlot;
         boolean hasTradeUnlocks = !NpcProgressManager.get().getUnlockedTrades(this.npcKey).isEmpty();
         boolean canTrade = archetype != null && archetype.services.canTrade && servicesUnlocked && hasTradeUnlocks;
         boolean canQuest = archetype != null && archetype.services.canGiveQuests && servicesUnlocked;
-        boolean canUpgrade = archetype != null && archetype.services.canUpgrade && servicesUnlocked;
+        boolean canUpgrade = archetype != null && archetype.services.canUpgrade && (servicesUnlocked || preWorkshopUpgradeOnly);
         NpcEconomyDefinition economy = NpcEconomyRegistry.get().getNpc(this.npcKey);
         String readyText = economy == null ? (name + " is ready. What do you need?") : economy.readyDialogueText;
         String lockedText = economy == null ? (name + " needs setup before full services are available.") : economy.noWorkshopDialogueText;
@@ -88,10 +89,15 @@ public class NpcDialoguePage extends InteractiveCustomUIPage<NpcDialoguePage.Dat
         HubNpcManager.NpcData npcData = BaseHousingManager.get().getNpcData(this.npcKey);
         NpcArchetype archetype = NpcDefinitionRegistry.get().getArchetype(this.npcKey);
         boolean requiresWorkshop = archetype != null && archetype.plotType != null && !archetype.plotType.isBlank();
-        if (("trade".equals(action) || "upgrades".equals(action) || "quests".equals(action))
+        boolean preWorkshopUpgradeOnly = BaseHousingManager.get().canUsePreWorkshopUpgrade(this.npcKey);
+        if (("trade".equals(action) || "quests".equals(action))
                 && requiresWorkshop
                 && npcData.assignedPlotId == null) {
-            this.playerRef.sendMessage(Message.raw("This NPC needs a purchased plot assignment first."));
+            this.playerRef.sendMessage(Message.raw("The blacksmith needs a workshop before those services unlock."));
+            return;
+        }
+        if ("upgrades".equals(action) && !preWorkshopUpgradeOnly && requiresWorkshop && npcData.assignedPlotId == null) {
+            this.playerRef.sendMessage(Message.raw("The blacksmith needs a workshop before those services unlock."));
             return;
         }
         if ("trade".equals(action)) {

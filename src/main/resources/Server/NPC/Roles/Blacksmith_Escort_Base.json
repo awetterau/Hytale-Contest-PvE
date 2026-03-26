@@ -36,6 +36,23 @@
           "Instructions": [
             {
               "Sensor": {
+                "Type": "Leash",
+                "Range": 2.75
+              },
+              "HeadMotion": {
+                "Type": "Watch"
+              },
+              "BodyMotion": {
+                "Type": "Seek",
+                "RelativeSpeed": 0.75,
+                "SlowDownDistance": 3.0,
+                "StopDistance": 0.8,
+                "AbortDistance": 96.0,
+                "UsePathfinder": true
+              }
+            },
+            {
+              "Sensor": {
                 "Type": "Any"
               },
               "HeadMotion": {

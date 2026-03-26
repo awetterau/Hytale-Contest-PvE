@@ -10,11 +10,13 @@ import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import dev.hytalemodding.commands.dev.DevPanelCommand;
 import dev.hytalemodding.commands.dev.ExampleCommand;
 import dev.hytalemodding.commands.dev.MapOpenCommand;
-import dev.hytalemodding.commands.dev.PlotDevCommand;
-import dev.hytalemodding.commands.hub.BasePlotCommand;
+import dev.hytalemodding.commands.dev.PasteBlacksmithBuildCommand;
+import dev.hytalemodding.commands.dev.PasteBlacksmithCommand;
+import dev.hytalemodding.commands.dev.UndoBlacksmithCommand;
 import dev.hytalemodding.commands.hub.GameConfigCommand;
 import dev.hytalemodding.commands.hub.SetBaseSpawnCommand;
 import dev.hytalemodding.commands.hub.SetRescueSpawnCommand;
+import dev.hytalemodding.commands.npc.BlacksmithDevCommand;
 import dev.hytalemodding.commands.npc.NpcDevCommand;
 import dev.hytalemodding.commands.npc.NpcRolesCommand;
 import dev.hytalemodding.commands.npc.NpcSpawnCommand;
@@ -30,12 +32,16 @@ import dev.hytalemodding.commands.run.GameEndCommand;
 import dev.hytalemodding.commands.run.GameResetCommand;
 import dev.hytalemodding.commands.run.GameStartCommand;
 import dev.hytalemodding.commands.run.SetRunSpawnCommand;
+import dev.hytalemodding.commands.run.SpawnStartTriggerCommand;
 import dev.hytalemodding.commands.run.SpawnUiCommand;
+import dev.hytalemodding.domain.housing.BaseHousingManager;
 import dev.hytalemodding.game.DevDebugHudSystem;
 import dev.hytalemodding.loot.LifeEssenceChestBreakCleanupSystem;
 import dev.hytalemodding.loot.LifeEssenceChestOpenSystem;
 import dev.hytalemodding.loot.LifeEssenceContainerKey;
 import dev.hytalemodding.map.MapReplacementPacketController;
+import dev.hytalemodding.map.BlacksmithSharedMarkerManager;
+import dev.hytalemodding.map.SpawnMarkerPacketController;
 import dev.hytalemodding.npc.NpcDefinitionRegistry;
 import dev.hytalemodding.npc.NpcProgressManager;
 import dev.hytalemodding.npc.RunRescueRegistry;
@@ -52,14 +58,18 @@ import dev.hytalemodding.rooter.RooterManManager;
 import dev.hytalemodding.rooter.RooterShockwaveDamageSystem;
 import dev.hytalemodding.rooter.RooterShockwaveEmitterSystem;
 import dev.hytalemodding.state.hub.BaseHousingSystem;
+import dev.hytalemodding.state.hub.BlacksmithPrefabBuildSystem;
+import dev.hytalemodding.state.hub.BlacksmithWorkshopEntityMarker;
 import dev.hytalemodding.state.hub.BasePlotInteractionHandler;
 import dev.hytalemodding.state.hub.BasePlotUseInteraction;
 import dev.hytalemodding.state.hub.RescueInteractionPacketWatcher;
 import dev.hytalemodding.state.run.GameDoorInteractionHandler;
 import dev.hytalemodding.state.run.GameDoorUseInteraction;
+import dev.hytalemodding.state.run.GameDoorBlockDetectionSystem;
 import dev.hytalemodding.state.run.GameRunDirectorSystem;
 import dev.hytalemodding.state.run.GameSessionManager;
 import dev.hytalemodding.state.run.BlightBeastKillTrackerSystem;
+import dev.hytalemodding.state.run.GameDoorTriggerSystem;
 import dev.hytalemodding.state.run.RescueObjectiveManager;
 import dev.hytalemodding.state.run.RescueObjectiveSystem;
 import dev.hytalemodding.state.run.RunDeathHandler;
@@ -76,6 +86,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ExamplePlugin extends JavaPlugin {
     private RescueInteractionPacketWatcher rescueInteractionPacketWatcher;
     private MapReplacementPacketController mapReplacementPacketController;
+    private SpawnMarkerPacketController spawnMarkerPacketController;
 
     public ExamplePlugin(@Nonnull JavaPluginInit init) {
         super(init);
@@ -83,24 +94,34 @@ public class ExamplePlugin extends JavaPlugin {
 
     @Override
     protected void setup() {
+        BlacksmithWorkshopEntityMarker.setComponentType(
+                this.getEntityStoreRegistry().registerComponent(
+                        BlacksmithWorkshopEntityMarker.class,
+                        "BlacksmithWorkshopEntity",
+                        BlacksmithWorkshopEntityMarker.CODEC
+                )
+        );
         this.getCommandRegistry().registerCommand(new GameStartCommand());
         this.getCommandRegistry().registerCommand(new GameEndCommand());
         this.getCommandRegistry().registerCommand(new GameResetCommand());
         this.getCommandRegistry().registerCommand(new SetRunSpawnCommand());
+        this.getCommandRegistry().registerCommand(new SpawnStartTriggerCommand());
         this.getCommandRegistry().registerCommand(new SpawnUiCommand());
         this.getCommandRegistry().registerCommand(new SetBaseSpawnCommand());
         this.getCommandRegistry().registerCommand(new SetRescueSpawnCommand());
-        this.getCommandRegistry().registerCommand(new BasePlotCommand());
         this.getCommandRegistry().registerCommand(new GameConfigCommand());
         this.getCommandRegistry().registerCommand(new NpcRolesCommand());
         this.getCommandRegistry().registerCommand(new NpcSpawnCommand());
         this.getCommandRegistry().registerCommand(new SpawnRooterCommand());
+        this.getCommandRegistry().registerCommand(new BlacksmithDevCommand());
         this.getCommandRegistry().registerCommand(new NpcDevCommand());
         this.getCommandRegistry().registerCommand(new QuestDevCommand());
         this.getCommandRegistry().registerCommand(new QuestLogCommand());
-        this.getCommandRegistry().registerCommand(new PlotDevCommand());
         this.getCommandRegistry().registerCommand(new DevPanelCommand());
         this.getCommandRegistry().registerCommand(new MapOpenCommand());
+        this.getCommandRegistry().registerCommand(new PasteBlacksmithBuildCommand());
+        this.getCommandRegistry().registerCommand(new PasteBlacksmithCommand());
+        this.getCommandRegistry().registerCommand(new UndoBlacksmithCommand());
         this.getCommandRegistry().registerCommand(new ExampleCommand("example", "An example command"));
         this.getCodecRegistry(Interaction.CODEC).register(
                 "game_door_use_interaction",
@@ -114,6 +135,7 @@ public class ExamplePlugin extends JavaPlugin {
         );
         this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, GameSessionManager.get()::onPlayerReady);
         this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, PlayerSpawnSafety::onPlayerReady);
+        this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, BaseHousingManager::onPlayerReady);
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, GameDoorInteractionHandler::onPlayerInteract);
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, BasePlotInteractionHandler::onPlayerInteract);
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, RescueObjectiveManager.get()::onPlayerInteract);
@@ -138,9 +160,12 @@ public class ExamplePlugin extends JavaPlugin {
         QuestFlagManager.get().initialize();
         RooterConfig.get().initialize();
         RooterManManager.get().initialize();
+        BlacksmithSharedMarkerManager.sync();
         this.mapReplacementPacketController = new MapReplacementPacketController(this);
         this.mapReplacementPacketController.register();
         this.mapReplacementPacketController.validateCustomMapAssetRegistration();
+        this.spawnMarkerPacketController = new SpawnMarkerPacketController(this);
+        this.spawnMarkerPacketController.register();
         this.rescueInteractionPacketWatcher = new RescueInteractionPacketWatcher();
         this.rescueInteractionPacketWatcher.register();
         Set<LifeEssenceContainerKey> processedLifeEssenceContainers = ConcurrentHashMap.newKeySet();
@@ -153,14 +178,17 @@ public class ExamplePlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new RunDeathHandler());
         this.getEntityStoreRegistry().registerSystem(new BlightBeastKillTrackerSystem());
         this.getEntityStoreRegistry().registerSystem(new BaseHousingSystem());
+        this.getEntityStoreRegistry().registerSystem(new BlacksmithPrefabBuildSystem());
         this.getEntityStoreRegistry().registerSystem(new DevDebugHudSystem());
 
         try {
             this.getChunkStoreRegistry().registerSystem(new CrimsonCoreDetectionSystem());
+            this.getChunkStoreRegistry().registerSystem(new GameDoorBlockDetectionSystem());
             this.getChunkStoreRegistry().registerSystem(new SpawnPointDetectionSystem());
         } catch (Throwable ignored) {
             // Keep plugin startup and command registration alive even when chunk-store APIs/components are unavailable.
         }
+        this.getEntityStoreRegistry().registerSystem(new GameDoorTriggerSystem());
         this.getEntityStoreRegistry().registerSystem(new RedWaveBlockSweepSystem());
         this.getEntityStoreRegistry().registerSystem(new RedWoolDamageSystem());
         this.getEntityStoreRegistry().registerSystem(new RedWoolNpcDamageSystem());
@@ -178,6 +206,10 @@ public class ExamplePlugin extends JavaPlugin {
         if (this.mapReplacementPacketController != null) {
             this.mapReplacementPacketController.unregister();
             this.mapReplacementPacketController = null;
+        }
+        if (this.spawnMarkerPacketController != null) {
+            this.spawnMarkerPacketController.unregister();
+            this.spawnMarkerPacketController = null;
         }
     }
 }

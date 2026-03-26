@@ -36,6 +36,10 @@ public final class RunStartMovementLockManager {
     }
 
     public void lockPlayerForIntro(@Nonnull PlayerRef playerRef) {
+        if (!RunStartPresentationConfig.isMovementLockEnabled()) {
+            restoreMovementDefaults(playerRef);
+            return;
+        }
         long now = System.currentTimeMillis();
         long startsAtMs = now + LOCK_START_DELAY_MS;
         this.lockByPlayer.put(
@@ -58,6 +62,9 @@ public final class RunStartMovementLockManager {
     }
 
     public void tick(@Nonnull World world) {
+        if (!RunStartPresentationConfig.isMovementLockEnabled()) {
+            return;
+        }
         long now = System.currentTimeMillis();
         UUID worldId = world.getWorldConfig().getUuid();
 

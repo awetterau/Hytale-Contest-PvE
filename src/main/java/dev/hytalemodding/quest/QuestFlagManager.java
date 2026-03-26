@@ -51,6 +51,17 @@ public final class QuestFlagManager {
         }
     }
 
+    public synchronized void removeFlag(@Nonnull String flag) {
+        ensureLoaded();
+        String normalized = normalize(flag);
+        if (normalized.isBlank()) {
+            return;
+        }
+        if (this.flags.remove(normalized)) {
+            saveQuietly();
+        }
+    }
+
     @Nonnull
     public synchronized Set<String> getFlags() {
         ensureLoaded();

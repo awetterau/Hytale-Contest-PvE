@@ -1,5 +1,5 @@
 Group #MapOverlayLayer {
   Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0);
-  Background: (TexturePath: "../Textures/custom_map.png", Color: #ffffff(0.58));
+  Background: (TexturePath: "../Textures/haven.png", Color: #ffffff(0.58));
 }
 

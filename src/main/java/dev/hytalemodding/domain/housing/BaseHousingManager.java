@@ -7,7 +7,10 @@ import com.hypixel.hytale.math.vector.Transform;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.math.vector.Vector3i;
+import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.modules.entity.component.Interactable;
+import com.hypixel.hytale.server.core.modules.entity.component.Invulnerable;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -17,10 +20,12 @@ import com.hypixel.hytale.server.npc.asset.builder.BuilderInfo;
 import com.hypixel.hytale.server.npc.entities.NPCEntity;
 import it.unimi.dsi.fastutil.Pair;
 import dev.hytalemodding.game.HubNpcManager;
+import dev.hytalemodding.map.BlacksmithSharedMarkerManager;
 import dev.hytalemodding.npc.NpcArchetype;
 import dev.hytalemodding.npc.NpcDefinitionRegistry;
 import dev.hytalemodding.npc.NpcProgressManager;
 import dev.hytalemodding.quest.QuestProgressManager;
+import dev.hytalemodding.state.hub.BlacksmithPrefabController;
 import dev.hytalemodding.state.transition.GameFlowConfigManager;
 
 import javax.annotation.Nonnull;
@@ -44,9 +49,22 @@ public final class BaseHousingManager {
     private static final String CONFIG_FILE_NAME = "base-housing.properties";
     private static final String BLACKSMITH_KEY = "blacksmith";
     private static final String BLACKSMITH_ROLE = "Blacksmith_Escort_Base";
+    private static final String DARIUS_KEY = "darius";
+    private static final String DARIUS_ROLE = "Captain_Darius_Hub";
     private static final String BLACKSMITH_PLOT_TYPE = "blacksmith";
+    private static final String BLACKSMITH_WORKSHOP_ASSIGNMENT_ID = "blacksmith_workshop_fixed";
     private static final String BUILDING_BLOCK = "Rock_Chalk_Brick_Decorative";
     private static final long NPC_SPAWN_COOLDOWN_MS = 1500L;
+    private static final Transform BLACKSMITH_WAITING_TRANSFORM = new Transform(
+            new Vector3d(572.0, 181.0, -9.0),
+            new Vector3f(0.0f, 0.0f, 0.0f)
+    );
+    private static final Transform BLACKSMITH_WORKSHOP_HOME = new Transform(
+            new Vector3d(592.0, 181.0, -11.0),
+            new Vector3f(0.0f, 0.0f, 0.0f)
+    );
+    private static final double BLACKSMITH_WAITING_RADIUS_SQUARED = 16.0D;
+    private static final double BLACKSMITH_HOME_RADIUS_SQUARED = 16.0D;
     private static final BaseHousingManager INSTANCE = new BaseHousingManager();
 
     private final ConcurrentHashMap<String, PlotData> plots = new ConcurrentHashMap<>();
@@ -212,6 +230,9 @@ public final class BaseHousingManager {
         if (plot == null || !plot.purchased || plot.assignedNpcKey != null) {
             return List.of();
         }
+        if (BLACKSMITH_PLOT_TYPE.equalsIgnoreCase(plot.plotType)) {
+            return List.of();
+        }
         String plotType = normalizeOrDefault(plot.plotType, BLACKSMITH_PLOT_TYPE);
         List<String> keys = new ArrayList<>();
         for (String profession : getNpcKeysForPlotType(plotType)) {
@@ -235,6 +256,9 @@ public final class BaseHousingManager {
         }
         if (!isPlotPurchaseUnlocked(plot.plotType)) {
             return AssignmentResult.fail("This plot is currently locked. Complete prerequisite questline first.");
+        }
+        if (BLACKSMITH_PLOT_TYPE.equalsIgnoreCase(plot.plotType)) {
+            return AssignmentResult.fail("Blacksmith workshop construction is handled directly through the blacksmith.");
         }
         World world = Universe.get().getWorld(plot.worldName);
         if (world == null) {
@@ -288,6 +312,9 @@ public final class BaseHousingManager {
                 : normalizeOrDefault(archetype.plotType, "");
         if (!npcPlotType.equalsIgnoreCase(plot.plotType)) {
             return AssignmentResult.fail("This plot is designated for " + plot.plotType + ", not " + npcPlotType + ".");
+        }
+        if (BLACKSMITH_KEY.equalsIgnoreCase(normalizedNpc) || BLACKSMITH_PLOT_TYPE.equalsIgnoreCase(plot.plotType)) {
+            return AssignmentResult.fail("Blacksmith uses the fixed workshop flow instead of plot assignment.");
         }
 
         buildHomeForPlot(world, plot.markerPos, normalizeOrDefault(plot.plotType, BLACKSMITH_PLOT_TYPE));
@@ -407,6 +434,9 @@ public final class BaseHousingManager {
             if (!archetype.alwaysInHub || archetype.hubRole == null || archetype.hubRole.isBlank()) {
                 continue;
             }
+            if (DARIUS_KEY.equalsIgnoreCase(archetype.npcKey)) {
+                continue;
+            }
             Transform target = resolveStaticHubTransform(archetype);
             if (target == null) {
                 continue;
@@ -433,6 +463,31 @@ public final class BaseHousingManager {
         return this.hubNpcManager.isWorking(npcKey);
     }
 
+    public synchronized boolean isBlacksmithWorkshopReady() {
+        ensureLoaded();
+        return isBlacksmithWorkshopBuilt();
+    }
+
+    public static void onPlayerReady(@Nonnull PlayerReadyEvent event) {
+        if (event.getPlayer() == null || event.getPlayer().getReference() == null) {
+            return;
+        }
+        var initialRef = event.getPlayer().getReference();
+        var initialStore = initialRef.getStore();
+        if (initialStore == null) {
+            return;
+        }
+        World world = initialStore.getExternalData().getWorld();
+        if (world == null) {
+            return;
+        }
+        world.execute(() -> {
+            BaseHousingManager manager = BaseHousingManager.get();
+            manager.ensureBlacksmithPresenceInHubIfLoaded(world);
+            manager.ensureDariusPresenceInHubIfLoaded(world);
+        });
+    }
+
     @Nonnull
     public synchronized HubNpcManager.NpcData getNpcData(@Nonnull String npcKey) {
         ensureLoaded();
@@ -443,6 +498,121 @@ public final class BaseHousingManager {
     public synchronized HubNpcManager.HubNpcState getNpcState(@Nonnull String npcKey) {
         ensureLoaded();
         return this.hubNpcManager.getState(npcKey);
+    }
+
+    public synchronized boolean canOpenDialogue(@Nonnull String npcKey) {
+        ensureLoaded();
+        if (this.hubNpcManager.isWorking(npcKey)) {
+            return true;
+        }
+        return isBlacksmithAwaitingWorkshop(npcKey);
+    }
+
+    public synchronized boolean canUsePreWorkshopUpgrade(@Nonnull String npcKey) {
+        ensureLoaded();
+        return isBlacksmithAwaitingWorkshop(npcKey);
+    }
+
+    public synchronized boolean isWorkshopBuilt(@Nonnull String npcKey) {
+        ensureLoaded();
+        if (!BLACKSMITH_KEY.equalsIgnoreCase(normalizeOrDefault(npcKey, ""))) {
+            return this.hubNpcManager.getOrCreate(npcKey).assignedPlotId != null;
+        }
+        return isBlacksmithWorkshopBuilt();
+    }
+
+    @Nullable
+    public synchronized Transform getFixedHubRescueSpawn(@Nonnull String npcKey) {
+        ensureLoaded();
+        if (!BLACKSMITH_KEY.equalsIgnoreCase(normalizeOrDefault(npcKey, ""))) {
+            return null;
+        }
+        return copyTransform(BLACKSMITH_WAITING_TRANSFORM);
+    }
+
+    @Nonnull
+    public synchronized AssignmentResult beginBlacksmithWorkshopUpgradePrecheck(@Nonnull PlayerRef playerRef) {
+        ensureLoaded();
+        if (!isNpcRescued(BLACKSMITH_KEY)) {
+            return AssignmentResult.fail("Blacksmith is not rescued yet.");
+        }
+        if (isBlacksmithWorkshopBuilt()) {
+            return AssignmentResult.fail("Blacksmith workshop is already built.");
+        }
+        if (playerRef.getWorldUuid() == null) {
+            return AssignmentResult.fail("Player world is unavailable.");
+        }
+        World world = Universe.get().getWorld(playerRef.getWorldUuid());
+        if (world == null || !GameFlowConfigManager.get().getHubWorldName().equalsIgnoreCase(world.getName())) {
+            return AssignmentResult.fail("Blacksmith workshop can only be built from the hub.");
+        }
+        BlacksmithPrefabController.Result validation = BlacksmithPrefabController.validateCustomBlacksmithBuildStart();
+        return validation.success()
+                ? AssignmentResult.ok(validation.message())
+                : AssignmentResult.fail(validation.message());
+    }
+
+    @Nonnull
+    public synchronized AssignmentResult beginBlacksmithWorkshopUpgrade(@Nonnull PlayerRef playerRef) {
+        ensureLoaded();
+        AssignmentResult precheck = beginBlacksmithWorkshopUpgradePrecheck(playerRef);
+        if (!precheck.success) {
+            return precheck;
+        }
+        World world = Universe.get().getWorld(playerRef.getWorldUuid());
+
+        BlacksmithPrefabController.Result result = BlacksmithPrefabController.scheduleCustomBlacksmithBuildStart(1000L);
+        if (!result.success()) {
+            return AssignmentResult.fail(result.message());
+        }
+
+        this.hubNpcManager.startMovingToWorkshop(BLACKSMITH_KEY, BLACKSMITH_WORKSHOP_ASSIGNMENT_ID);
+        ensureNpcAtHome(world, BLACKSMITH_KEY, BLACKSMITH_WORKSHOP_HOME, BLACKSMITH_HOME_RADIUS_SQUARED);
+        return AssignmentResult.ok("Blacksmith workshop construction started.");
+    }
+
+    @Nonnull
+    public synchronized Transform getBlacksmithWorkshopMarkerTransform() {
+        return copyTransform(BLACKSMITH_WORKSHOP_HOME);
+    }
+
+    public synchronized void onBlacksmithWorkshopBuilt(@Nullable World world) {
+        ensureLoaded();
+        if (world == null || !GameFlowConfigManager.get().getHubWorldName().equalsIgnoreCase(world.getName())) {
+            return;
+        }
+        if (!isNpcRescued(BLACKSMITH_KEY) || !isBlacksmithWorkshopBuilt()) {
+            return;
+        }
+        placeBlacksmithWorkshopSupportBlocks(world);
+        teleportNpcToTransform(world, BLACKSMITH_ROLE, BLACKSMITH_WORKSHOP_HOME);
+        this.hubNpcManager.devAssign(BLACKSMITH_KEY, BLACKSMITH_WORKSHOP_ASSIGNMENT_ID, HubNpcManager.HubNpcState.WORKING);
+        ensureNpcAtHome(world, BLACKSMITH_KEY, BLACKSMITH_WORKSHOP_HOME, BLACKSMITH_HOME_RADIUS_SQUARED);
+        BlacksmithSharedMarkerManager.sync();
+    }
+
+    public synchronized void ensureBlacksmithPresenceInHubIfLoaded(@Nullable World world) {
+        ensureLoaded();
+        if (world == null || !GameFlowConfigManager.get().getHubWorldName().equalsIgnoreCase(world.getName())) {
+            return;
+        }
+        ensureBlacksmithHubFlow(world);
+    }
+
+    public synchronized void ensureDariusPresenceInHubIfLoaded(@Nullable World world) {
+        ensureLoaded();
+        if (world == null || !GameFlowConfigManager.get().getHubWorldName().equalsIgnoreCase(world.getName())) {
+            return;
+        }
+        NpcArchetype archetype = NpcDefinitionRegistry.get().getArchetype(DARIUS_KEY);
+        if (archetype == null || archetype.hubRole == null || archetype.hubRole.isBlank()) {
+            return;
+        }
+        Transform target = resolveStaticHubTransform(archetype);
+        if (target == null) {
+            return;
+        }
+        ensureRoleAtTransform(world, DARIUS_ROLE, target);
     }
 
     @Nonnull
@@ -497,14 +667,32 @@ public final class BaseHousingManager {
     }
 
     private void ensureNpcAtHome(@Nonnull World world, @Nonnull String npcKey, @Nonnull Transform homeTransform) {
+        ensureNpcAtHome(world, npcKey, homeTransform, 4.0D);
+    }
+
+    private void ensureNpcAtHome(
+            @Nonnull World world,
+            @Nonnull String npcKey,
+            @Nonnull Transform homeTransform,
+            double idleDistanceSquared
+    ) {
         NpcArchetype archetype = NpcDefinitionRegistry.get().getArchetype(npcKey);
         if (archetype == null || archetype.hubRole == null || archetype.hubRole.isBlank()) {
             return;
         }
-        ensureRoleAtTransform(world, archetype.hubRole, homeTransform);
+        ensureRoleAtTransform(world, archetype.hubRole, homeTransform, idleDistanceSquared);
     }
 
     private void ensureRoleAtTransform(@Nonnull World world, @Nonnull String roleName, @Nonnull Transform targetTransform) {
+        ensureRoleAtTransform(world, roleName, targetTransform, 4.0D);
+    }
+
+    private void ensureRoleAtTransform(
+            @Nonnull World world,
+            @Nonnull String roleName,
+            @Nonnull Transform targetTransform,
+            double idleDistanceSquared
+    ) {
         Store<EntityStore> store = world.getEntityStore().getStore();
         Collection<Ref<EntityStore>> all = findAllNpcByRole(store, roleName);
         Ref<EntityStore> existing = null;
@@ -512,12 +700,16 @@ public final class BaseHousingManager {
             if (ref == null || !ref.isValid()) {
                 continue;
             }
+            NPCEntity candidate = store.getComponent(ref, NPCEntity.getComponentType());
+            if (candidate == null || candidate.isDespawning()) {
+                continue;
+            }
             if (existing == null) {
                 existing = ref;
                 continue;
             }
             NPCEntity duplicate = store.getComponent(ref, NPCEntity.getComponentType());
-            if (duplicate != null) {
+            if (duplicate != null && !duplicate.isDespawning()) {
                 duplicate.setToDespawn();
                 store.putComponent(ref, NPCEntity.getComponentType(), duplicate);
             }
@@ -541,6 +733,7 @@ public final class BaseHousingManager {
         if (npc == null) {
             return;
         }
+        store.putComponent(existing, Invulnerable.getComponentType(), Invulnerable.INSTANCE);
 
         Vector3d home = targetTransform.getPosition();
         npc.saveLeashInformation(new Vector3d(home), new Vector3f(targetTransform.getRotation()));
@@ -551,9 +744,36 @@ public final class BaseHousingManager {
         double dy = pos.getY() - home.getY();
         double dz = pos.getZ() - home.getZ();
         double distSq = dx * dx + dy * dy + dz * dz;
-        if (distSq > 4.0 && npc.getRole() != null && npc.getRole().getStateSupport() != null && !npc.getRole().getStateSupport().isInBusyState()) {
+        if (distSq > idleDistanceSquared && npc.getRole() != null && npc.getRole().getStateSupport() != null && !npc.getRole().getStateSupport().isInBusyState()) {
             npc.getRole().getStateSupport().setState(existing, "Idle", null, store);
         }
+    }
+
+    private void ensureBlacksmithHubFlow(@Nonnull World world) {
+        if (!isNpcRescued(BLACKSMITH_KEY)) {
+            return;
+        }
+
+        if (!isBlacksmithWorkshopBuilt()) {
+            HubNpcManager.NpcData blacksmithData = this.hubNpcManager.getOrCreate(BLACKSMITH_KEY);
+            if (blacksmithData.assignedPlotId != null) {
+                this.hubNpcManager.clearAssignment(BLACKSMITH_KEY);
+            }
+            ensureRoleAtTransform(world, BLACKSMITH_ROLE, BLACKSMITH_WAITING_TRANSFORM, BLACKSMITH_WAITING_RADIUS_SQUARED);
+            return;
+        }
+
+        placeBlacksmithWorkshopSupportBlocks(world);
+        HubNpcManager.NpcData blacksmithData = this.hubNpcManager.getOrCreate(BLACKSMITH_KEY);
+        if (!BLACKSMITH_WORKSHOP_ASSIGNMENT_ID.equalsIgnoreCase(
+                blacksmithData.assignedPlotId == null ? "" : blacksmithData.assignedPlotId
+        )) {
+            this.hubNpcManager.startMovingToWorkshop(BLACKSMITH_KEY, BLACKSMITH_WORKSHOP_ASSIGNMENT_ID);
+        }
+
+        ensureNpcAtHome(world, BLACKSMITH_KEY, BLACKSMITH_WORKSHOP_HOME, BLACKSMITH_HOME_RADIUS_SQUARED);
+        boolean reachedWorkshop = isNpcCloseTo(world, BLACKSMITH_ROLE, BLACKSMITH_WORKSHOP_HOME.getPosition(), BLACKSMITH_HOME_RADIUS_SQUARED);
+        this.hubNpcManager.promoteToWorkingIfReady(BLACKSMITH_KEY, reachedWorkshop);
     }
 
     @Nullable
@@ -586,8 +806,10 @@ public final class BaseHousingManager {
 
         Vector3d spawnPos = new Vector3d(transform.getPosition());
         Vector3f spawnRot = new Vector3f(transform.getRotation());
-        TriConsumer<NPCEntity, Ref<EntityStore>, Store<EntityStore>> postSpawn = (npcEntity, npcRef, entityStore) ->
-                entityStore.putComponent(npcRef, Interactable.getComponentType(), Interactable.INSTANCE);
+        TriConsumer<NPCEntity, Ref<EntityStore>, Store<EntityStore>> postSpawn = (npcEntity, npcRef, entityStore) -> {
+            entityStore.putComponent(npcRef, Interactable.getComponentType(), Interactable.INSTANCE);
+            entityStore.putComponent(npcRef, Invulnerable.getComponentType(), Invulnerable.INSTANCE);
+        };
         Pair<Ref<EntityStore>, NPCEntity> pair = npcPlugin.spawnEntity(
                 world.getEntityStore().getStore(),
                 roleIndex,
@@ -604,6 +826,31 @@ public final class BaseHousingManager {
     private static void buildHomeForPlot(@Nonnull World world, @Nonnull Vector3i origin, @Nonnull String plotType) {
         // Phase 2: template strategy lives here. For now all workshop plots use the current base shape.
         buildDefaultWorkshopHome(world, origin);
+    }
+
+    private static void placeBlacksmithWorkshopSupportBlocks(@Nonnull World world) {
+        world.setBlock(593, 181, -11, "Transparent_Light");
+        world.setBlock(594, 183, -15, "Transparent_Light");
+        world.setBlock(588, 183, -12, "Transparent_Light");
+    }
+
+    private static void teleportNpcToTransform(@Nonnull World world, @Nonnull String roleName, @Nonnull Transform targetTransform) {
+        Ref<EntityStore> npcRef = findNpcByRole(world.getEntityStore().getStore(), roleName);
+        if (npcRef == null || !npcRef.isValid()) {
+            return;
+        }
+        Store<EntityStore> store = npcRef.getStore();
+        TransformComponent transform = store.getComponent(npcRef, TransformComponent.getComponentType());
+        if (transform == null) {
+            return;
+        }
+        transform.getPosition().x = targetTransform.getPosition().x;
+        transform.getPosition().y = targetTransform.getPosition().y;
+        transform.getPosition().z = targetTransform.getPosition().z;
+        transform.getRotation().x = targetTransform.getRotation().x;
+        transform.getRotation().y = targetTransform.getRotation().y;
+        transform.getRotation().z = targetTransform.getRotation().z;
+        store.putComponent(npcRef, TransformComponent.getComponentType(), transform);
     }
 
     private static void buildDefaultWorkshopHome(@Nonnull World world, @Nonnull Vector3i origin) {
@@ -744,23 +991,38 @@ public final class BaseHousingManager {
             if (archetype.plotType == null || archetype.plotType.isBlank()) {
                 continue;
             }
+            if (BLACKSMITH_KEY.equalsIgnoreCase(archetype.npcKey)) {
+                continue;
+            }
             if (normalizeOrDefault(archetype.plotType, "").equalsIgnoreCase(normalizedPlotType)) {
                 keys.add(archetype.npcKey);
             }
-        }
-        if (keys.isEmpty() && BLACKSMITH_PLOT_TYPE.equalsIgnoreCase(normalizedPlotType)) {
-            keys.add(BLACKSMITH_KEY);
         }
         return keys;
     }
 
     private boolean isNpcAssigned(@Nonnull String npcKey) {
+        if (BLACKSMITH_KEY.equalsIgnoreCase(npcKey)) {
+            HubNpcManager.NpcData blacksmithData = this.hubNpcManager.getOrCreate(BLACKSMITH_KEY);
+            return blacksmithData.assignedPlotId != null;
+        }
         for (PlotData plot : this.plots.values()) {
             if (npcKey.equals(plot.assignedNpcKey)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private boolean isBlacksmithAwaitingWorkshop(@Nonnull String npcKey) {
+        String normalizedNpc = normalizeOrDefault(npcKey, "");
+        return BLACKSMITH_KEY.equalsIgnoreCase(normalizedNpc)
+                && isNpcRescued(BLACKSMITH_KEY)
+                && !isBlacksmithWorkshopBuilt();
+    }
+
+    private boolean isBlacksmithWorkshopBuilt() {
+        return NpcProgressManager.get().getOrCreate(BLACKSMITH_KEY).upgradeTier >= 1;
     }
 
     private synchronized void ensureLoaded() {

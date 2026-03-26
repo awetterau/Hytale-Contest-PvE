@@ -11,10 +11,12 @@ import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerMouseButtonEvent;
+import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.server.npc.entities.NPCEntity;
 import dev.hytalemodding.state.transition.GameFlowConfigManager;
 import dev.hytalemodding.state.transition.SpawnPointZoneConfigManager;
 import dev.hytalemodding.state.transition.RunHubTransferService;
@@ -29,6 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class GameDoorInteractionHandler {
     public static final String GAME_DOOR_BLOCK_ID = "Game_Start_Door";
+    public static final String GAME_ROPE_BLOCK_ID = "Game_Start_Rope";
+    public static final String GAME_DOOR_TRIGGER_ROLE = "Game_Start_Trigger";
     private static final long USE_COOLDOWN_MS = 500L;
     private static final ConcurrentHashMap<UUID, Long> LAST_USE_BY_PLAYER = new ConcurrentHashMap<>();
 
@@ -36,14 +40,21 @@ public final class GameDoorInteractionHandler {
     }
 
     public static void onPlayerInteract(@Nonnull PlayerInteractEvent event) {
-        if (event.getActionType() != InteractionType.Use || event.getTargetBlock() == null) {
+        if (event.getActionType() != InteractionType.Use) {
             return;
         }
-        PlayerRef playerRef = event.getPlayerRef().getStore().getComponent(event.getPlayerRef(), PlayerRef.getComponentType());
+        PlayerRef playerRef = resolvePlayerRef(event);
         if (playerRef == null) {
-            playerRef = Universe.get().getPlayer(event.getPlayer().getUuid());
+            return;
         }
-        handleDoorTrigger(playerRef, event.getTargetBlock());
+
+        if (event.getTargetBlock() != null && handleDoorTrigger(playerRef, event.getTargetBlock())) {
+            return;
+        }
+
+        if (isGameDoorTriggerEntity(event.getTargetRef())) {
+            handleDoorEntityTrigger(playerRef);
+        }
     }
 
     public static void onPlayerMouseButton(@Nonnull PlayerMouseButtonEvent event) {
@@ -58,6 +69,18 @@ public final class GameDoorInteractionHandler {
     }
 
     public static boolean handleDoorTrigger(@Nullable PlayerRef playerRef, @Nonnull Vector3i target) {
+        return handleDoorTriggerInternal(playerRef, target, false);
+    }
+
+    public static boolean handleDoorEntityTrigger(@Nullable PlayerRef playerRef) {
+        return handleDoorTriggerInternal(playerRef, null, true);
+    }
+
+    private static boolean handleDoorTriggerInternal(
+            @Nullable PlayerRef playerRef,
+            @Nullable Vector3i target,
+            boolean allowEntityTrigger
+    ) {
         if (playerRef == null) {
             return false;
         }
@@ -74,7 +97,7 @@ public final class GameDoorInteractionHandler {
         if (playerWorld == null) {
             return false;
         }
-        if (!isGameDoorBlock(playerWorld, target)) {
+        if (!allowEntityTrigger && (target == null || !isGameDoorBlock(playerWorld, target))) {
             return false;
         }
 
@@ -220,7 +243,31 @@ public final class GameDoorInteractionHandler {
 
     private static boolean isGameDoorBlock(@Nonnull World world, @Nonnull Vector3i target) {
         BlockType blockType = world.getBlockType(target);
-        return blockType != null && GAME_DOOR_BLOCK_ID.equals(blockType.getId());
+        if (blockType == null) {
+            return false;
+        }
+        String id = blockType.getId();
+        return GAME_DOOR_BLOCK_ID.equals(id) || GAME_ROPE_BLOCK_ID.equals(id);
+    }
+
+    public static boolean isGameDoorTriggerEntity(@Nullable Ref<EntityStore> targetRef) {
+        if (targetRef == null || !targetRef.isValid()) {
+            return false;
+        }
+        Store<EntityStore> store = targetRef.getStore();
+        NPCEntity npc = store.getComponent(targetRef, NPCEntity.getComponentType());
+        return npc != null && GAME_DOOR_TRIGGER_ROLE.equals(npc.getRoleName());
+    }
+
+    @Nullable
+    private static PlayerRef resolvePlayerRef(@Nonnull PlayerInteractEvent event) {
+        if (event.getPlayerRef() != null && event.getPlayerRef().isValid()) {
+            PlayerRef playerRef = event.getPlayerRef().getStore().getComponent(event.getPlayerRef(), PlayerRef.getComponentType());
+            if (playerRef != null) {
+                return playerRef;
+            }
+        }
+        return event.getPlayer() == null ? null : Universe.get().getPlayer(event.getPlayer().getUuid());
     }
 
     @Nonnull

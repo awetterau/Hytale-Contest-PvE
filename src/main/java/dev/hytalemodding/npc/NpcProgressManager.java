@@ -139,6 +139,38 @@ public final class NpcProgressManager {
         saveQuietly();
     }
 
+    public synchronized void devOverwriteProgress(
+            @Nonnull String npcKey,
+            boolean rescued,
+            @Nonnull NpcProgressState state,
+            @Nullable String assignedPlotId,
+            int level,
+            int upgradeTier,
+            @Nonnull List<String> unlockedCrafts,
+            @Nonnull List<String> unlockedTrades
+    ) {
+        ensureLoaded();
+        String key = normalize(npcKey);
+        if (key.isBlank()) {
+            return;
+        }
+        this.progressByNpc.put(
+                key,
+                new NpcProgress(
+                        key,
+                        rescued,
+                        state,
+                        assignedPlotId,
+                        Math.max(1, level),
+                        Math.max(0, upgradeTier),
+                        System.currentTimeMillis(),
+                        Set.copyOf(unlockedCrafts),
+                        Set.copyOf(unlockedTrades)
+                )
+        );
+        saveQuietly();
+    }
+
     @Nonnull
     public synchronized List<String> describeAll() {
         ensureLoaded();

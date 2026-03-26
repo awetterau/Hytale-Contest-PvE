@@ -143,6 +143,19 @@ public final class QuestProgressManager {
         saveQuietly();
     }
 
+    public synchronized int resetBySource(@Nonnull String sourceType, @Nonnull String sourceId) {
+        ensureLoaded();
+        int resetCount = 0;
+        for (QuestDefinition definition : QuestDefinitionRegistry.get().getBySource(sourceType, sourceId)) {
+            this.byQuestId.put(definition.questId, QuestProgress.defaultFor(definition.questId));
+            resetCount++;
+        }
+        if (resetCount > 0) {
+            saveQuietly();
+        }
+        return resetCount;
+    }
+
     public synchronized boolean incrementSuccessfulExtraction() {
         ensureLoaded();
         boolean changed = false;

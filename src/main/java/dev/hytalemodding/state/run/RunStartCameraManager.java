@@ -46,6 +46,11 @@ public final class RunStartCameraManager {
     }
 
     public void playSpawnIntro(@Nonnull PlayerRef playerRef) {
+        if (!RunStartPresentationConfig.isIntroCameraEnabled()) {
+            restoreDefaultCamera(playerRef);
+            this.introByPlayer.remove(playerRef.getUuid());
+            return;
+        }
         GameSessionManager.ActiveSessionSnapshot snapshot = GameSessionManager.get().getActiveSession();
         if (snapshot == null || snapshot.phase() != GameSessionManager.RunPhase.EXPLORATION || snapshot.startedAtEpochMillis() <= 0L) {
             return;
@@ -62,6 +67,9 @@ public final class RunStartCameraManager {
     }
 
     public void tick(@Nonnull World world) {
+        if (!RunStartPresentationConfig.isIntroCameraEnabled()) {
+            return;
+        }
         long now = System.currentTimeMillis();
         UUID worldId = world.getWorldConfig().getUuid();
 

@@ -183,7 +183,7 @@ public final class RescueObjectiveManager {
             if (interactionType == InteractionType.Use
                     || interactionType == InteractionType.Primary
                     || interactionType == InteractionType.Secondary) {
-                if (BaseHousingManager.get().isNpcWorking(hubNpcKey)) {
+                if (BaseHousingManager.get().canOpenDialogue(hubNpcKey)) {
                     NpcDialogueManager.get().openDialogue(playerRef, targetRef);
                 } else {
                     HubNpcManager.HubNpcState state = BaseHousingManager.get().getNpcState(hubNpcKey);
@@ -343,18 +343,23 @@ public final class RescueObjectiveManager {
         if (archetype == null || archetype.hubRole == null || archetype.hubRole.isBlank()) {
             return false;
         }
+        Transform spawnTransform = BaseHousingManager.get().getFixedHubRescueSpawn(npcKey);
+        if (spawnTransform == null) {
+            spawnTransform = destinationTransform;
+        }
         Ref<EntityStore> existingBase = findExistingNpcRefByRole(destinationWorld.getEntityStore().getStore(), archetype.hubRole);
         if (existingBase != null && existingBase.isValid()) {
             return true;
         }
-        return spawnNpcAt(destinationWorld, destinationTransform, archetype.hubRole, true);
+        return spawnNpcAt(destinationWorld, spawnTransform, archetype.hubRole, true, spawnTransform == destinationTransform);
     }
 
     private static boolean spawnNpcAt(
             @Nonnull World destinationWorld,
             @Nonnull Transform destinationTransform,
             @Nonnull String roleName,
-            boolean interactable
+            boolean interactable,
+            boolean applyLegacyOffset
     ) {
         NPCPlugin npcPlugin = NPCPlugin.get();
         int roleIndex = npcPlugin.getIndex(roleName);
@@ -364,7 +369,9 @@ public final class RescueObjectiveManager {
         }
 
         Vector3d spawnPos = new Vector3d(destinationTransform.getPosition());
-        spawnPos.setX(spawnPos.getX() + 1.0);
+        if (applyLegacyOffset) {
+            spawnPos.setX(spawnPos.getX() + 1.0);
+        }
         Vector3f spawnRot = new Vector3f(destinationTransform.getRotation());
         TriConsumer<NPCEntity, Ref<EntityStore>, Store<EntityStore>> postSpawn = null;
         if (interactable) {

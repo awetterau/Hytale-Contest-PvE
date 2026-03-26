@@ -4,6 +4,6 @@ Group #MapOpenRoot {
   Group #MapImageFullscreen {
     Anchor: (Left: 0, Right: 0);
     FlexWeight: 1;
-    Background: (TexturePath: "../Textures/custom_map.png");
+    Background: (TexturePath: "../Textures/haven.png");
   }
 }

@@ -106,6 +106,16 @@ public final class NpcInventoryService {
         return true;
     }
 
+    public static boolean clearAll(@Nonnull PlayerRef playerRef) {
+        Inventory inventory = getInventory(playerRef);
+        if (inventory == null) {
+            return false;
+        }
+        clearContainer(inventory.getHotbar());
+        clearContainer(inventory.getStorage());
+        return true;
+    }
+
     private static int countInContainer(@Nullable ItemContainer container, @Nonnull String itemId) {
         if (container == null) {
             return 0;
@@ -227,5 +237,14 @@ public final class NpcInventoryService {
             clone.setItemStackForSlot(i, new ItemStack(stack.getItemId(), stack.getQuantity()));
         }
         return clone;
+    }
+
+    private static void clearContainer(@Nullable ItemContainer container) {
+        if (container == null) {
+            return;
+        }
+        for (short i = 0; i < container.getCapacity(); i++) {
+            container.setItemStackForSlot(i, null);
+        }
     }
 }

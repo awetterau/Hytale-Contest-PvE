@@ -22,12 +22,12 @@ Group #DoorRunZoneRoot {
 
     Group #DoorRunZoneMapArea {
       Anchor: (Left: 28, Top: 64, Width: 1344, Height: 680);
-      Background: (TexturePath: "../../Textures/custom_map.png");
+      Background: (TexturePath: "../../Textures/haven_flipped.png");
       OutlineColor: #d2dde9ff;
       OutlineSize: 1;
 
       Button #DoorZone1Button {
-        Anchor: (Left: 38, Top: 470, Width: 260, Height: 96);
+        Anchor: (Left: 1046, Top: 470, Width: 260, Height: 96);
         OutlineColor: #dbe4efff;
         OutlineSize: 1;
         Style: (
@@ -39,7 +39,7 @@ Group #DoorRunZoneRoot {
       }
 
       Button #DoorZone2Button {
-        Anchor: (Left: 534, Top: 74, Width: 270, Height: 100);
+        Anchor: (Left: 540, Top: 74, Width: 270, Height: 100);
         OutlineColor: #dbe4efff;
         OutlineSize: 1;
         Style: (
@@ -51,7 +51,7 @@ Group #DoorRunZoneRoot {
       }
 
       Button #DoorZone3Button {
-        Anchor: (Left: 1060, Top: 518, Width: 248, Height: 96);
+        Anchor: (Left: 36, Top: 518, Width: 248, Height: 96);
         OutlineColor: #dbe4efff;
         OutlineSize: 1;
         Style: (
@@ -63,7 +63,7 @@ Group #DoorRunZoneRoot {
       }
 
       Button #DoorZone4Button {
-        Anchor: (Left: 54, Top: 596, Width: 220, Height: 56);
+        Anchor: (Left: 1070, Top: 596, Width: 220, Height: 56);
         OutlineColor: #dbe4efff;
         OutlineSize: 1;
         Style: (
@@ -75,7 +75,7 @@ Group #DoorRunZoneRoot {
       }
 
       Button #DoorZone5Button {
-        Anchor: (Left: 300, Top: 596, Width: 220, Height: 56);
+        Anchor: (Left: 824, Top: 596, Width: 220, Height: 56);
         OutlineColor: #dbe4efff;
         OutlineSize: 1;
         Style: (
@@ -87,7 +87,7 @@ Group #DoorRunZoneRoot {
       }
 
       Button #DoorZone6Button {
-        Anchor: (Left: 548, Top: 596, Width: 220, Height: 56);
+        Anchor: (Left: 576, Top: 596, Width: 220, Height: 56);
         OutlineColor: #dbe4efff;
         OutlineSize: 1;
         Style: (
@@ -99,7 +99,7 @@ Group #DoorRunZoneRoot {
       }
 
       Button #DoorZone7Button {
-        Anchor: (Left: 794, Top: 596, Width: 220, Height: 56);
+        Anchor: (Left: 330, Top: 596, Width: 220, Height: 56);
         OutlineColor: #dbe4efff;
         OutlineSize: 1;
         Style: (
@@ -111,7 +111,7 @@ Group #DoorRunZoneRoot {
       }
 
       Button #DoorZone8Button {
-        Anchor: (Left: 1042, Top: 596, Width: 220, Height: 56);
+        Anchor: (Left: 82, Top: 596, Width: 220, Height: 56);
         OutlineColor: #dbe4efff;
         OutlineSize: 1;
         Style: (

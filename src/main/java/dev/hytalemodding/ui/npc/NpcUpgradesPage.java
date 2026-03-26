@@ -111,6 +111,11 @@ public class NpcUpgradesPage extends InteractiveCustomUIPage<NpcUpgradesPage.Dat
             NpcEconomyDefinition.UpgradeDefinition selected = upgrades.get(safeIndex);
             NpcUpgradeService.Result result = NpcUpgradeService.get().executeUpgrade(this.playerRef, this.npcKey, selected.upgradeId);
             this.playerRef.sendMessage(Message.raw(result.message()));
+            if (result.success() && result.closeUiOnSuccess()) {
+                NpcDialogueManager.get().closeDialogue(this.playerRef);
+                close();
+                return;
+            }
             refresh(ref, store);
             return;
         }

@@ -5,6 +5,7 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
+import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -42,6 +43,7 @@ public class NpcDevCommand extends AbstractPlayerCommand {
             case "assign" -> handleAssign(context, args);
             case "unassign" -> handleUnassign(context, args);
             case "rescue" -> handleRescue(context, args);
+            case "hubpos" -> handleHubPos(context, world, args);
             case "reset" -> {
                 HubNpcManager.get().resetAll();
                 context.sendMessage(Message.raw("Hub NPC dev state reset."));
@@ -52,7 +54,7 @@ public class NpcDevCommand extends AbstractPlayerCommand {
                     context.sendMessage(Message.raw(" - " + line));
                 }
             }
-            default -> context.sendMessage(Message.raw("Usage: /npcdev <hud|state|assign|unassign|rescue|dump|reset> ..."));
+            default -> context.sendMessage(Message.raw("Usage: /npcdev <hud|state|assign|unassign|rescue|hubpos|dump|reset> ..."));
         }
     }
 
@@ -127,6 +129,54 @@ public class NpcDevCommand extends AbstractPlayerCommand {
         NpcProgressManager.get().setNpcRescued(npcKey, rescued);
         RescueObjectiveManager.get().setNpcRescued(npcKey, rescued);
         context.sendMessage(Message.raw("Set rescued state for " + npcKey + " to " + rescued + "."));
+    }
+
+    private static void handleHubPos(@Nonnull CommandContext context, @Nonnull World world, @Nonnull List<String> args) {
+        if (args.size() < 2) {
+            context.sendMessage(Message.raw("Usage: /npcdev hubpos <npcKey>"));
+            return;
+        }
+        String npcKey = args.get(1).toLowerCase(Locale.ROOT);
+        var archetype = dev.hytalemodding.npc.NpcDefinitionRegistry.get().getArchetype(npcKey);
+        if (archetype == null || archetype.hubRole == null || archetype.hubRole.isBlank()) {
+            context.sendMessage(Message.raw("No hub role configured for " + npcKey + "."));
+            return;
+        }
+
+        final Ref<EntityStore>[] found = new Ref[]{null};
+        world.getEntityStore().getStore().forEachChunk(com.hypixel.hytale.server.npc.entities.NPCEntity.getComponentType(), (chunk, buffer) -> {
+            if (found[0] != null) {
+                return;
+            }
+            int size = chunk.size();
+            for (int i = 0; i < size; i++) {
+                var npc = chunk.getComponent(i, com.hypixel.hytale.server.npc.entities.NPCEntity.getComponentType());
+                if (npc == null || !archetype.hubRole.equalsIgnoreCase(npc.getRoleName())) {
+                    continue;
+                }
+                Ref<EntityStore> npcRef = chunk.getReferenceTo(i);
+                if (npcRef != null && npcRef.isValid()) {
+                    found[0] = npcRef;
+                    return;
+                }
+            }
+        });
+
+        if (found[0] == null || !found[0].isValid()) {
+            context.sendMessage(Message.raw("No live hub NPC found for " + npcKey + "."));
+            return;
+        }
+        TransformComponent transform = found[0].getStore().getComponent(found[0], TransformComponent.getComponentType());
+        if (transform == null) {
+            context.sendMessage(Message.raw("Hub NPC transform unavailable for " + npcKey + "."));
+            return;
+        }
+        context.sendMessage(Message.raw("hubSpawn.x=" + transform.getPosition().getX()));
+        context.sendMessage(Message.raw("hubSpawn.y=" + transform.getPosition().getY()));
+        context.sendMessage(Message.raw("hubSpawn.z=" + transform.getPosition().getZ()));
+        context.sendMessage(Message.raw("hubSpawn.pitch=" + transform.getRotation().getX()));
+        context.sendMessage(Message.raw("hubSpawn.yaw=" + transform.getRotation().getY()));
+        context.sendMessage(Message.raw("hubSpawn.roll=" + transform.getRotation().getZ()));
     }
 
     private static HubNpcManager.HubNpcState parseState(@Nonnull String raw) {

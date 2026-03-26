@@ -53,7 +53,8 @@ public class DoorRunZoneSelectPage extends InteractiveCustomUIPage<DoorRunZoneSe
             String buttonId = "#DoorZone" + (zoneIndex + 1) + "Button";
             ui.set(buttonId + ".Visible", visible);
             if (visible) {
-                ui.set("#DoorZone" + (zoneIndex + 1) + "Label.Text", SpawnPointZoneManager.getFormattedZoneLabel(zoneIndex));
+                int worldZoneIndex = toWorldZoneIndex(zoneIndex, zoneCount);
+                ui.set("#DoorZone" + (zoneIndex + 1) + "Label.Text", SpawnPointZoneManager.getFormattedZoneLabel(worldZoneIndex));
                 events.addEventBinding(CustomUIEventBindingType.Activating, buttonId, EventData.of("Action", "door_zone_" + zoneIndex), false);
             }
         }
@@ -74,9 +75,9 @@ public class DoorRunZoneSelectPage extends InteractiveCustomUIPage<DoorRunZoneSe
         String eventData = data.action == null ? "" : data.action.trim().toLowerCase();
 
         if (eventData.contains("door_zone_")) {
-            int zoneIndex = parseTrailingIndex(eventData, "door_zone_");
-            if (zoneIndex >= 0) {
-                setZoneAndStart(player, ref, store, zoneIndex);
+            int displayZoneIndex = parseTrailingIndex(eventData, "door_zone_");
+            if (displayZoneIndex >= 0) {
+                setZoneAndStart(player, ref, store, toWorldZoneIndex(displayZoneIndex, SpawnPointZoneManager.getZoneCount()));
             }
             return;
         }
@@ -116,5 +117,12 @@ public class DoorRunZoneSelectPage extends InteractiveCustomUIPage<DoorRunZoneSe
         } catch (NumberFormatException ignored) {
             return -1;
         }
+    }
+
+    private static int toWorldZoneIndex(int displayZoneIndex, int zoneCount) {
+        if (displayZoneIndex < 0 || displayZoneIndex >= zoneCount) {
+            return displayZoneIndex;
+        }
+        return (zoneCount - 1) - displayZoneIndex;
     }
 }
