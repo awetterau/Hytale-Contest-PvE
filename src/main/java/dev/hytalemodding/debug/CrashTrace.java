@@ -20,10 +20,10 @@ public final class CrashTrace {
     }
 
     public static void onPlayerReady(@Nonnull PlayerReadyEvent event) {
-        if (!ENABLED || event.getPlayer() == null || event.getPlayer().getUuid() == null) {
+        if (!ENABLED || event.getPlayerRef() == null || !event.getPlayerRef().isValid()) {
             return;
         }
-        PlayerRef playerRef = Universe.get().getPlayer(event.getPlayer().getUuid());
+        PlayerRef playerRef = event.getPlayerRef().getStore().getComponent(event.getPlayerRef(), PlayerRef.getComponentType());
         if (playerRef == null) {
             return;
         }

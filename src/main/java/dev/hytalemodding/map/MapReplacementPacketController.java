@@ -12,12 +12,16 @@ import com.hypixel.hytale.server.core.io.adapter.PacketFilter;
 import com.hypixel.hytale.server.core.io.adapter.PlayerPacketFilter;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.world.chunk.palette.BitFieldArr;
 import dev.hytalemodding.debug.CrashTrace;
 
 import javax.annotation.Nonnull;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.logging.Level;
 
 public final class MapReplacementPacketController {
@@ -140,7 +144,7 @@ public final class MapReplacementPacketController {
             int lockedCenterChunkZ = Math.floorDiv(LOCKED_CENTER_WORLD_Z, MAP_CHUNK_BLOCK_SIZE);
 
             for (MapChunk chunk : updateWorldMap.chunks) {
-                if (chunk == null || chunk.image == null || chunk.image.data == null) {
+                if (chunk == null || chunk.image == null) {
                     continue;
                 }
                 CrashTrace.logLimited(
@@ -150,7 +154,8 @@ public final class MapReplacementPacketController {
                         "packet",
                         "chunk=(" + chunk.chunkX + "," + chunk.chunkZ + ") image="
                                 + chunk.image.width + "x" + chunk.image.height
-                                + " data=" + chunk.image.data.length
+                                + " palette=" + (chunk.image.palette == null ? 0 : chunk.image.palette.length)
+                                + " packed=" + (chunk.image.packedIndices == null ? 0 : chunk.image.packedIndices.length)
                 );
                 int sampleChunkX = chunk.chunkX;
                 int sampleChunkZ = chunk.chunkZ;
@@ -176,9 +181,11 @@ public final class MapReplacementPacketController {
 
     private void applyOverlayToChunk(@Nonnull MapChunk chunk, @Nonnull BufferedImage overlayImage, int sampleChunkX, int sampleChunkZ) {
         MapImage image = chunk.image;
-        if (image.width <= 0 || image.height <= 0 || image.data.length < image.width * image.height) {
+        int pixelCount = image.width * image.height;
+        if (image.width <= 0 || image.height <= 0 || pixelCount <= 0) {
             return;
         }
+        int[] pixels = unpackPixels(image, pixelCount);
 
         int chunkMinX = sampleChunkX * MAP_CHUNK_BLOCK_SIZE;
         int chunkMinZ = sampleChunkZ * MAP_CHUNK_BLOCK_SIZE;
@@ -214,9 +221,11 @@ public final class MapReplacementPacketController {
                 int r = (src >>> 16) & 0xFF;
                 int g = (src >>> 8) & 0xFF;
                 int b = src & 0xFF;
-                image.data[(py * image.width) + px] = packMapColor(r, g, b, OPAQUE_ALPHA);
+                pixels[(py * image.width) + px] = packMapColor(r, g, b, OPAQUE_ALPHA);
             }
         }
+
+        chunk.image = packPixels(image.width, image.height, pixels);
     }
 
     private BufferedImage loadOverlayImage() {
@@ -253,6 +262,54 @@ public final class MapReplacementPacketController {
 
     private static int packMapColor(int r, int g, int b, int a) {
         return ((r & 0xFF) << 24) | ((g & 0xFF) << 16) | ((b & 0xFF) << 8) | (a & 0xFF);
+    }
+
+    @Nonnull
+    private static int[] unpackPixels(@Nonnull MapImage image, int pixelCount) {
+        int[] pixels = new int[pixelCount];
+        if (image.palette == null || image.palette.length == 0 || image.packedIndices == null || image.bitsPerIndex <= 0) {
+            return pixels;
+        }
+
+        BitFieldArr indices = new BitFieldArr(Byte.toUnsignedInt(image.bitsPerIndex), pixelCount);
+        indices.set(image.packedIndices);
+        for (int i = 0; i < pixelCount; i++) {
+            int paletteIndex = indices.get(i);
+            if (paletteIndex >= 0 && paletteIndex < image.palette.length) {
+                pixels[i] = image.palette[paletteIndex];
+            }
+        }
+        return pixels;
+    }
+
+    @Nonnull
+    private static MapImage packPixels(int width, int height, @Nonnull int[] pixels) {
+        if (pixels.length == 0) {
+            return new MapImage(width, height, new int[]{0}, (byte) 1, new byte[1]);
+        }
+
+        Map<Integer, Integer> paletteLookup = new LinkedHashMap<>();
+        int[] pixelIndices = new int[pixels.length];
+        for (int i = 0; i < pixels.length; i++) {
+            Integer paletteIndex = paletteLookup.get(pixels[i]);
+            if (paletteIndex == null) {
+                paletteIndex = paletteLookup.size();
+                paletteLookup.put(pixels[i], paletteIndex);
+            }
+            pixelIndices[i] = paletteIndex;
+        }
+
+        int[] palette = new int[paletteLookup.size()];
+        for (Map.Entry<Integer, Integer> entry : paletteLookup.entrySet()) {
+            palette[entry.getValue()] = entry.getKey();
+        }
+
+        int bitsPerIndex = Math.max(1, 32 - Integer.numberOfLeadingZeros(Math.max(1, palette.length - 1)));
+        BitFieldArr packed = new BitFieldArr(bitsPerIndex, pixels.length);
+        for (int i = 0; i < pixelIndices.length; i++) {
+            packed.set(i, pixelIndices[i]);
+        }
+        return new MapImage(width, height, palette, (byte) bitsPerIndex, Arrays.copyOf(packed.get(), packed.get().length));
     }
 
     private static int[] estimatePacketCenter(@Nonnull MapChunk[] chunks) {

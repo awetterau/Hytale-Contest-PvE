@@ -3,7 +3,7 @@ package dev.hytalemodding.npc.economy;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.entity.entities.Player;
-import com.hypixel.hytale.server.core.inventory.Inventory;
+import com.hypixel.hytale.server.core.inventory.InventoryComponent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -24,12 +24,12 @@ public final class NpcInventoryService {
         if (costs.isEmpty()) {
             return true;
         }
-        Inventory inventory = getInventory(playerRef);
+        InventoryContainers inventory = getInventory(playerRef);
         if (inventory == null) {
             return false;
         }
-        ItemContainer hotbar = inventory.getHotbar();
-        ItemContainer storage = inventory.getStorage();
+        ItemContainer hotbar = inventory.hotbar();
+        ItemContainer storage = inventory.storage();
         for (NpcEconomyDefinition.ItemAmount cost : costs) {
             int have = countInContainer(hotbar, cost.itemId) + countInContainer(storage, cost.itemId);
             if (have < cost.amount) {
@@ -40,11 +40,11 @@ public final class NpcInventoryService {
     }
 
     public static int countItem(@Nonnull PlayerRef playerRef, @Nonnull String itemId) {
-        Inventory inventory = getInventory(playerRef);
+        InventoryContainers inventory = getInventory(playerRef);
         if (inventory == null) {
             return 0;
         }
-        return countInContainer(inventory.getHotbar(), itemId) + countInContainer(inventory.getStorage(), itemId);
+        return countInContainer(inventory.hotbar(), itemId) + countInContainer(inventory.storage(), itemId);
     }
 
     public static boolean executeTransaction(
@@ -52,12 +52,12 @@ public final class NpcInventoryService {
             @Nonnull List<NpcEconomyDefinition.ItemAmount> costs,
             @Nonnull List<NpcEconomyDefinition.ItemAmount> rewards
     ) {
-        Inventory inventory = getInventory(playerRef);
+        InventoryContainers inventory = getInventory(playerRef);
         if (inventory == null) {
             return false;
         }
-        ItemContainer hotbar = inventory.getHotbar();
-        ItemContainer storage = inventory.getStorage();
+        ItemContainer hotbar = inventory.hotbar();
+        ItemContainer storage = inventory.storage();
         if (hotbar == null || storage == null) {
             return false;
         }
@@ -115,12 +115,12 @@ public final class NpcInventoryService {
     }
 
     public static boolean clearAll(@Nonnull PlayerRef playerRef) {
-        Inventory inventory = getInventory(playerRef);
+        InventoryContainers inventory = getInventory(playerRef);
         if (inventory == null) {
             return false;
         }
-        clearContainer(inventory.getHotbar());
-        clearContainer(inventory.getStorage());
+        clearContainer(inventory.hotbar());
+        clearContainer(inventory.storage());
         return true;
     }
 
@@ -213,7 +213,7 @@ public final class NpcInventoryService {
     }
 
     @Nullable
-    private static Inventory getInventory(@Nonnull PlayerRef playerRef) {
+    private static InventoryContainers getInventory(@Nonnull PlayerRef playerRef) {
         Ref<EntityStore> ref = playerRef.getReference();
         if (ref == null || !ref.isValid()) {
             return null;
@@ -226,7 +226,12 @@ public final class NpcInventoryService {
         if (player == null) {
             return null;
         }
-        return player.getInventory();
+        InventoryComponent.Hotbar hotbar = store.getComponent(ref, InventoryComponent.Hotbar.getComponentType());
+        InventoryComponent.Storage storage = store.getComponent(ref, InventoryComponent.Storage.getComponentType());
+        if (hotbar == null || storage == null) {
+            return null;
+        }
+        return new InventoryContainers(hotbar.getInventory(), storage.getInventory());
     }
 
     @Nullable
@@ -254,5 +259,8 @@ public final class NpcInventoryService {
         for (short i = 0; i < container.getCapacity(); i++) {
             container.setItemStackForSlot(i, null);
         }
+    }
+
+    private record InventoryContainers(@Nonnull ItemContainer hotbar, @Nonnull ItemContainer storage) {
     }
 }

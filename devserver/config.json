@@ -6,7 +6,7 @@
   "MaxPlayers": 4,
   "MaxViewRadius": 32,
   "Defaults": {
-    "World": "default",
+    "World": "hub",
     "GameMode": "Creative"
   },
   "ConnectionTimeouts": {},

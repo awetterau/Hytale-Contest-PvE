@@ -354,7 +354,14 @@ public final class GameSessionManager {
     }
 
     public void onPlayerReady(@Nonnull PlayerReadyEvent event) {
-        UUID playerId = event.getPlayer().getUuid();
+        if (event.getPlayerRef() == null || !event.getPlayerRef().isValid()) {
+            return;
+        }
+        PlayerRef readyPlayerRef = event.getPlayerRef().getStore().getComponent(event.getPlayerRef(), PlayerRef.getComponentType());
+        if (readyPlayerRef == null) {
+            return;
+        }
+        UUID playerId = readyPlayerRef.getUuid();
         World runWorld;
         ActiveSessionSnapshot snapshot;
 

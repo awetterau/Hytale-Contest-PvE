@@ -10,7 +10,7 @@ import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
-import com.hypixel.hytale.server.core.inventory.Inventory;
+import com.hypixel.hytale.server.core.inventory.InventoryComponent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
@@ -181,11 +181,18 @@ public class NpcUpgradesPage extends InteractiveCustomUIPage<NpcUpgradesPage.Dat
         if (player == null || itemId.isBlank()) {
             return 0;
         }
-        Inventory inventory = player.getInventory();
-        if (inventory == null) {
+        Ref<EntityStore> ref = player.getReference();
+        if (ref == null || !ref.isValid()) {
             return 0;
         }
-        return countInContainer(inventory.getHotbar(), itemId) + countInContainer(inventory.getStorage(), itemId);
+        Store<EntityStore> store = ref.getStore();
+        if (store == null) {
+            return 0;
+        }
+        InventoryComponent.Hotbar hotbar = store.getComponent(ref, InventoryComponent.Hotbar.getComponentType());
+        InventoryComponent.Storage storage = store.getComponent(ref, InventoryComponent.Storage.getComponentType());
+        return countInContainer(hotbar == null ? null : hotbar.getInventory(), itemId)
+                + countInContainer(storage == null ? null : storage.getInventory(), itemId);
     }
 
     private static int countInContainer(ItemContainer container, @Nonnull String itemId) {

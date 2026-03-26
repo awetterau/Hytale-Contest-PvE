@@ -45,7 +45,6 @@ public final class BlacksmithWorkshopMarkerProvider implements WorldMapManager.M
         collector.add(new MapMarker(
                 MARKER_ID,
                 markerName,
-                null,
                 MARKER_ICON,
                 PositionUtil.toTransformPacket(markerTransform),
                 null,

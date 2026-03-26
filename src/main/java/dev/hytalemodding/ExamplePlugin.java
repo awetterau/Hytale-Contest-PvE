@@ -68,6 +68,7 @@ import dev.hytalemodding.state.hub.BlacksmithWorkshopEntityMarker;
 import dev.hytalemodding.state.hub.BasePlotInteractionHandler;
 import dev.hytalemodding.state.hub.BasePlotUseInteraction;
 import dev.hytalemodding.state.hub.RescueInteractionPacketWatcher;
+import dev.hytalemodding.state.hub.TransparentLightProtectionSystem;
 import dev.hytalemodding.state.run.GameDoorInteractionHandler;
 import dev.hytalemodding.state.run.GameDoorUseInteraction;
 import dev.hytalemodding.state.run.GameDoorBlockDetectionSystem;
@@ -188,6 +189,7 @@ public class ExamplePlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new BlightBeastKillTrackerSystem());
         this.getEntityStoreRegistry().registerSystem(new BaseHousingSystem());
         this.getEntityStoreRegistry().registerSystem(new BlacksmithPrefabBuildSystem());
+        this.getEntityStoreRegistry().registerSystem(new TransparentLightProtectionSystem());
         this.getEntityStoreRegistry().registerSystem(new DevDebugHudSystem());
 
         try {

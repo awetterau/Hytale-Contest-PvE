@@ -1,16 +1,18 @@
 package dev.hytalemodding.loot;
 
+import com.hypixel.hytale.component.Holder;
 import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
+import com.hypixel.hytale.server.core.modules.block.components.ItemContainerBlock;
+import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
-import com.hypixel.hytale.server.core.universe.world.meta.state.ItemContainerBlockState;
+import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.lang.reflect.Method;
 import java.util.List;
 
 public final class LootChestAccess {
@@ -25,16 +27,17 @@ public final class LootChestAccess {
             return null;
         }
 
-        try {
-            Method getStateMethod = worldChunk.getClass().getMethod("getState", int.class, int.class, int.class);
-            Object rawState = getStateMethod.invoke(worldChunk, pos.getX(), pos.getY(), pos.getZ());
-            if (!(rawState instanceof ItemContainerBlockState containerBlock)) {
-                return null;
-            }
-            return new ResolvedChest(rawState, containerBlock, normalizeBlockId(tryGetBlockId(rawState)));
-        } catch (Exception ignored) {
+        Holder<ChunkStore> holder = worldChunk.getBlockComponentHolder(pos.getX(), pos.getY(), pos.getZ());
+        if (holder == null) {
             return null;
         }
+        ItemContainerBlock containerBlock = holder.getComponent(ItemContainerBlock.getComponentType());
+        if (containerBlock == null) {
+            return null;
+        }
+        BlockType blockType = world.getBlockType(pos);
+        String blockId = blockType == null ? null : normalizeBlockId(blockType.getId());
+        return new ResolvedChest(worldChunk, holder, containerBlock, blockId);
     }
 
     public static boolean populate(@Nonnull ResolvedChest chest, @Nonnull List<ItemStack> items) {
@@ -52,17 +55,8 @@ public final class LootChestAccess {
             container.setItemStackForSlot(slot, item);
             slot++;
         }
-        markNeedsSave(chest.rawState());
+        chest.chunk().markNeedsSaving();
         return true;
-    }
-
-    public static void markNeedsSave(@Nonnull Object rawState) {
-        try {
-            Method saveMethod = rawState.getClass().getMethod("markNeedsSave");
-            saveMethod.invoke(rawState);
-        } catch (Exception ignored) {
-            // Ignore if markNeedsSave is unavailable.
-        }
     }
 
     @Nullable
@@ -80,41 +74,10 @@ public final class LootChestAccess {
         return id.trim();
     }
 
-    @Nonnull
-    private static String tryGetBlockId(@Nonnull Object rawState) {
-        Object blockTypeObj = null;
-        String[] candidates = new String[]{"getBlockType", "getType", "getBlock"};
-        for (String name : candidates) {
-            try {
-                Method m = rawState.getClass().getMethod(name);
-                blockTypeObj = m.invoke(rawState);
-                if (blockTypeObj != null) {
-                    break;
-                }
-            } catch (Exception ignored) {
-                // Try next fallback.
-            }
-        }
-
-        String raw = blockTypeObj != null ? String.valueOf(blockTypeObj) : String.valueOf(rawState);
-        int idPos = raw.indexOf("id=");
-        if (idPos >= 0) {
-            int start = idPos + 3;
-            int end = raw.indexOf(',', start);
-            if (end < 0) {
-                end = raw.indexOf('}', start);
-            }
-            if (end < 0) {
-                end = raw.length();
-            }
-            return raw.substring(start, end).trim();
-        }
-        return raw;
-    }
-
     public record ResolvedChest(
-            @Nonnull Object rawState,
-            @Nonnull ItemContainerBlockState containerBlock,
+            @Nonnull WorldChunk chunk,
+            @Nonnull Holder<ChunkStore> holder,
+            @Nonnull ItemContainerBlock containerBlock,
             @Nullable String blockId
     ) {
     }

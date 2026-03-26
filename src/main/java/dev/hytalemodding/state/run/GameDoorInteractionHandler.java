@@ -4,6 +4,7 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.vector.Transform;
 import com.hypixel.hytale.math.vector.Vector3i;
+import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.protocol.InteractionType;
 import com.hypixel.hytale.protocol.MouseButtonState;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
@@ -11,6 +12,8 @@ import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerMouseButtonEvent;
+import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
+import com.hypixel.hytale.server.core.modules.entitystats.asset.DefaultEntityStatTypes;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
@@ -222,6 +225,7 @@ public final class GameDoorInteractionHandler {
                 return;
             }
             SpawnPointZoneManager.releaseReservedSpawn(playerRef.getUuid());
+            healIfAdventurePlayer(playerRef);
             playerRef.sendMessage(Message.raw("Extraction complete."));
             QuestProgressManager.get().incrementSuccessfulExtraction(playerRef);
             if (queuedRescue) {
@@ -267,7 +271,7 @@ public final class GameDoorInteractionHandler {
                 return playerRef;
             }
         }
-        return event.getPlayer() == null ? null : Universe.get().getPlayer(event.getPlayer().getUuid());
+        return null;
     }
 
     @Nonnull
@@ -279,6 +283,30 @@ public final class GameDoorInteractionHandler {
         long now = System.currentTimeMillis();
         Long last = LAST_USE_BY_PLAYER.put(playerId, now);
         return last != null && now - last < USE_COOLDOWN_MS;
+    }
+
+    private static void healIfAdventurePlayer(@Nonnull PlayerRef playerRef) {
+        Ref<EntityStore> ref = playerRef.getReference();
+        if (ref == null || !ref.isValid()) {
+            return;
+        }
+        Store<EntityStore> store = ref.getStore();
+        if (store == null) {
+            return;
+        }
+
+        Player player = store.getComponent(ref, Player.getComponentType());
+        if (player == null || player.getGameMode() != GameMode.Adventure) {
+            return;
+        }
+
+        EntityStatMap statMap = store.getComponent(ref, EntityStatMap.getComponentType());
+        if (statMap == null) {
+            return;
+        }
+
+        statMap.maximizeStatValue(DefaultEntityStatTypes.getHealth());
+        store.putComponent(ref, EntityStatMap.getComponentType(), statMap);
     }
 
     @Nonnull

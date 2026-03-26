@@ -8,6 +8,7 @@ repositories {
 
 dependencies {
     // Any external dependency you also want to include
+    implementation("com.hypixel.hytale:Server:2026.03.26-89796e57b")
 }
 
 val devModsRoot = layout.buildDirectory.dir("devmods")

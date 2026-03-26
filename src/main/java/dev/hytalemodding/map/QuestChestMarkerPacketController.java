@@ -86,7 +86,6 @@ public final class QuestChestMarkerPacketController {
         return new MapMarker(
                 state.markerId(),
                 label,
-                null,
                 state.markerIcon(),
                 PositionUtil.toTransformPacket(transform),
                 null,

@@ -170,9 +170,6 @@ public final class RescueObjectiveManager {
         if (event.getPlayerRef() != null && event.getPlayerRef().isValid()) {
             playerRef = event.getPlayerRef().getStore().getComponent(event.getPlayerRef(), PlayerRef.getComponentType());
         }
-        if (playerRef == null && event.getPlayer() != null) {
-            playerRef = Universe.get().getPlayer(event.getPlayer().getUuid());
-        }
         if (playerRef == null || playerRef.getWorldUuid() == null) {
             return;
         }
