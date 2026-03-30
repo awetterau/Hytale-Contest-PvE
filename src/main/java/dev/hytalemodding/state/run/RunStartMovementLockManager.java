@@ -20,8 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class RunStartMovementLockManager {
     private static final float MIN_LOCKED_MOVEMENT_VALUE = 0.01f;
-    private static final long LOCK_START_DELAY_MS = 1_500L;
-    private static final long LOCK_END_FROM_RUN_START_MS = 20_000L;
+    private static final long LOCK_START_DELAY_MS = 0L;
+    private static final long LOCK_EXTRA_AFTER_CAMERA_END_MS = 4_000L;
     private static final double LOCK_POSITION_EPSILON = 0.01D;
     private static final RunStartMovementLockManager INSTANCE = new RunStartMovementLockManager();
 
@@ -94,7 +94,9 @@ public final class RunStartMovementLockManager {
                         && snapshot.runWorldUuid() != null
                         && snapshot.runWorldUuid().equals(playerRef.getWorldUuid())
                         && snapshot.startedAtEpochMillis() > 0L) {
-                    session.endsAtMs = snapshot.startedAtEpochMillis() + LOCK_END_FROM_RUN_START_MS;
+                    session.endsAtMs = snapshot.startedAtEpochMillis()
+                            + RunStartCameraManager.getIntroEndFromRunStartMs()
+                            + LOCK_EXTRA_AFTER_CAMERA_END_MS;
                 }
             }
             if (now >= session.endsAtMs) {
@@ -104,11 +106,7 @@ public final class RunStartMovementLockManager {
             }
             if (session.lockedPosition == null) {
                 Vector3d currentPlayerPosition = playerRef.getTransform().getPosition();
-                session.lockedPosition = new Vector3d(
-                        truncateCoordinate(currentPlayerPosition.getX()),
-                        truncateCoordinate(currentPlayerPosition.getY()),
-                        truncateCoordinate(currentPlayerPosition.getZ())
-                );
+                session.lockedPosition = new Vector3d(currentPlayerPosition);
             }
 
             Ref<EntityStore> ref = playerRef.getReference();
@@ -182,10 +180,6 @@ public final class RunStartMovementLockManager {
         settings.strafeCrouchSpeedMultiplier = MIN_LOCKED_MOVEMENT_VALUE;
         settings.forwardSprintSpeedMultiplier = MIN_LOCKED_MOVEMENT_VALUE;
         movementManager.update(playerRef.getPacketHandler());
-    }
-
-    private static double truncateCoordinate(double value) {
-        return value >= 0.0d ? Math.floor(value) : Math.ceil(value);
     }
 
     private static void restoreMovementDefaults(@Nonnull PlayerRef playerRef) {

@@ -79,8 +79,10 @@ import dev.hytalemodding.state.run.GameDoorTriggerSystem;
 import dev.hytalemodding.state.run.RescueObjectiveManager;
 import dev.hytalemodding.state.run.RescueObjectiveSystem;
 import dev.hytalemodding.state.run.RunDeathHandler;
+import dev.hytalemodding.state.run.RunClientReadyPacketWatcher;
 import dev.hytalemodding.state.run.RunStartCameraSystem;
 import dev.hytalemodding.state.run.RunStartMovementLockSystem;
+import dev.hytalemodding.state.run.RunStartPlayerAnimationPatcher;
 import dev.hytalemodding.state.run.SpawnPointDetectionSystem;
 import dev.hytalemodding.state.run.SpawnPointPlacementHandler;
 import dev.hytalemodding.state.transition.PlayerSpawnSafety;
@@ -88,7 +90,9 @@ import dev.hytalemodding.state.transition.PlayerSpawnSafety;
 import javax.annotation.Nonnull;
 
 public class ExamplePlugin extends JavaPlugin {
+    private boolean introAnimationPatched;
     private RescueInteractionPacketWatcher rescueInteractionPacketWatcher;
+    private RunClientReadyPacketWatcher runClientReadyPacketWatcher;
     private MapReplacementPacketController mapReplacementPacketController;
     private SpawnMarkerPacketController spawnMarkerPacketController;
     private QuestChestMarkerPacketController questChestMarkerPacketController;
@@ -153,10 +157,15 @@ public class ExamplePlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new RedStartCommand());
         this.getCommandRegistry().registerCommand(new RedUndoCommand());
         this.getCommandRegistry().registerCommand(new RedUiCommand());
+
+        this.introAnimationPatched = patchRunIntroAnimationSet("setup");
     }
 
     @Override
     protected void start() {
+        if (!this.introAnimationPatched) {
+            this.introAnimationPatched = patchRunIntroAnimationSet("start");
+        }
         GameSessionManager.get().cleanupOrphanRunWorldsOnStartup();
         NpcDefinitionRegistry.get().initialize();
         NpcProgressManager.get().initialize();
@@ -178,6 +187,8 @@ public class ExamplePlugin extends JavaPlugin {
         this.questChestMarkerPacketController.register();
         this.rescueInteractionPacketWatcher = new RescueInteractionPacketWatcher();
         this.rescueInteractionPacketWatcher.register();
+        this.runClientReadyPacketWatcher = new RunClientReadyPacketWatcher();
+        this.runClientReadyPacketWatcher.register();
         java.util.Set<LifeEssenceContainerKey> processedLifeEssenceContainers = LootChestRuntime.get().processedChests();
         this.getEntityStoreRegistry().registerSystem(new LifeEssenceChestOpenSystem(processedLifeEssenceContainers));
         this.getEntityStoreRegistry().registerSystem(new LifeEssenceChestBreakCleanupSystem(processedLifeEssenceContainers));
@@ -214,6 +225,10 @@ public class ExamplePlugin extends JavaPlugin {
             this.rescueInteractionPacketWatcher.unregister();
             this.rescueInteractionPacketWatcher = null;
         }
+        if (this.runClientReadyPacketWatcher != null) {
+            this.runClientReadyPacketWatcher.unregister();
+            this.runClientReadyPacketWatcher = null;
+        }
         if (this.mapReplacementPacketController != null) {
             this.mapReplacementPacketController.unregister();
             this.mapReplacementPacketController = null;
@@ -226,5 +241,16 @@ public class ExamplePlugin extends JavaPlugin {
             this.questChestMarkerPacketController.unregister();
             this.questChestMarkerPacketController = null;
         }
+    }
+
+    private static boolean patchRunIntroAnimationSet(@Nonnull String phase) {
+        boolean patchedIntroAnimation = RunStartPlayerAnimationPatcher.ensureAnimationSetPatched(
+                "Player_Anim_LargeRope_A",
+                "Characters/Animations/Default/Player_Anim_LargeRope_A.blockyanim"
+        );
+        if (!patchedIntroAnimation) {
+            System.out.println("[RunStartIntro] (" + phase + ") Failed to patch player AnimationSets for Player_Anim_LargeRope_A.");
+        }
+        return patchedIntroAnimation;
     }
 }

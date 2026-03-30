@@ -20,3 +20,5 @@ server.items.Base_Plot_Marker.description=Use this marker to assign a rescued NP
 
 items.Crimson_Core.name=Crimson Core
 items.Crimson_Core.description=A fleshy, viscous mass of unknown origin.
+
+items.Large_Rope.name=Large Rope

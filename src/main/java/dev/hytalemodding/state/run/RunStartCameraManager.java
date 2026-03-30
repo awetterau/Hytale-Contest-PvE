@@ -1,31 +1,46 @@
 package dev.hytalemodding.state.run;
 
-import com.hypixel.hytale.math.vector.Transform;
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.protocol.AnimationSlot;
 import com.hypixel.hytale.protocol.ClientCameraView;
 import com.hypixel.hytale.protocol.Direction;
 import com.hypixel.hytale.protocol.Position;
+import com.hypixel.hytale.protocol.PositionDistanceOffsetType;
 import com.hypixel.hytale.protocol.PositionType;
 import com.hypixel.hytale.protocol.RotationType;
 import com.hypixel.hytale.protocol.ServerCameraSettings;
 import com.hypixel.hytale.protocol.packets.camera.SetServerCamera;
+import com.hypixel.hytale.server.core.asset.common.BlockyAnimationCache;
+import com.hypixel.hytale.server.core.entity.AnimationUtils;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.math.vector.Transform;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class RunStartCameraManager {
-    private static final long INTRO_DELAY_FROM_RUN_START_MS = 5_000L;
-    private static final long INTRO_END_FROM_RUN_START_MS = 15_000L;
+    private static final long INTRO_DELAY_FROM_RUN_START_MS = 0L;
+    private static final long INTRO_MIN_DURATION_MS = 250L;
+    private static final long INTRO_CAMERA_END_OFFSET_FROM_ANIMATION_MS = 200L;
+    private static final String INTRO_PLAYER_ANIMATION_PATH = "Characters/Animations/Default/Player_Anim_LargeRope_A.blockyanim";
     private static final double CAMERA_DISTANCE = 2.4D;
     private static final double CAMERA_HEIGHT_OFFSET = 0.7D;
     private static final double PLAYER_LOOK_TARGET_HEIGHT = 1.3D;
+    private static final String INTRO_PLAYER_ANIMATION = "Player_Anim_LargeRope_A";
+    private static final String INTRO_ROPE_BLOCK_ID = "Large_Rope";
+    private static final long CAMERA_REAPPLY_DELAY_MS = 1_600L;
     private static final RunStartCameraManager INSTANCE = new RunStartCameraManager();
+    private static volatile long introEndFromRunStartMs = -1L;
 
     private final ConcurrentHashMap<UUID, IntroSession> introByPlayer = new ConcurrentHashMap<>();
 
@@ -42,7 +57,19 @@ public final class RunStartCameraManager {
     }
 
     public static long getIntroEndFromRunStartMs() {
-        return INTRO_END_FROM_RUN_START_MS;
+        long cached = introEndFromRunStartMs;
+        if (cached > 0L) {
+            return cached;
+        }
+
+        BlockyAnimationCache.BlockyAnimation animation = BlockyAnimationCache.getNow(INTRO_PLAYER_ANIMATION_PATH);
+        long animationDurationMs = animation == null
+                ? 3_000L
+                : Math.round(animation.getDurationMillis());
+        long cameraDurationMs = Math.max(INTRO_MIN_DURATION_MS, animationDurationMs - INTRO_CAMERA_END_OFFSET_FROM_ANIMATION_MS);
+        long resolved = INTRO_DELAY_FROM_RUN_START_MS + cameraDurationMs;
+        introEndFromRunStartMs = resolved;
+        return resolved;
     }
 
     public void playSpawnIntro(@Nonnull PlayerRef playerRef) {
@@ -61,7 +88,7 @@ public final class RunStartCameraManager {
                 playerRef.getUuid(),
                 new IntroSession(
                         runStartedAtMs + INTRO_DELAY_FROM_RUN_START_MS,
-                        runStartedAtMs + INTRO_END_FROM_RUN_START_MS
+                        runStartedAtMs + getIntroEndFromRunStartMs()
                 )
         );
     }
@@ -83,14 +110,9 @@ public final class RunStartCameraManager {
 
             PlayerRef playerRef = Universe.get().getPlayer(playerId);
             if (playerRef == null || !playerRef.isValid() || playerRef.getWorldUuid() == null) {
-                this.introByPlayer.remove(playerId, session);
-                continue;
-            }
-            if (!worldId.equals(playerRef.getWorldUuid())) {
-                continue;
-            }
-
-            if (now < session.startsAtMs) {
+                if (now >= session.endsAtMs) {
+                    this.introByPlayer.remove(playerId, session);
+                }
                 continue;
             }
             if (now >= session.endsAtMs) {
@@ -98,47 +120,86 @@ public final class RunStartCameraManager {
                 this.introByPlayer.remove(playerId, session);
                 continue;
             }
+            if (!worldId.equals(playerRef.getWorldUuid())) {
+                continue;
+            }
+            if (now < session.startsAtMs) {
+                continue;
+            }
 
-            if (session.cameraPosition == null) {
-                session.cameraPosition = captureCameraPosition(playerRef);
+            if (session.cameraOffset == null) {
+                session.cameraOffset = captureCameraOffset(world, playerRef);
             }
             if (!session.cameraApplied) {
-                applyTrackingCamera(playerRef, session.cameraPosition);
+                applyTrackingCamera(playerRef, session.cameraOffset);
+                applyIntroPresentation(world, playerRef, session);
                 session.cameraApplied = true;
+                session.cameraAppliedAtMs = now;
+                continue;
+            }
+            if (!session.cameraReapplied && session.cameraAppliedAtMs > 0L && now - session.cameraAppliedAtMs >= CAMERA_REAPPLY_DELAY_MS) {
+                applyTrackingCamera(playerRef, session.cameraOffset);
+                session.cameraReapplied = true;
             }
         }
     }
 
     @Nonnull
-    private static Position captureCameraPosition(@Nonnull PlayerRef playerRef) {
+    private static Vector3d captureCameraOffset(@Nonnull World world, @Nonnull PlayerRef playerRef) {
         Transform transform = playerRef.getTransform();
-        Vector3d offset = pickRandomCameraOffset();
-        return new Position(
-                transform.getPosition().getX() + offset.getX(),
-                transform.getPosition().getY() + CAMERA_HEIGHT_OFFSET,
-                transform.getPosition().getZ() + offset.getZ()
-        );
+        double playerX = transform.getPosition().getX();
+        double playerY = transform.getPosition().getY();
+        double playerZ = transform.getPosition().getZ();
+
+        ArrayList<Vector3d> candidates = new ArrayList<>(4);
+        candidates.add(new Vector3d(CAMERA_DISTANCE, CAMERA_HEIGHT_OFFSET, 0.0d));
+        candidates.add(new Vector3d(-CAMERA_DISTANCE, CAMERA_HEIGHT_OFFSET, 0.0d));
+        candidates.add(new Vector3d(0.0d, CAMERA_HEIGHT_OFFSET, CAMERA_DISTANCE));
+        candidates.add(new Vector3d(0.0d, CAMERA_HEIGHT_OFFSET, -CAMERA_DISTANCE));
+        Collections.shuffle(candidates, ThreadLocalRandom.current());
+
+        for (Vector3d offset : candidates) {
+            Position candidate = new Position(playerX + offset.getX(), playerY + offset.getY(), playerZ + offset.getZ());
+            if (isClearForCamera(world, candidate)) {
+                return offset;
+            }
+        }
+
+        for (int step = 1; step <= 3; step++) {
+            Vector3d raisedOffset = new Vector3d(0.0d, CAMERA_HEIGHT_OFFSET + (step * 0.8d), 0.0d);
+            Position raised = new Position(playerX + raisedOffset.getX(), playerY + raisedOffset.getY(), playerZ + raisedOffset.getZ());
+            if (isClearForCamera(world, raised)) {
+                return raisedOffset;
+            }
+        }
+
+        return new Vector3d(0.0d, CAMERA_HEIGHT_OFFSET + 1.6d, 0.0d);
     }
 
-    @Nonnull
-    private static Vector3d pickRandomCameraOffset() {
-        return switch (ThreadLocalRandom.current().nextInt(4)) {
-            case 0 -> new Vector3d(CAMERA_DISTANCE, 0.0d, 0.0d);
-            case 1 -> new Vector3d(-CAMERA_DISTANCE, 0.0d, 0.0d);
-            case 2 -> new Vector3d(0.0d, 0.0d, CAMERA_DISTANCE);
-            default -> new Vector3d(0.0d, 0.0d, -CAMERA_DISTANCE);
-        };
+    private static boolean isClearForCamera(@Nonnull World world, @Nonnull Position position) {
+        int baseX = (int) Math.floor(position.x);
+        int baseY = (int) Math.floor(position.y);
+        int baseZ = (int) Math.floor(position.z);
+        return isOpenBlock(world.getBlockType(baseX, baseY, baseZ))
+                && isOpenBlock(world.getBlockType(baseX, baseY + 1, baseZ));
     }
 
-    private static void applyTrackingCamera(@Nonnull PlayerRef playerRef, @Nonnull Position cameraPosition) {
+    private static boolean isOpenBlock(BlockType type) {
+        return type == null || "Empty".equalsIgnoreCase(type.getId());
+    }
+
+    private static void applyTrackingCamera(@Nonnull PlayerRef playerRef, @Nonnull Vector3d cameraOffset) {
         Transform transform = playerRef.getTransform();
         double targetX = transform.getPosition().getX();
         double targetY = transform.getPosition().getY() + PLAYER_LOOK_TARGET_HEIGHT;
         double targetZ = transform.getPosition().getZ();
+        double cameraX = targetX + cameraOffset.getX();
+        double cameraY = transform.getPosition().getY() + cameraOffset.getY();
+        double cameraZ = targetZ + cameraOffset.getZ();
 
-        double lookDx = targetX - cameraPosition.x;
-        double lookDy = targetY - cameraPosition.y;
-        double lookDz = targetZ - cameraPosition.z;
+        double lookDx = targetX - cameraX;
+        double lookDy = targetY - cameraY;
+        double lookDz = targetZ - cameraZ;
         double horizontalDistance = Math.sqrt((lookDx * lookDx) + (lookDz * lookDz));
 
         float yaw = (float) Math.atan2(-lookDx, -lookDz);
@@ -147,10 +208,13 @@ public final class RunStartCameraManager {
         ServerCameraSettings settings = new ServerCameraSettings();
         settings.isFirstPerson = false;
         settings.displayReticle = false;
-        settings.positionType = PositionType.Custom;
-        settings.position = cameraPosition;
+        settings.positionType = PositionType.AttachedToPlusOffset;
+        settings.positionDistanceOffsetType = PositionDistanceOffsetType.DistanceOffset;
+        settings.positionOffset = new Position(cameraOffset.getX(), cameraOffset.getY(), cameraOffset.getZ());
+        settings.positionLerpSpeed = 0.15f;
         settings.rotationType = RotationType.Custom;
         settings.rotation = new Direction(yaw, pitch, 0.0f);
+        settings.rotationLerpSpeed = 0.15f;
 
         playerRef.getPacketHandler().writeNoCache(new SetServerCamera(ClientCameraView.Custom, true, settings));
     }
@@ -159,11 +223,44 @@ public final class RunStartCameraManager {
         playerRef.getPacketHandler().writeNoCache(new SetServerCamera(ClientCameraView.FirstPerson, false, null));
     }
 
+    private static void applyIntroPresentation(@Nonnull World world, @Nonnull PlayerRef playerRef, @Nonnull IntroSession session) {
+        Ref<EntityStore> playerRefHandle = playerRef.getReference();
+        if (playerRefHandle == null || !playerRefHandle.isValid() || playerRefHandle.getStore() == null) {
+            return;
+        }
+        AnimationUtils.stopAnimation(playerRefHandle, AnimationSlot.Movement, true, playerRefHandle.getStore());
+        AnimationUtils.stopAnimation(playerRefHandle, AnimationSlot.Emote, true, playerRefHandle.getStore());
+        AnimationUtils.playAnimation(
+                playerRefHandle,
+                AnimationSlot.Movement,
+                null,
+                INTRO_PLAYER_ANIMATION,
+                true,
+                playerRefHandle.getStore()
+        );
+        AnimationUtils.playAnimation(
+                playerRefHandle,
+                AnimationSlot.Action,
+                null,
+                INTRO_PLAYER_ANIMATION,
+                true,
+                playerRefHandle.getStore()
+        );
+
+        Transform transform = playerRef.getTransform();
+        int blockX = (int) Math.floor(transform.getPosition().getX());
+        int blockY = (int) Math.floor(transform.getPosition().getY());
+        int blockZ = (int) Math.floor(transform.getPosition().getZ());
+        world.setBlock(blockX, blockY, blockZ, INTRO_ROPE_BLOCK_ID);
+    }
+
     private static final class IntroSession {
         private final long startsAtMs;
         private final long endsAtMs;
-        private Position cameraPosition;
+        private Vector3d cameraOffset;
         private boolean cameraApplied;
+        private boolean cameraReapplied;
+        private long cameraAppliedAtMs;
 
         private IntroSession(long startsAtMs, long endsAtMs) {
             this.startsAtMs = startsAtMs;

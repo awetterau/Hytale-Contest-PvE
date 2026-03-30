@@ -1,8 +1,8 @@
 package dev.hytalemodding.state.run;
 
 public final class RunStartPresentationConfig {
-    private static volatile boolean movementLockEnabled = false;
-    private static volatile boolean introCameraEnabled = false;
+    private static volatile boolean movementLockEnabled = true;
+    private static volatile boolean introCameraEnabled = true;
 
     private RunStartPresentationConfig() {
     }
