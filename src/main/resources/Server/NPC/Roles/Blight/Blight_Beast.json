@@ -7,13 +7,14 @@
     "Weapons": [
       "Weapon_Battleaxe_Doomed"
     ],
-    "ViewSector": 270,
-    "HearingRange": 6,
+    "ViewSector": 360,
+    "HearingRange": 30,
     "CombatRelativeTurnSpeed": 0.25,
     "AttackSequence": "Component_Instruction_Attack_Sequence_Outlander_Brute",
     "AttackDistance": 3.5,
     "TargetGroups": [
-      "Outlander"
+      "Outlander",
+      "Extraction_Rune"
     ],
     "ChestBlockSet": "Trork_Chest",
     "BedBlockSet": "Trork_Bedroll",

@@ -1,4 +1,4 @@
-// GameTimerHud.ui - Custom UI for displaying the game timer
+// GameTimerHud.ui - Custom UI for displaying the game timer and witch marker
 
 Group #GameTimerHud {
   Anchor: (Top: 35, Width: 150, Height: 30);

@@ -23,8 +23,14 @@ import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.domain.housing.BaseHousingManager;
+import dev.hytalemodding.quest.QuestDefinition;
 import dev.hytalemodding.state.transition.GameFlowConfigManager;
 import dev.hytalemodding.game.HubNpcManager;
+import dev.hytalemodding.npc.NpcProgressManager;
+import dev.hytalemodding.npc.state.NpcStateManager;
+import dev.hytalemodding.quest.QuestDefinitionRegistry;
+import dev.hytalemodding.quest.QuestProgressManager;
+import dev.hytalemodding.state.hub.FarmerPrefabController;
 import dev.hytalemodding.state.run.RescueObjectiveManager;
 import dev.hytalemodding.ui.hub.BasePlotTerminalPage;
 
@@ -59,6 +65,7 @@ public class DevAdminPanelPage extends InteractiveCustomUIPage<DevAdminPanelPage
         events.addEventBinding(CustomUIEventBindingType.Activating, "#RescuedFalseBtn", EventData.of("Action", "rescued_false"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#SetWorkingBtn", EventData.of("Action", "set_working"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#OpenTerminalBtn", EventData.of("Action", "open_terminal"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#FullNpcResetBtn", EventData.of("Action", "full_npc_reset"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#RefreshBtn", EventData.of("Action", "refresh"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#CloseBtn", EventData.of("Action", "close"), false);
     }
@@ -74,6 +81,7 @@ public class DevAdminPanelPage extends InteractiveCustomUIPage<DevAdminPanelPage
             case "purchase_plot" -> this.playerRef.sendMessage(Message.raw(BaseHousingManager.get().purchasePlot(PLOT_ID).message));
             case "set_working" -> HubNpcManager.get().devSetState("blacksmith", HubNpcManager.HubNpcState.WORKING);
             case "open_terminal" -> openPlotTerminal(ref, store);
+            case "full_npc_reset" -> runFullNpcReset();
             case "close" -> {
                 close();
                 return;
@@ -88,12 +96,33 @@ public class DevAdminPanelPage extends InteractiveCustomUIPage<DevAdminPanelPage
         UUID worldId = this.playerRef.getWorldUuid();
         World world = worldId == null ? null : Universe.get().getWorld(worldId);
         if (world != null) {
-            BaseHousingManager.get().removeAllBaseBlacksmithsInWorld(world);
+            BaseHousingManager.get().removeAllFixedHubNpcsInWorld(world);
         }
+        FarmerPrefabController.undoFarmer();
         BaseHousingManager.get().resetAll();
         HubNpcManager.get().resetAll();
         RescueObjectiveManager.get().resetRuntimeStatePreserveRescued();
         RescueObjectiveManager.get().setNpcRescued(NPC_KEY, false);
+    }
+
+    private void runFullNpcReset() {
+        UUID worldId = this.playerRef.getWorldUuid();
+        World world = worldId == null ? null : Universe.get().getWorld(worldId);
+        if (world != null) {
+            BaseHousingManager.get().removeAllFixedHubNpcsInWorld(world);
+        }
+        FarmerPrefabController.undoFarmer();
+        BaseHousingManager.get().resetAll();
+        HubNpcManager.get().resetAll();
+        RescueObjectiveManager.get().resetRuntimeStatePreserveRescued();
+        NpcProgressManager.get().resetAllToDefaults();
+        NpcStateManager.get().resetAllToMigratedDefaults();
+        GameFlowConfigManager.get().clearRescuedNpcKeys();
+        // Reset all quest progress for all quests
+        for (QuestDefinition quest : QuestDefinitionRegistry.get().getAll()) {
+            QuestProgressManager.get().reset(quest.questId);
+        }
+        this.playerRef.sendMessage(Message.raw("Full NPC reset complete."));
     }
 
     private void setupPlotAtPlayer() {
@@ -138,13 +167,14 @@ public class DevAdminPanelPage extends InteractiveCustomUIPage<DevAdminPanelPage
                 : "Plot " + plot.id + ": type=" + plot.plotType + ", purchased=" + plot.purchased + ", assigned=" + (plot.assignedNpcKey == null ? "<none>" : plot.assignedNpcKey);
         return "Quick Test Steps:\n"
                 + "1) Reset Flow  2) Setup Plot Here  3) Rescued TRUE  4) Purchase Plot\n"
+                + "Use Full NPC Reset to clear rescued flags and despawn fixed hub NPCs.\n"
                 + "If needed, click Force WORKING then interact with blacksmith.\n\n"
                 + "World: " + worldName + " (hub: " + GameFlowConfigManager.get().getHubWorldName() + ")\n"
                 + "Blacksmith: rescued=" + RescueObjectiveManager.get().isNpcRescued(NPC_KEY)
                 + ", state=" + npc.state
                 + ", assignedPlot=" + (npc.assignedPlotId == null ? "<none>" : npc.assignedPlotId) + "\n"
                 + plotLine + "\n"
-                + "Tip: /npcdev hud on for live overlay.";
+                + "Tip: use /npcadmin for unified NPC inspection and reset tools.";
     }
 
     private void refresh(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {

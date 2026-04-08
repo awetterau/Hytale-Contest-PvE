@@ -59,6 +59,8 @@ public final class QuestDefinition {
     public final String trackedNpcRoleName;
     @Nonnull
     public final java.util.List<String> requiredCompletedQuests;
+    @Nonnull
+    public final java.util.List<String> requiredFlags;
     public final boolean canBeMissed;
     public final boolean repeatable;
     @Nonnull
@@ -103,6 +105,7 @@ public final class QuestDefinition {
             int requiredNpcKills,
             @Nullable String trackedNpcRoleName,
             @Nonnull java.util.List<String> requiredCompletedQuests,
+            @Nonnull java.util.List<String> requiredFlags,
             boolean canBeMissed,
             boolean repeatable,
             @Nonnull java.util.List<String> rewardSetFlags,
@@ -141,6 +144,7 @@ public final class QuestDefinition {
         this.requiredNpcKills = Math.max(0, requiredNpcKills);
         this.trackedNpcRoleName = normalizeNullable(trackedNpcRoleName);
         this.requiredCompletedQuests = java.util.List.copyOf(requiredCompletedQuests);
+        this.requiredFlags = java.util.List.copyOf(requiredFlags);
         this.canBeMissed = canBeMissed;
         this.repeatable = repeatable;
         this.rewardSetFlags = java.util.List.copyOf(rewardSetFlags);

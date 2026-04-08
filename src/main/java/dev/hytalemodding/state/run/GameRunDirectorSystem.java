@@ -5,11 +5,13 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.entity.entities.player.hud.CustomUIHud;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.hud.GameTimerHud;
+import dev.hytalemodding.quest.QuestProgressManager;
 import dev.hytalemodding.redwave.RedWaveManager;
 import dev.hytalemodding.redwave.RedCoreProfileRegistry;
 import dev.hytalemodding.redwave.RedCoreRegistry;
@@ -20,6 +22,10 @@ import com.hypixel.hytale.math.vector.Vector3i;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import com.hypixel.hytale.server.npc.NPCPlugin;
+import com.hypixel.hytale.server.npc.asset.builder.BuilderInfo;
+import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.math.vector.Vector3f;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,10 +33,19 @@ import java.util.UUID;
 
 public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
     private static final String WEAK_RUNTIME_CORE_BLOCK_ID = "Crimson_Core_Weak";
+    private static final String POTION_BREWER_WITCH_ROLE = "Potion_Brewer_Witch";
+    private static final Vector3d WITCH_SPAWN_POS = new Vector3d(-2, 225, -90);
     private final ConcurrentHashMap<UUID, GameTimerHud> timerHuds = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Long> lastShownSecond = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Set<Integer>> executedAutomationByWorld = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Integer>> failedAutomationByWorld = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Boolean> witchSpawnedInWorld = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, String> currentFormattedTime = new ConcurrentHashMap<>();
+    private static Vector3d witchMarkerPos = null;
+
+    public static String getFormattedTime(@Nonnull UUID playerId) {
+        return currentFormattedTime.getOrDefault(playerId, "00:00");
+    }
 
     @Override
     public void tick(float dt, int systemIndex, @Nonnull Store<EntityStore> store) {
@@ -58,6 +73,19 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
         long remainingMs = Math.max(0L, snapshot.runEndsAtEpochMillis() - System.currentTimeMillis());
         updateRunWorldTimerHud(worldId, remainingMs);
         processAutomatedActions(world, snapshot);
+
+        // End run when time expires, wiping inventory like death
+        if (remainingMs <= 0) {
+            sendRunWorldMessage(worldId, "Time's up! Returning to hub.");
+            GameSessionManager.get().endSessionAndWipeInventory(null, null);
+            return;
+        }
+
+        // Spawn Potion Brewer Witch when save_the_farm_animals quest is completed
+        if (!this.witchSpawnedInWorld.getOrDefault(worldId, false) &&
+                QuestProgressManager.get().isCompleted("save_the_farm_animals")) {
+            trySpawnWitch(world, worldId);
+        }
 
         if (snapshot.crimsonEnabled() && snapshot.phase() == GameSessionManager.RunPhase.EXPLORATION && GameSessionManager.get().shouldActivateCrimson()) {
             if (RedWaveManager.getActiveWave(worldId) == null) {
@@ -244,26 +272,55 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
     }
 
     private void updateRunWorldTimerHud(@Nonnull UUID runWorldId, long remainingMs) {
+        GameSessionManager.ActiveSessionSnapshot snapshot = GameSessionManager.get().getActiveSession();
         long secondsLeft = remainingMs / 1000L;
         String formatted = formatTime(secondsLeft);
+        boolean witchSpawned = this.witchSpawnedInWorld.getOrDefault(runWorldId, false);
         for (PlayerRef playerRef : Universe.get().getPlayers()) {
             UUID playerWorld = playerRef.getWorldUuid();
             UUID playerId = playerRef.getUuid();
             if (playerWorld == null || !playerWorld.equals(runWorldId)) {
                 hideTimerHud(playerRef);
                 this.lastShownSecond.remove(playerId);
+                currentFormattedTime.remove(playerId);
                 continue;
             }
+
+            currentFormattedTime.put(playerId, formatted);
+
+            if (isRunIntroHudSuppressed(snapshot)) {
+                hideTimerHud(playerRef);
+                this.lastShownSecond.remove(playerId);
+                continue;
+            }
+
+            // Skip if Potion Brewer Witch HUD is active to avoid flashing
+            if (dev.hytalemodding.potion.PotionBrewerWitchHudSystem.isPlayerSeeingWitchHud(playerId)) {
+                if (this.lastShownSecond.containsKey(playerId)) {
+                    hideTimerHud(playerRef);
+                    this.lastShownSecond.remove(playerId);
+                }
+                continue;
+            }
+
             Long last = this.lastShownSecond.get(playerId);
             if (last != null && last == secondsLeft) {
                 continue;
             }
             this.lastShownSecond.put(playerId, secondsLeft);
-            showTimerHud(playerRef, formatted);
+            showTimerHud(playerRef, formatted, witchSpawned);
         }
     }
 
-    private void showTimerHud(@Nonnull PlayerRef playerRef, @Nonnull String timeString) {
+    private static boolean isRunIntroHudSuppressed(GameSessionManager.ActiveSessionSnapshot snapshot) {
+        if (snapshot == null || snapshot.startedAtEpochMillis() <= 0L) {
+            return false;
+        }
+        long introEndsAt = snapshot.startedAtEpochMillis() + RunStartCameraManager.getIntroEndFromRunStartMs();
+        return System.currentTimeMillis() < introEndsAt;
+    }
+
+    private void showTimerHud(@Nonnull PlayerRef playerRef, @Nonnull String timeString, boolean witchSpawned) {
         Ref<EntityStore> ref = playerRef.getReference();
         if (ref == null || !ref.isValid()) {
             return;
@@ -290,8 +347,25 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
         if (hud == null) {
             return;
         }
-        hud.setVisible(false);
-        hud.show();
+        Ref<EntityStore> ref = playerRef.getReference();
+        if (ref == null || !ref.isValid()) {
+            return;
+        }
+        Store<EntityStore> entityStore = ref.getStore();
+        entityStore.getExternalData().getWorld().execute(() -> {
+            if (!ref.isValid()) {
+                return;
+            }
+            Player player = entityStore.getComponent(ref, Player.getComponentType());
+            if (player == null) {
+                return;
+            }
+            hud.setVisible(false);
+            CustomUIHud current = player.getHudManager().getCustomHud();
+            if (current == hud) {
+                player.getHudManager().setCustomHud(playerRef, null);
+            }
+        });
     }
 
     private void hideAllTimerHuds() {
@@ -316,6 +390,36 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
             if (worldUuid != null && worldUuid.equals(runWorldId)) {
                 playerRef.sendMessage(message);
             }
+        }
+    }
+
+    private void trySpawnWitch(@Nonnull World world, @Nonnull UUID worldId) {
+        try {
+            NPCPlugin npcPlugin = NPCPlugin.get();
+            if (npcPlugin == null) {
+                return;
+            }
+            int roleIndex = npcPlugin.getIndex(POTION_BREWER_WITCH_ROLE);
+            BuilderInfo roleInfo = npcPlugin.getRoleBuilderInfo(roleIndex);
+            if (roleInfo == null || !roleInfo.getBuilder().isSpawnable()) {
+                return;
+            }
+            Vector3f spawnRot = new Vector3f(0, 0, 0);
+            var npcPair = npcPlugin.spawnEntity(
+                    world.getEntityStore().getStore(),
+                    roleIndex,
+                    WITCH_SPAWN_POS,
+                    spawnRot,
+                    null,
+                    null
+            );
+
+            if (npcPair != null && npcPair.first() != null && npcPair.first().isValid()) {
+                this.witchSpawnedInWorld.put(worldId, true);
+                sendRunWorldMessage(worldId, "A Potion Brewer Witch appeared!");
+            }
+        } catch (Exception e) {
+            System.err.println("[ERROR] Failed to spawn witch: " + e.getMessage());
         }
     }
 }

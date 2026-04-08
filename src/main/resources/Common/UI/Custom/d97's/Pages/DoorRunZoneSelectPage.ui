@@ -1,142 +1,120 @@
-@ZoneDefault = #000000b8;
-@ZoneHover = #000000d6;
-@ZonePressed = #18222fcf;
-@CancelDefault = #000000b0;
-@CancelHover = #2d3743d9;
-@CancelPressed = #1a222ccc;
+@ZoneText = #ffffffff;
+@CloseText = #ff4a4aff;
+@Transparent = #00000000;
 
 Group #DoorRunZoneRoot {
   Anchor: (Left: 0, Top: 0, Right: 0, Bottom: 0);
 
   Group {
     Anchor: (Width: 1400, Height: 860);
-    Background: (Color: #0c1118f2);
-    OutlineColor: #7f8da1ff;
-    OutlineSize: 1;
-
-    Label {
-      Anchor: (Left: 28, Top: 18, Right: 28, Height: 30);
-      Text: "Choose Run Zone";
-      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 28);
-    }
 
     Group #DoorRunZoneMapArea {
-      Anchor: (Left: 28, Top: 64, Width: 1344, Height: 680);
+      Anchor: (Left: 316, Top: 4, Width: 768, Height: 852);
       Background: (TexturePath: "../../Textures/haven_flipped.png");
-      OutlineColor: #d2dde9ff;
-      OutlineSize: 1;
+
+      Button #CancelButton {
+        Anchor: (Left: 15, Top: 15, Width: 34, Height: 34);
+        Style: (
+          Default: (Background: (Color: @Transparent)),
+          Hovered: (Background: (Color: @Transparent)),
+          Pressed: (Background: (Color: @Transparent))
+        );
+        Label #CancelLabelDefault { Text: "X"; Style: (TextColor: @CloseText, RenderBold: true, FontSize: 28, HorizontalAlignment: Center, VerticalAlignment: Center); }
+        Label #CancelLabelHover { Text: "X"; Visible: false; Style: (TextColor: #ffffffff, RenderBold: true, FontSize: 28, HorizontalAlignment: Center, VerticalAlignment: Center); }
+      }
 
       Button #DoorZone1Button {
-        Anchor: (Left: 220, Top: 296, Width: 256, Height: 88);
-        OutlineColor: #dbe4efff;
-        OutlineSize: 1;
+        Anchor: (Left: 280, Top: 662, Width: 220, Height: 42);
         Style: (
-          Default: (Background: (Color: @ZoneDefault)),
-          Hovered: (Background: (Color: @ZoneHover)),
-          Pressed: (Background: (Color: @ZonePressed))
+          Default: (Background: (Color: @Transparent)),
+          Hovered: (Background: (Color: @Transparent)),
+          Pressed: (Background: (Color: @Transparent))
         );
-        Label #DoorZone1Label { Text: "Zone A"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 22); }
+        Label #DoorZone1LabelDefault { Text: "Zone A"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 22, TextColor: @ZoneText); }
+        Label #DoorZone1LabelHover { Text: "Zone A"; Visible: false; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 22, TextColor: #ffd84dff); }
       }
 
       Button #DoorZone2Button {
-        Anchor: (Left: 544, Top: 296, Width: 256, Height: 88);
-        OutlineColor: #dbe4efff;
-        OutlineSize: 1;
+        Anchor: (Left: 280, Top: 498, Width: 220, Height: 42);
         Style: (
-          Default: (Background: (Color: @ZoneDefault)),
-          Hovered: (Background: (Color: @ZoneHover)),
-          Pressed: (Background: (Color: @ZonePressed))
+          Default: (Background: (Color: @Transparent)),
+          Hovered: (Background: (Color: @Transparent)),
+          Pressed: (Background: (Color: @Transparent))
         );
-        Label #DoorZone2Label { Text: "Zone B"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 22); }
+        Label #DoorZone2LabelDefault { Text: "Zone B"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 22, TextColor: @ZoneText); }
+        Label #DoorZone2LabelHover { Text: "Zone B"; Visible: false; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 22, TextColor: #ffd84dff); }
       }
 
       Button #DoorZone3Button {
-        Anchor: (Left: 868, Top: 296, Width: 256, Height: 88);
-        OutlineColor: #dbe4efff;
-        OutlineSize: 1;
+        Anchor: (Left: 280, Top: 338, Width: 220, Height: 42);
         Style: (
-          Default: (Background: (Color: @ZoneDefault)),
-          Hovered: (Background: (Color: @ZoneHover)),
-          Pressed: (Background: (Color: @ZonePressed))
+          Default: (Background: (Color: @Transparent)),
+          Hovered: (Background: (Color: @Transparent)),
+          Pressed: (Background: (Color: @Transparent))
         );
-        Label #DoorZone3Label { Text: "Zone C"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 22); }
+        Label #DoorZone3LabelDefault { Text: "Zone C"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 22, TextColor: @ZoneText); }
+        Label #DoorZone3LabelHover { Text: "Zone C"; Visible: false; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 22, TextColor: #ffd84dff); }
       }
 
-      Group #DoorZoneBottomRow {
-        Anchor: (Left: 70, Top: 596, Width: 1204, Height: 56);
-
-        Button #DoorZone8Button {
-          Anchor: (Left: 0, Top: 0, Width: 220, Height: 56);
-          OutlineColor: #dbe4efff;
-          OutlineSize: 1;
-          Style: (
-            Default: (Background: (Color: @ZoneDefault)),
-            Hovered: (Background: (Color: @ZoneHover)),
-            Pressed: (Background: (Color: @ZonePressed))
-          );
-          Label #DoorZone8Label { Text: "Zone H"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 18); }
-        }
-
-        Button #DoorZone7Button {
-          Anchor: (Left: 246, Top: 0, Width: 220, Height: 56);
-          OutlineColor: #dbe4efff;
-          OutlineSize: 1;
-          Style: (
-            Default: (Background: (Color: @ZoneDefault)),
-            Hovered: (Background: (Color: @ZoneHover)),
-            Pressed: (Background: (Color: @ZonePressed))
-          );
-          Label #DoorZone7Label { Text: "Zone G"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 18); }
-        }
-
-        Button #DoorZone6Button {
-          Anchor: (Left: 492, Top: 0, Width: 220, Height: 56);
-          OutlineColor: #dbe4efff;
-          OutlineSize: 1;
-          Style: (
-            Default: (Background: (Color: @ZoneDefault)),
-            Hovered: (Background: (Color: @ZoneHover)),
-            Pressed: (Background: (Color: @ZonePressed))
-          );
-          Label #DoorZone6Label { Text: "Zone F"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 18); }
-        }
-
-        Button #DoorZone5Button {
-          Anchor: (Left: 738, Top: 0, Width: 220, Height: 56);
-          OutlineColor: #dbe4efff;
-          OutlineSize: 1;
-          Style: (
-            Default: (Background: (Color: @ZoneDefault)),
-            Hovered: (Background: (Color: @ZoneHover)),
-            Pressed: (Background: (Color: @ZonePressed))
-          );
-          Label #DoorZone5Label { Text: "Zone E"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 18); }
-        }
-
-        Button #DoorZone4Button {
-          Anchor: (Left: 984, Top: 0, Width: 220, Height: 56);
-          OutlineColor: #dbe4efff;
-          OutlineSize: 1;
-          Style: (
-            Default: (Background: (Color: @ZoneDefault)),
-            Hovered: (Background: (Color: @ZoneHover)),
-            Pressed: (Background: (Color: @ZonePressed))
-          );
-          Label #DoorZone4Label { Text: "Zone D"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 18); }
-        }
+      Button #DoorZone4Button {
+        Visible: false;
+        Anchor: (Left: 240, Top: 394, Width: 220, Height: 40);
+        Style: (
+          Default: (Background: (Color: @Transparent)),
+          Hovered: (Background: (Color: @Transparent)),
+          Pressed: (Background: (Color: @Transparent))
+        );
+        Label #DoorZone4LabelDefault { Text: "Zone D"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 18, TextColor: @ZoneText); }
+        Label #DoorZone4LabelHover { Text: "Zone D"; Visible: false; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 18, TextColor: #ffd84dff); }
       }
-    }
 
-    Button #CancelButton {
-      Anchor: (Right: 28, Bottom: 22, Width: 180, Height: 42);
-      OutlineColor: #dbe4efff;
-      OutlineSize: 1;
-      Style: (
-        Default: (Background: (Color: @CancelDefault)),
-        Hovered: (Background: (Color: @CancelHover)),
-        Pressed: (Background: (Color: @CancelPressed))
-      );
-      Label { Text: "Cancel"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true); }
+      Button #DoorZone5Button {
+        Visible: false;
+        Anchor: (Left: 240, Top: 442, Width: 220, Height: 40);
+        Style: (
+          Default: (Background: (Color: @Transparent)),
+          Hovered: (Background: (Color: @Transparent)),
+          Pressed: (Background: (Color: @Transparent))
+        );
+        Label #DoorZone5LabelDefault { Text: "Zone E"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 18, TextColor: @ZoneText); }
+        Label #DoorZone5LabelHover { Text: "Zone E"; Visible: false; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 18, TextColor: #ffd84dff); }
+      }
+
+      Button #DoorZone6Button {
+        Visible: false;
+        Anchor: (Left: 240, Top: 490, Width: 220, Height: 40);
+        Style: (
+          Default: (Background: (Color: @Transparent)),
+          Hovered: (Background: (Color: @Transparent)),
+          Pressed: (Background: (Color: @Transparent))
+        );
+        Label #DoorZone6LabelDefault { Text: "Zone F"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 18, TextColor: @ZoneText); }
+        Label #DoorZone6LabelHover { Text: "Zone F"; Visible: false; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 18, TextColor: #ffd84dff); }
+      }
+
+      Button #DoorZone7Button {
+        Visible: false;
+        Anchor: (Left: 240, Top: 538, Width: 220, Height: 40);
+        Style: (
+          Default: (Background: (Color: @Transparent)),
+          Hovered: (Background: (Color: @Transparent)),
+          Pressed: (Background: (Color: @Transparent))
+        );
+        Label #DoorZone7LabelDefault { Text: "Zone G"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 18, TextColor: @ZoneText); }
+        Label #DoorZone7LabelHover { Text: "Zone G"; Visible: false; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 18, TextColor: #ffd84dff); }
+      }
+
+      Button #DoorZone8Button {
+        Visible: false;
+        Anchor: (Left: 240, Top: 586, Width: 220, Height: 40);
+        Style: (
+          Default: (Background: (Color: @Transparent)),
+          Hovered: (Background: (Color: @Transparent)),
+          Pressed: (Background: (Color: @Transparent))
+        );
+        Label #DoorZone8LabelDefault { Text: "Zone H"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 18, TextColor: @ZoneText); }
+        Label #DoorZone8LabelHover { Text: "Zone H"; Visible: false; Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 18, TextColor: #ffd84dff); }
+      }
     }
   }
 }

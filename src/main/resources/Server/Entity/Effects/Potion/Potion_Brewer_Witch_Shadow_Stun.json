@@ -1,0 +1,15 @@
+{
+  "Duration": 1.1,
+  "OverlapBehavior": "Overwrite",
+  "ApplicationEffects": {
+    "EntityTopTint": "#7d71ff",
+    "EntityBottomTint": "#130b28",
+    "HorizontalSpeedMultiplier": 0.3,
+    "AbilityEffects": {
+      "Disabled": [
+        "Primary",
+        "Secondary"
+      ]
+    }
+  }
+}

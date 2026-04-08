@@ -4,23 +4,109 @@
   "EyeHeight": 2,
   "HitBox": {
     "Max": {
-      "X": 0.7,
-      "Y": 2.3,
-      "Z": 0.7
+      "X": 1.35,
+      "Y": 4.6,
+      "Z": 1.35
     },
     "Min": {
-      "X": -0.7,
+      "X": -1.35,
       "Y": 0.0,
-      "Z": -0.7
+      "Z": -1.35
     }
   },
-  "MinScale": 1,
-  "MaxScale": 1,
+  "DetailBoxes": {
+    "crystall": [
+      {
+        "Offset": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        "Box": {
+          "Min": {
+            "X": -9.0,
+            "Y": -22.0,
+            "Z": -9.0
+          },
+          "Max": {
+            "X": 9.0,
+            "Y": 22.0,
+            "Z": 9.0
+          }
+        }
+      }
+    ],
+    "crystall4": [
+      {
+        "Offset": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        "Box": {
+          "Min": {
+            "X": -9.0,
+            "Y": -22.0,
+            "Z": -9.0
+          },
+          "Max": {
+            "X": 9.0,
+            "Y": 22.0,
+            "Z": 9.0
+          }
+        }
+      }
+    ],
+    "crystall2": [
+      {
+        "Offset": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        "Box": {
+          "Min": {
+            "X": -9.0,
+            "Y": -22.0,
+            "Z": -9.0
+          },
+          "Max": {
+            "X": 9.0,
+            "Y": 22.0,
+            "Z": 9.0
+          }
+        }
+      }
+    ],
+    "crystall3": [
+      {
+        "Offset": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        "Box": {
+          "Min": {
+            "X": -9.0,
+            "Y": -22.0,
+            "Z": -9.0
+          },
+          "Max": {
+            "X": 9.0,
+            "Y": 22.0,
+            "Z": 9.0
+          }
+        }
+      }
+    ]
+  },
+  "MinScale": 1.5,
+  "MaxScale": 1.5,
   "AnimationSets": {
     "Idle": {
       "Animations": [
         {
-          "Animation": "Characters/Animations/Default/Idle.blockyanim",
+          "Animation": "NPC/intelligent/Rooter/Animations/idle.blockyanim",
           "Looping": true
         }
       ]
@@ -30,9 +116,6 @@
         {
           "Animation": "NPC/intelligent/Rooter/Animations/walk.blockyanim",
           "Looping": true
-        },
-        {
-          "Animation": "Characters/Animations/Default/Walk.blockyanim"
         }
       ]
     },
@@ -41,9 +124,6 @@
         {
           "Animation": "NPC/intelligent/Rooter/Animations/walk.blockyanim",
           "Looping": true
-        },
-        {
-          "Animation": "Characters/Animations/Default/Walk_Backward.blockyanim"
         }
       ]
     },
@@ -53,16 +133,13 @@
           "Animation": "NPC/intelligent/Rooter/Animations/walk.blockyanim",
           "Speed": 1.15,
           "Looping": true
-        },
-        {
-          "Animation": "Characters/Animations/Default/Run.blockyanim"
         }
       ]
     },
     "Alerted": {
       "Animations": [
         {
-          "Animation": "Characters/Animations/Default/Idle.blockyanim",
+          "Animation": "NPC/intelligent/Rooter/Animations/idle.blockyanim",
           "Looping": true
         }
       ]
@@ -79,6 +156,14 @@
       "Animations": [
         {
           "Animation": "NPC/intelligent/Rooter/Animations/attack2.blockyanim",
+          "Looping": false
+        }
+      ]
+    },
+    "Attack3": {
+      "Animations": [
+        {
+          "Animation": "NPC/intelligent/Rooter/Animations/roar.blockyanim",
           "Looping": false
         }
       ]

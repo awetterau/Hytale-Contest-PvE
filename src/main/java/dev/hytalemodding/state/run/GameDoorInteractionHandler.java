@@ -20,6 +20,7 @@ import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.npc.entities.NPCEntity;
+import dev.hytalemodding.domain.housing.BaseHousingManager;
 import dev.hytalemodding.state.transition.GameFlowConfigManager;
 import dev.hytalemodding.state.transition.SpawnPointZoneConfigManager;
 import dev.hytalemodding.state.transition.RunHubTransferService;
@@ -208,33 +209,77 @@ public final class GameDoorInteractionHandler {
             @Nonnull PlayerRef playerRef,
             @Nonnull GameSessionManager.ActiveSessionSnapshot session
     ) {
-        GameFlowConfigManager config = GameFlowConfigManager.get();
-        String hubWorldName = config.getHubWorldName();
-        World hubWorld = Universe.get().getWorld(hubWorldName);
-        if (hubWorld == null) {
-            sendStatusMessage(playerRef, "Hub world is unavailable: " + hubWorldName);
-            return;
-        }
-
-        Transform baseSpawn = nullableOrDefault(config.getBaseSpawn(), playerRef.getTransform());
-        boolean queuedRescue = RunHubTransferService.get().queueRescueForExtraction(session.runWorldUuid(), playerRef.getUuid());
-        if (!queuedRescue) {
-            sendStatusMessage(playerRef, "Rescue transfer not queued (already rescued or objective not ready).");
-        }
-
-        GameSessionManager.get().endSession(baseSpawn, hubWorld).whenComplete((result, throwable) -> {
+        completeExtraction(playerRef, session).whenComplete((result, throwable) -> {
             if (throwable != null) {
                 String reason = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
                 sendStatusMessage(playerRef, "Failed to extract: " + reason);
                 return;
+            }
+            if (result == null || !result.success()) {
+                playerRef.sendMessage(Message.raw("Failed to extract: " + (result == null ? "unknown error" : result.message())));
+            }
+        });
+    }
+
+    @Nonnull
+    public static java.util.concurrent.CompletableFuture<GameSessionManager.EndSessionResult> completeActiveRunExtraction(@Nonnull PlayerRef playerRef) {
+        GameSessionManager.ActiveSessionSnapshot session = GameSessionManager.get().getActiveSession();
+        if (session == null) {
+            return java.util.concurrent.CompletableFuture.completedFuture(
+                    new GameSessionManager.EndSessionResult(false, null, null, "No active run.")
+            );
+        }
+        return completeExtraction(playerRef, session);
+    }
+
+    @Nonnull
+    private static java.util.concurrent.CompletableFuture<GameSessionManager.EndSessionResult> completeExtraction(
+            @Nonnull PlayerRef playerRef,
+            @Nonnull GameSessionManager.ActiveSessionSnapshot session
+    ) {
+        GameFlowConfigManager config = GameFlowConfigManager.get();
+        String hubWorldName = config.getHubWorldName();
+        World hubWorld = Universe.get().getWorld(hubWorldName);
+        if (hubWorld == null) {
+            playerRef.sendMessage(Message.raw("Hub world is unavailable: " + hubWorldName));
+            return java.util.concurrent.CompletableFuture.completedFuture(
+                    new GameSessionManager.EndSessionResult(false, session.runWorldName(), session.templateWorldName(), "Hub world unavailable.")
+            );
+        }
+
+        Transform baseSpawn = nullableOrDefault(config.getBaseSpawn(), playerRef.getTransform());
+        boolean queuedRescue = RunHubTransferService.get().queueRescueForExtraction(session.runWorldUuid(), playerRef.getUuid());
+        boolean queuedAnimal = FarmerAnimalRescueManager.get().queueAnimalForExtraction(session.runWorldUuid());
+        if (!queuedRescue) {
+            playerRef.sendMessage(Message.raw("Rescue transfer not queued (already rescued or objective not ready)."));
+        }
+        if (!queuedAnimal && QuestProgressManager.get().getOrCreate("save_the_farm_animals").accepted) {
+            playerRef.sendMessage(Message.raw("Animal rescue not queued (the missing animal is not following you yet)."));
+        }
+
+        return GameSessionManager.get().endSession(baseSpawn, hubWorld).handle((result, throwable) -> {
+            if (throwable != null) {
+                String reason = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
+                return new GameSessionManager.EndSessionResult(false, session.runWorldName(), session.templateWorldName(), reason == null ? "unknown extraction error" : reason);
+            }
+            if (result == null || !result.success()) {
+                return result == null
+                        ? new GameSessionManager.EndSessionResult(false, session.runWorldName(), session.templateWorldName(), "Extraction returned no result.")
+                        : result;
             }
             SpawnPointZoneManager.releaseReservedSpawn(playerRef.getUuid());
             healIfAdventurePlayer(playerRef);
             sendStatusMessage(playerRef, "Extraction complete.");
             QuestProgressManager.get().incrementSuccessfulExtraction(playerRef);
             if (queuedRescue) {
-                RunHubTransferService.get().spawnQueuedRescueInBase(playerRef, hubWorld, baseSpawn);
+                RescueObjectiveManager.get().commitPendingRescueAsRescued();
+                hubWorld.execute(() -> BaseHousingManager.get().ensureAssignmentsInWorld(hubWorld));
             }
+            if (queuedAnimal) {
+                FarmerAnimalRescueManager.get().commitPendingAnimalsAsRescued();
+                hubWorld.execute(() -> FarmerAnimalRescueManager.get().ensureHubAnimalsInWorld(hubWorld));
+            }
+            return result;
         });
     }
 

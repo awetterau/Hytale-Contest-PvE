@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class NpcDialogueManager {
     private static final String DIALOGUE_STATE = "Dialogue";
     private static final NpcDialogueManager INSTANCE = new NpcDialogueManager();
+    private static final float DIALOGUE_CAMERA_LERP_SPEED = 0.15f;
 
     private final ConcurrentHashMap<UUID, DialogueSession> sessionByPlayer = new ConcurrentHashMap<>();
 
@@ -93,7 +94,9 @@ public final class NpcDialogueManager {
         if (session == null || session.npcRef == null || !session.npcRef.isValid()) {
             return;
         }
-        enterDialoguePose(session.npcRef.getStore(), session.npcRef, playerRef);
+        Store<EntityStore> npcStore = session.npcRef.getStore();
+        enterDialoguePose(npcStore, session.npcRef, playerRef);
+        applyDialogueCamera(playerRef, npcStore, session.npcRef);
     }
 
     public void setTalkAnimation(@Nonnull PlayerRef playerRef, boolean talking) {
@@ -167,8 +170,10 @@ public final class NpcDialogueManager {
         settings.displayReticle = false;
         settings.positionType = PositionType.Custom;
         settings.position = new Position(camX, camY, camZ);
+        settings.positionLerpSpeed = DIALOGUE_CAMERA_LERP_SPEED;
         settings.rotationType = RotationType.Custom;
         settings.rotation = new Direction(yaw, pitch, 0.0f);
+        settings.rotationLerpSpeed = DIALOGUE_CAMERA_LERP_SPEED;
 
         playerRef.getPacketHandler().writeNoCache(new SetServerCamera(ClientCameraView.Custom, true, settings));
     }

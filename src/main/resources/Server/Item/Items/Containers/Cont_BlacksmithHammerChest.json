@@ -68,7 +68,6 @@
     },
     "VariantRotation": "NESW",
     "Interactions": {
-      "Primary": "Break_Container",
       "Use": "Open_Container"
     }
   },

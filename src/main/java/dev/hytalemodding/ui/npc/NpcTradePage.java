@@ -31,10 +31,13 @@ import java.util.Comparator;
 import java.util.List;
 
 public class NpcTradePage extends InteractiveCustomUIPage<NpcTradePage.Data> {
-    private static final int SLOT_COUNT = 7;
+    enum TradeCategory { ALL, WEAPONS, ARMOR, SHIELDS }
+
+    private static final int SLOT_COUNT = 54;
     private final String npcKey;
     private int index;
     private boolean internalNavigation;
+    private TradeCategory selectedCategory = TradeCategory.ALL;
 
     public static class Data {
         public String action;
@@ -143,6 +146,10 @@ public class NpcTradePage extends InteractiveCustomUIPage<NpcTradePage.Data> {
         }
         events.addEventBinding(CustomUIEventBindingType.Activating, "#CraftBtn", EventData.of("Action", "buy"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#BackBtn", EventData.of("Action", "back"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#TabAll", EventData.of("Action", "tab:all"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#TabWeapons", EventData.of("Action", "tab:weapons"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#TabArmor", EventData.of("Action", "tab:armor"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#TabShields", EventData.of("Action", "tab:shields"), false);
     }
 
     @Override
@@ -156,10 +163,11 @@ public class NpcTradePage extends InteractiveCustomUIPage<NpcTradePage.Data> {
                 int newIndex = Integer.parseInt(action.substring("select:".length()));
                 if (newIndex >= 0 && newIndex < trades.size() && newIndex < SLOT_COUNT) {
                     this.index = newIndex;
+                    // Update UI without full refresh to preserve scroll position
+                    updateSelection(ref, store);
                 }
             } catch (NumberFormatException ignored) {
             }
-            refresh(ref, store);
             return;
         }
 
@@ -174,6 +182,16 @@ public class NpcTradePage extends InteractiveCustomUIPage<NpcTradePage.Data> {
             NpcOfferService.Result result = NpcOfferService.get().executeOffer(this.playerRef, this.npcKey, selected.offerId);
             this.playerRef.sendMessage(Message.raw(result.message()));
             refresh(ref, store);
+            return;
+        }
+        if (action.startsWith("tab:")) {
+            String tabName = action.substring("tab:".length());
+            try {
+                this.selectedCategory = TradeCategory.valueOf(tabName.toUpperCase());
+                this.index = 0;
+                refresh(ref, store);
+            } catch (IllegalArgumentException ignored) {
+            }
             return;
         }
         this.internalNavigation = true;
@@ -192,6 +210,48 @@ public class NpcTradePage extends InteractiveCustomUIPage<NpcTradePage.Data> {
         UIEventBuilder eventBuilder = new UIEventBuilder();
         build(ref, commandBuilder, eventBuilder, store);
         sendUpdate(commandBuilder, eventBuilder, true);
+    }
+
+    private void updateSelection(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+        List<NpcEconomyDefinition.OfferDefinition> trades = getTradeOffers();
+        normalizeSelection(trades);
+        NpcEconomyDefinition.OfferDefinition selected = getSelected(trades);
+        Player player = store.getComponent(ref, Player.getComponentType());
+
+        // Update right panel only (no grid rebuild = scroll preserved)
+        UICommandBuilder ui = new UICommandBuilder();
+        String rarity = "COMMON";
+        if (selected != null) {
+            rarity = rarityLabel(selected.requiredTier);
+        }
+        ui.set("#RarityLabel.Text", rarity);
+        ui.set("#ItemName.Text", selected == null ? "No Selection" : selected.title);
+        ui.set("#ItemDesc.Text", selected == null
+                ? "Select a trade"
+                : "Cost: " + formatItems(selected.cost) + "\nReward: " + formatItems(selected.reward));
+
+        for (int i = 0; i < 4; i++) {
+            boolean show = selected != null && i < selected.cost.size();
+            ui.set("#ReqRow" + i + ".Visible", show);
+            if (!show) {
+                ui.set("#ReqIcon" + i + ".ItemId", "");
+                ui.set("#ReqName" + i + ".Text", "");
+                ui.set("#ReqCount" + i + ".Text", "");
+                if (i < 3) {
+                    ui.set("#Divider" + i + ".Visible", false);
+                }
+                continue;
+            }
+            NpcEconomyDefinition.ItemAmount req = selected.cost.get(i);
+            int have = countOwned(player, req.itemId);
+            ui.set("#ReqIcon" + i + ".ItemId", req.itemId);
+            ui.set("#ReqName" + i + ".Text", req.itemId);
+            ui.set("#ReqCount" + i + ".Text", have + "/" + req.amount);
+            ui.set("#Divider" + i + ".Visible", i < 3 && i < selected.cost.size() - 1);
+        }
+
+        ui.set("#CraftBtn.Visible", selected != null);
+        sendUpdate(ui, null, false);
     }
 
     private static void openPage(
@@ -214,7 +274,9 @@ public class NpcTradePage extends InteractiveCustomUIPage<NpcTradePage.Data> {
         }
         ArrayList<NpcEconomyDefinition.OfferDefinition> out = new ArrayList<>();
         for (NpcEconomyDefinition.OfferDefinition offer : npc.getOffersByKind(NpcEconomyDefinition.OfferKind.TRADE)) {
-            out.add(offer);
+            if (matchesCategory(offer)) {
+                out.add(offer);
+            }
         }
         out.sort(Comparator
                 .comparingInt((NpcEconomyDefinition.OfferDefinition o) -> o.requiredTier)
@@ -322,6 +384,26 @@ public class NpcTradePage extends InteractiveCustomUIPage<NpcTradePage.Data> {
             total += stack.getQuantity();
         }
         return total;
+    }
+
+    private boolean matchesCategory(@Nonnull NpcEconomyDefinition.OfferDefinition offer) {
+        if (selectedCategory == TradeCategory.ALL) {
+            return true;
+        }
+        String title = offer.title.toLowerCase();
+        switch (selectedCategory) {
+            case WEAPONS:
+                return title.contains("dagger") || title.contains("sword") || title.contains("axe")
+                        || title.contains("bow") || title.contains("mace") || title.contains("crossbow")
+                        || title.contains("arrow");
+            case ARMOR:
+                return title.contains("helm") || title.contains("cuirass") || title.contains("chest")
+                        || title.contains("gauntlet") || title.contains("hand") || title.contains("greave") || title.contains("leg");
+            case SHIELDS:
+                return title.contains("shield");
+            default:
+                return true;
+        }
     }
 }
 

@@ -98,9 +98,9 @@ Group #PageOverlay {
 
     Group { Anchor: (Height: 10); }
 
-    // Main content area - three panels side by side (fixed height to prevent resizing)
+    // Main content area - three panels side by side
     Group #WorkshopContent {
-      Anchor: (Height: 670);
+      FlexWeight: 1;
       LayoutMode: Left;
 
       // LEFT PANEL - Blueprints (3 columns × 8 rows evenly spaced)
@@ -119,516 +119,1446 @@ Group #PageOverlay {
         Anchor: (Height: 30);
       }
 
-      Group { Anchor: (Height: 14); }
+      Group { Anchor: (Height: 8); }
 
-      Group #BpGrid {
-        FlexWeight: 1;
-        LayoutMode: Top;
-
-        Group { LayoutMode: Left;
-          Group #Bp0Cell {
-            Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
-
-            Button #Bp0CommonUnlocked {
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/CommonItem/Weapon/Common Item.png"),
-                Hovered: (Background: "Stash/CommonItem/Weapon/CommonHover.png"),
-                Pressed: (Background: "Stash/CommonItem/Weapon/CommonSelected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/CommonItem/Weapon/CommonSelected.png"); }
-              ItemIcon #Bp0CommonUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp0CommonLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Common Item Locked.png")
-              );
-              ItemIcon #Bp0CommonLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-
-            Button #Bp0UncommonUnlocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/UncommonItem/Weapon/Uncommon Item.png"),
-                Hovered: (Background: "Stash/UncommonItem/Weapon/UncommonHover.png"),
-                Pressed: (Background: "Stash/UncommonItem/Weapon/UncommonSelected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/UncommonItem/Weapon/UncommonSelected.png"); }
-              ItemIcon #Bp0UncommonUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp0UncommonLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Uncommon Item Locked.png")
-              );
-              ItemIcon #Bp0UncommonLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-
-            Button #Bp0RareUnlocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/RareItem/Weapon/Rare Item.png"),
-                Hovered: (Background: "Stash/RareItem/Weapon/Rare Hover.png"),
-                Pressed: (Background: "Stash/RareItem/Weapon/Rare Selected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/RareItem/Weapon/Rare Selected.png"); }
-              ItemIcon #Bp0RareUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp0RareLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Rare Item Locked.png")
-              );
-              ItemIcon #Bp0RareLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-          }
-
-          Group { Anchor: (Width: 20); }
-
-          Group #Bp1Cell {
-            Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
-
-            Button #Bp1CommonUnlocked {
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/CommonItem/Weapon/Common Item.png"),
-                Hovered: (Background: "Stash/CommonItem/Weapon/CommonHover.png"),
-                Pressed: (Background: "Stash/CommonItem/Weapon/CommonSelected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/CommonItem/Weapon/CommonSelected.png"); }
-              ItemIcon #Bp1CommonUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp1CommonLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Common Item Locked.png")
-              );
-              ItemIcon #Bp1CommonLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-
-            Button #Bp1UncommonUnlocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/UncommonItem/Weapon/Uncommon Item.png"),
-                Hovered: (Background: "Stash/UncommonItem/Weapon/UncommonHover.png"),
-                Pressed: (Background: "Stash/UncommonItem/Weapon/UncommonSelected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/UncommonItem/Weapon/UncommonSelected.png"); }
-              ItemIcon #Bp1UncommonUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp1UncommonLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Uncommon Item Locked.png")
-              );
-              ItemIcon #Bp1UncommonLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-
-            Button #Bp1RareUnlocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/RareItem/Weapon/Rare Item.png"),
-                Hovered: (Background: "Stash/RareItem/Weapon/Rare Hover.png"),
-                Pressed: (Background: "Stash/RareItem/Weapon/Rare Selected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/RareItem/Weapon/Rare Selected.png"); }
-              ItemIcon #Bp1RareUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp1RareLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Rare Item Locked.png")
-              );
-              ItemIcon #Bp1RareLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-          }
-        }
-
-        Group { Anchor: (Height: 20); }
-
-        Group { LayoutMode: Left;
-          Group #Bp2Cell {
-            Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
-
-            Button #Bp2CommonUnlocked {
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/CommonItem/Weapon/Common Item.png"),
-                Hovered: (Background: "Stash/CommonItem/Weapon/CommonHover.png"),
-                Pressed: (Background: "Stash/CommonItem/Weapon/CommonSelected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/CommonItem/Weapon/CommonSelected.png"); }
-              ItemIcon #Bp2CommonUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp2CommonLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Common Item Locked.png")
-              );
-              ItemIcon #Bp2CommonLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-
-            Button #Bp2UncommonUnlocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/UncommonItem/Weapon/Uncommon Item.png"),
-                Hovered: (Background: "Stash/UncommonItem/Weapon/UncommonHover.png"),
-                Pressed: (Background: "Stash/UncommonItem/Weapon/UncommonSelected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/UncommonItem/Weapon/UncommonSelected.png"); }
-              ItemIcon #Bp2UncommonUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp2UncommonLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Uncommon Item Locked.png")
-              );
-              ItemIcon #Bp2UncommonLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-
-            Button #Bp2RareUnlocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/RareItem/Weapon/Rare Item.png"),
-                Hovered: (Background: "Stash/RareItem/Weapon/Rare Hover.png"),
-                Pressed: (Background: "Stash/RareItem/Weapon/Rare Selected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/RareItem/Weapon/Rare Selected.png"); }
-              ItemIcon #Bp2RareUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp2RareLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Rare Item Locked.png")
-              );
-              ItemIcon #Bp2RareLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-          }
-
-          Group { Anchor: (Width: 20); }
-
-          Group #Bp3Cell {
-            Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
-
-            Button #Bp3CommonUnlocked {
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/CommonItem/Weapon/Common Item.png"),
-                Hovered: (Background: "Stash/CommonItem/Weapon/CommonHover.png"),
-                Pressed: (Background: "Stash/CommonItem/Weapon/CommonSelected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/CommonItem/Weapon/CommonSelected.png"); }
-              ItemIcon #Bp3CommonUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp3CommonLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Common Item Locked.png")
-              );
-              ItemIcon #Bp3CommonLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-
-            Button #Bp3UncommonUnlocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/UncommonItem/Weapon/Uncommon Item.png"),
-                Hovered: (Background: "Stash/UncommonItem/Weapon/UncommonHover.png"),
-                Pressed: (Background: "Stash/UncommonItem/Weapon/UncommonSelected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/UncommonItem/Weapon/UncommonSelected.png"); }
-              ItemIcon #Bp3UncommonUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp3UncommonLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Uncommon Item Locked.png")
-              );
-              ItemIcon #Bp3UncommonLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-
-            Button #Bp3RareUnlocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/RareItem/Weapon/Rare Item.png"),
-                Hovered: (Background: "Stash/RareItem/Weapon/Rare Hover.png"),
-                Pressed: (Background: "Stash/RareItem/Weapon/Rare Selected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/RareItem/Weapon/Rare Selected.png"); }
-              ItemIcon #Bp3RareUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp3RareLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Rare Item Locked.png")
-              );
-              ItemIcon #Bp3RareLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-          }
-        }
-
-        Group { Anchor: (Height: 20); }
-
-        Group { LayoutMode: Left;
-          Group #Bp4Cell {
-            Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
-
-            Button #Bp4CommonUnlocked {
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/CommonItem/Weapon/Common Item.png"),
-                Hovered: (Background: "Stash/CommonItem/Weapon/CommonHover.png"),
-                Pressed: (Background: "Stash/CommonItem/Weapon/CommonSelected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/CommonItem/Weapon/CommonSelected.png"); }
-              ItemIcon #Bp4CommonUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp4CommonLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Common Item Locked.png")
-              );
-              ItemIcon #Bp4CommonLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-
-            Button #Bp4UncommonUnlocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/UncommonItem/Weapon/Uncommon Item.png"),
-                Hovered: (Background: "Stash/UncommonItem/Weapon/UncommonHover.png"),
-                Pressed: (Background: "Stash/UncommonItem/Weapon/UncommonSelected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/UncommonItem/Weapon/UncommonSelected.png"); }
-              ItemIcon #Bp4UncommonUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp4UncommonLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Uncommon Item Locked.png")
-              );
-              ItemIcon #Bp4UncommonLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-
-            Button #Bp4RareUnlocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/RareItem/Weapon/Rare Item.png"),
-                Hovered: (Background: "Stash/RareItem/Weapon/Rare Hover.png"),
-                Pressed: (Background: "Stash/RareItem/Weapon/Rare Selected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/RareItem/Weapon/Rare Selected.png"); }
-              ItemIcon #Bp4RareUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp4RareLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Rare Item Locked.png")
-              );
-              ItemIcon #Bp4RareLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-          }
-
-          Group { Anchor: (Width: 20); }
-
-          Group #Bp5Cell {
-            Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
-
-            Button #Bp5CommonUnlocked {
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/CommonItem/Weapon/Common Item.png"),
-                Hovered: (Background: "Stash/CommonItem/Weapon/CommonHover.png"),
-                Pressed: (Background: "Stash/CommonItem/Weapon/CommonSelected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/CommonItem/Weapon/CommonSelected.png"); }
-              ItemIcon #Bp5CommonUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp5CommonLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Common Item Locked.png")
-              );
-              ItemIcon #Bp5CommonLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-
-            Button #Bp5UncommonUnlocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/UncommonItem/Weapon/Uncommon Item.png"),
-                Hovered: (Background: "Stash/UncommonItem/Weapon/UncommonHover.png"),
-                Pressed: (Background: "Stash/UncommonItem/Weapon/UncommonSelected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/UncommonItem/Weapon/UncommonSelected.png"); }
-              ItemIcon #Bp5UncommonUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp5UncommonLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Uncommon Item Locked.png")
-              );
-              ItemIcon #Bp5UncommonLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-
-            Button #Bp5RareUnlocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/RareItem/Weapon/Rare Item.png"),
-                Hovered: (Background: "Stash/RareItem/Weapon/Rare Hover.png"),
-                Pressed: (Background: "Stash/RareItem/Weapon/Rare Selected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/RareItem/Weapon/Rare Selected.png"); }
-              ItemIcon #Bp5RareUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp5RareLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Rare Item Locked.png")
-              );
-              ItemIcon #Bp5RareLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-          }
-        }
-
-        Group { Anchor: (Height: 20); }
-
-        Group { LayoutMode: Left;
-          Group #Bp6Cell {
-            Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
-
-            Button #Bp6CommonUnlocked {
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/CommonItem/Weapon/Common Item.png"),
-                Hovered: (Background: "Stash/CommonItem/Weapon/CommonHover.png"),
-                Pressed: (Background: "Stash/CommonItem/Weapon/CommonSelected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/CommonItem/Weapon/CommonSelected.png"); }
-              ItemIcon #Bp6CommonUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp6CommonLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Common Item Locked.png")
-              );
-              ItemIcon #Bp6CommonLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-
-            Button #Bp6UncommonUnlocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/UncommonItem/Weapon/Uncommon Item.png"),
-                Hovered: (Background: "Stash/UncommonItem/Weapon/UncommonHover.png"),
-                Pressed: (Background: "Stash/UncommonItem/Weapon/UncommonSelected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/UncommonItem/Weapon/UncommonSelected.png"); }
-              ItemIcon #Bp6UncommonUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp6UncommonLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Uncommon Item Locked.png")
-              );
-              ItemIcon #Bp6UncommonLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-
-            Button #Bp6RareUnlocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Stash/RareItem/Weapon/Rare Item.png"),
-                Hovered: (Background: "Stash/RareItem/Weapon/Rare Hover.png"),
-                Pressed: (Background: "Stash/RareItem/Weapon/Rare Selected.png")
-              );
-              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Stash/RareItem/Weapon/Rare Selected.png"); }
-              ItemIcon #Bp6RareUnlockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-            }
-
-            Button #Bp6RareLocked {
-              Visible: false;
-              Anchor: (Full: 0);
-              Style: (
-                Default: (Background: "Workshop/Rare Item Locked.png")
-              );
-              ItemIcon #Bp6RareLockedIcon { Anchor: (Left: 58, Right: 58, Top: 19, Bottom: 19); }
-              Group #Shade { Anchor: (Full: 0); Background: #000000(0.5); }
-            }
-          }
-        }
-
+      // Category tabs
+      Group #TabsRow {
+        LayoutMode: Left;
+        Anchor: (Height: 36);
+        Button #TabAll { Anchor: (Width: 60, Height: 32); Style: (Default: (Background: (Color: #4a6a8a)), Hovered: (Background: (Color: #5a7a9a)), Pressed: (Background: (Color: #3a5a7a))); Label { Text: "All"; Style: (FontSize: 12, TextColor: #ffffff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+        Group { Anchor: (Width: 6); }
+        Button #TabWeapons { Anchor: (Width: 80, Height: 32); Style: (Default: (Background: (Color: #4a6a8a)), Hovered: (Background: (Color: #5a7a9a)), Pressed: (Background: (Color: #3a5a7a))); Label { Text: "Weapons"; Style: (FontSize: 12, TextColor: #ffffff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+        Group { Anchor: (Width: 6); }
+        Button #TabArmor { Anchor: (Width: 70, Height: 32); Style: (Default: (Background: (Color: #4a6a8a)), Hovered: (Background: (Color: #5a7a9a)), Pressed: (Background: (Color: #3a5a7a))); Label { Text: "Armor"; Style: (FontSize: 12, TextColor: #ffffff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+        Group { Anchor: (Width: 6); }
+        Button #TabShields { Anchor: (Width: 70, Height: 32); Style: (Default: (Background: (Color: #4a6a8a)), Hovered: (Background: (Color: #5a7a9a)), Pressed: (Background: (Color: #3a5a7a))); Label { Text: "Shields"; Style: (FontSize: 12, TextColor: #ffffff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); } }
         Group { FlexWeight: 1; }
+      }
+
+      Group { Anchor: (Height: 8); }
+
+      Group #BpScrollerWrapper {
+        FlexWeight: 1;
+
+        Group #BpScroller {
+          Anchor: (Width: @LeftWidth, Top: 0, Bottom: 0);
+          LayoutMode: TopScrolling;
+          ScrollbarStyle: $C.@DefaultScrollbarStyle;
+
+          Group #BpGrid {
+            Anchor: (Left: 0, Right: 0);
+            LayoutMode: Top;
+
+          // Blueprint slot template - each cell contains 6 possible states (3 rarities × 2 lock states)
+          // Usage: BpXCommonUnlocked, BpXUncommonUnlocked, BpXRareUnlocked, BpXCommonLocked, etc.
+
+        // Row 0
+        Group { LayoutMode: Left;
+          Group #Bp0Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp0CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp0CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Button #Bp0UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp0UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Button #Bp0RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp0RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp0CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+              ItemIcon #Bp0CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp0UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+              ItemIcon #Bp0UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp0RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+              ItemIcon #Bp0RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp1Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp1CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp1CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Button #Bp1UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp1UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Button #Bp1RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp1RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp1CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+              ItemIcon #Bp1CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp1UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+              ItemIcon #Bp1UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp1RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+              ItemIcon #Bp1RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 1
+        Group { LayoutMode: Left;
+          Group #Bp2Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp2CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp2CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Button #Bp2UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp2UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Button #Bp2RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp2RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp2CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+              ItemIcon #Bp2CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp2UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+              ItemIcon #Bp2UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp2RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+              ItemIcon #Bp2RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp3Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp3CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp3CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Button #Bp3UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp3UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Button #Bp3RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp3RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp3CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+              ItemIcon #Bp3CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp3UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+              ItemIcon #Bp3UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp3RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+              ItemIcon #Bp3RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 2
+        Group { LayoutMode: Left;
+          Group #Bp4Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp4CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp4CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Button #Bp4UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp4UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Button #Bp4RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp4RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp4CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+              ItemIcon #Bp4CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp4UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+              ItemIcon #Bp4UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp4RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+              ItemIcon #Bp4RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp5Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp5CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp5CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Button #Bp5UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp5UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Button #Bp5RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp5RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp5CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+              ItemIcon #Bp5CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp5UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+              ItemIcon #Bp5UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp5RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+              ItemIcon #Bp5RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 3
+        Group { LayoutMode: Left;
+          Group #Bp6Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp6CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp6CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Button #Bp6UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp6UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Button #Bp6RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp6RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp6CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+              ItemIcon #Bp6CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp6UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+              ItemIcon #Bp6UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp6RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+              ItemIcon #Bp6RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp7Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp7CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp7CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Button #Bp7UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp7UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Button #Bp7RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+              Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp7RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp7CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+              ItemIcon #Bp7CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp7UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+              ItemIcon #Bp7UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp7RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+              ItemIcon #Bp7RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+
+        // Row 4
+        Group { LayoutMode: Left;
+          Group #Bp8Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp8CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp8CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp8UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp8UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp8RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp8RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp8CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp8CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp8UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp8UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp8RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp8RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp9Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp9CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp9CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp9UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp9UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp9RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp9RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp9CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp9CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp9UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp9UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp9RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp9RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 5
+        Group { LayoutMode: Left;
+          Group #Bp10Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp10CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp10CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp10UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp10UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp10RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp10RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp10CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp10CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp10UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp10UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp10RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp10RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp11Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp11CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp11CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp11UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp11UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp11RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp11RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp11CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp11CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp11UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp11UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp11RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp11RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 6
+        Group { LayoutMode: Left;
+          Group #Bp12Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp12CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp12CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp12UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp12UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp12RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp12RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp12CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp12CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp12UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp12UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp12RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp12RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp13Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp13CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp13CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp13UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp13UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp13RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp13RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp13CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp13CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp13UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp13UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp13RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp13RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 7
+        Group { LayoutMode: Left;
+          Group #Bp14Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp14CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp14CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp14UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp14UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp14RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp14RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp14CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp14CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp14UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp14UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp14RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp14RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp15Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp15CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp15CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp15UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp15UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp15RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp15RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp15CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp15CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp15UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp15UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp15RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp15RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 8
+        Group { LayoutMode: Left;
+          Group #Bp16Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp16CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp16CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp16UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp16UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp16RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp16RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp16CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp16CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp16UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp16UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp16RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp16RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp17Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp17CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp17CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp17UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp17UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp17RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp17RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp17CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp17CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp17UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp17UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp17RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp17RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 9
+        Group { LayoutMode: Left;
+          Group #Bp18Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp18CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp18CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp18UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp18UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp18RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp18RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp18CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp18CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp18UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp18UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp18RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp18RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp19Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp19CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp19CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp19UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp19UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp19RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp19RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp19CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp19CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp19UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp19UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp19RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp19RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 10
+        Group { LayoutMode: Left;
+          Group #Bp20Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp20CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp20CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp20UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp20UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp20RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp20RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp20CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp20CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp20UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp20UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp20RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp20RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp21Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp21CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp21CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp21UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp21UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp21RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp21RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp21CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp21CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp21UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp21UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp21RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp21RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 11
+        Group { LayoutMode: Left;
+          Group #Bp22Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp22CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp22CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp22UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp22UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp22RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp22RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp22CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp22CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp22UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp22UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp22RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp22RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp23Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp23CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp23CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp23UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp23UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp23RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp23RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp23CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp23CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp23UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp23UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp23RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp23RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 12
+        Group { LayoutMode: Left;
+          Group #Bp24Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp24CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp24CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp24UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp24UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp24RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp24RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp24CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp24CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp24UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp24UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp24RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp24RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp25Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp25CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp25CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp25UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp25UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp25RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp25RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp25CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp25CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp25UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp25UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp25RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp25RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 13
+        Group { LayoutMode: Left;
+          Group #Bp26Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp26CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp26CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp26UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp26UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp26RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp26RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp26CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp26CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp26UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp26UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp26RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp26RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp27Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp27CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp27CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp27UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp27UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp27RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp27RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp27CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp27CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp27UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp27UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp27RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp27RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 14
+        Group { LayoutMode: Left;
+          Group #Bp28Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp28CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp28CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp28UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp28UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp28RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp28RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp28CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp28CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp28UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp28UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp28RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp28RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp29Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp29CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp29CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp29UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp29UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp29RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp29RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp29CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp29CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp29UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp29UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp29RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp29RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 15
+        Group { LayoutMode: Left;
+          Group #Bp30Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp30CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp30CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp30UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp30UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp30RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp30RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp30CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp30CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp30UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp30UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp30RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp30RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp31Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp31CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp31CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp31UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp31UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp31RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp31RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp31CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp31CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp31UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp31UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp31RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp31RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 16
+        Group { LayoutMode: Left;
+          Group #Bp32Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp32CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp32CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp32UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp32UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp32RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp32RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp32CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp32CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp32UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp32UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp32RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp32RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp33Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp33CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp33CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp33UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp33UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp33RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp33RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp33CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp33CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp33UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp33UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp33RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp33RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 17
+        Group { LayoutMode: Left;
+          Group #Bp34Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp34CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp34CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp34UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp34UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp34RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp34RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp34CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp34CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp34UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp34UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp34RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp34RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp35Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp35CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp35CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp35UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp35UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp35RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp35RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp35CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp35CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp35UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp35UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp35RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp35RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 18
+        Group { LayoutMode: Left;
+          Group #Bp36Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp36CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp36CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp36UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp36UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp36RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp36RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp36CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp36CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp36UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp36UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp36RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp36RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp37Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp37CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp37CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp37UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp37UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp37RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp37RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp37CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp37CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp37UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp37UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp37RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp37RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 19
+        Group { LayoutMode: Left;
+          Group #Bp38Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp38CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp38CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp38UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp38UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp38RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp38RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp38CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp38CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp38UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp38UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp38RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp38RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp39Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp39CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp39CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp39UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp39UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp39RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp39RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp39CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp39CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp39UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp39UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp39RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp39RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 20
+        Group { LayoutMode: Left;
+          Group #Bp40Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp40CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp40CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp40UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp40UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp40RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp40RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp40CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp40CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp40UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp40UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp40RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp40RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp41Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp41CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp41CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp41UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp41UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp41RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp41RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp41CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp41CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp41UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp41UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp41RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp41RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 21
+        Group { LayoutMode: Left;
+          Group #Bp42Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp42CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp42CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp42UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp42UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp42RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp42RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp42CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp42CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp42UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp42UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp42RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp42RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp43Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp43CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp43CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp43UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp43UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp43RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp43RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp43CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp43CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp43UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp43UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp43RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp43RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 22
+        Group { LayoutMode: Left;
+          Group #Bp44Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp44CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp44CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp44UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp44UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp44RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp44RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp44CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp44CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp44UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp44UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp44RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp44RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp45Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp45CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp45CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp45UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp45UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp45RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp45RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp45CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp45CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp45UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp45UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp45RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp45RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 23
+        Group { LayoutMode: Left;
+          Group #Bp46Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp46CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp46CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp46UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp46UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp46RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp46RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp46CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp46CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp46UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp46UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp46RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp46RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp47Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp47CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp47CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp47UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp47UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp47RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp47RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp47CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp47CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp47UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp47UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp47RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp47RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 24
+        Group { LayoutMode: Left;
+          Group #Bp48Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp48CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp48CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp48UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp48UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp48RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp48RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp48CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp48CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp48UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp48UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp48RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp48RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp49Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp49CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp49CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp49UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp49UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp49RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp49RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp49CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp49CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp49UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp49UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp49RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp49RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 25
+        Group { LayoutMode: Left;
+          Group #Bp50Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp50CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp50CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp50UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp50UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp50RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp50RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp50CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp50CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp50UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp50UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp50RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp50RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp51Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp51CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp51CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp51UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp51UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp51RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp51RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp51CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp51CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp51UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp51UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp51RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp51RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 26
+        Group { LayoutMode: Left;
+          Group #Bp52Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp52CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp52CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp52UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp52UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp52RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp52RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp52CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp52CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp52UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp52UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp52RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp52RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp53Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Button #Bp53CommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp53CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp53UncommonUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp53UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Button #Bp53RareUnlocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Style: (Default: (Background: (TexturePath: "Workshop/ItemSlotUnselected.png")));
+                          Group #Selected { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+                          ItemIcon #Bp53RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp53CommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Common Item Locked.png");
+                          ItemIcon #Bp53CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp53UncommonLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Uncommon Item Locked.png");
+                          ItemIcon #Bp53UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+                        Group #Bp53RareLocked { Visible: false; Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/Rare Item Locked.png");
+                          ItemIcon #Bp53RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+                        }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+        Group { FlexWeight: 1; }
+      }
+      }
       }
     }
 
@@ -1074,7 +2004,7 @@ Group #PageOverlay {
       Button #WbWorkbench {
         Anchor: (Width: @WbBtnSize, Height: @WbBtnSize);
         TooltipText: "Workbench";
-        Background: (TexturePath: "Workshop/ItemSlotUnselected.png");
+        Background: (Color: #3a4a5a);
         Group #Selected {
           Visible: false;
           Anchor: (Full: 0);
@@ -1091,7 +2021,7 @@ Group #PageOverlay {
       Button #WbAlchemyTable {
         Anchor: (Width: @WbBtnSize, Height: @WbBtnSize);
         TooltipText: "Alchemy Table";
-        Background: (TexturePath: "Workshop/ItemSlotUnselected.png");
+        Background: (Color: #3a4a5a);
         Group #Selected {
           Visible: false;
           Anchor: (Full: 0);
@@ -1108,7 +2038,7 @@ Group #PageOverlay {
       Button #WbDemolitionsTable {
         Anchor: (Width: @WbBtnSize, Height: @WbBtnSize);
         TooltipText: "Furnace";
-        Background: (TexturePath: "Workshop/ItemSlotUnselected.png");
+        Background: (Color: #3a4a5a);
         Group #Selected {
           Visible: false;
           Anchor: (Full: 0);
@@ -1125,7 +2055,7 @@ Group #PageOverlay {
       Button #WbUtilityBench {
         Anchor: (Width: @WbBtnSize, Height: @WbBtnSize);
         TooltipText: "Utility Bench";
-        Background: (TexturePath: "Workshop/ItemSlotUnselected.png");
+        Background: (Color: #3a4a5a);
         Group #Selected {
           Visible: false;
           Anchor: (Full: 0);
@@ -1142,7 +2072,7 @@ Group #PageOverlay {
       Button #WbWeaponsForge {
         Anchor: (Width: @WbBtnSize, Height: @WbBtnSize);
         TooltipText: "Weapons Forge";
-        Background: (TexturePath: "Workshop/ItemSlotUnselected.png");
+        Background: (Color: #3a4a5a);
         Group #Selected {
           Visible: false;
           Anchor: (Full: 0);

@@ -1,0 +1,57 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.Orange_Blob_Rune.name",
+    "Description": "server.items.Orange_Blob_Rune.description"
+  },
+  "Icon": "Icons/ItemsGenerated/Soil_Clay_Brick.png",
+  "Categories": [
+    "Blocks.Soils"
+  ],
+  "BlockType": {
+    "Material": "Solid",
+    "DrawType": "Cube",
+    "Group": "Dirt",
+    "Flags": {
+      "IsUsable": true
+    },
+    "Gathering": {
+      "Breaking": {
+        "GatherType": "SoftBlocks"
+      }
+    },
+    "BlockParticleSetId": "Stone",
+    "Textures": [
+      {
+        "Weight": 1,
+        "All": "BlockTextures/Soil_Clay_Brick.png"
+      }
+    ],
+    "BlockSoundSetId": "Stone",
+    "ParticleColor": "#ffae42",
+    "State": {
+      "Property": "state",
+      "Default": "On",
+      "Definitions": {
+        "On": {
+          "InteractionHint": "Press F to begin extraction"
+        }
+      }
+    },
+    "Interactions": {
+      "Use": {
+        "Interactions": [
+          {
+            "Type": "orange_blob_block_use_interaction"
+          }
+        ]
+      }
+    }
+  },
+  "PlayerAnimationsId": "Block",
+  "Tags": {
+    "Type": [
+      "Soil"
+    ]
+  },
+  "ItemSoundSetId": "ISS_Blocks_Soft"
+}

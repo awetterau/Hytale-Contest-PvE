@@ -5,6 +5,12 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.entity.UUIDComponent;
+import com.hypixel.hytale.server.core.modules.entity.damage.Damage;
+import com.hypixel.hytale.server.core.modules.entity.damage.DamageCause;
+import com.hypixel.hytale.server.core.modules.entity.damage.DamageSystems;
+import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
+import com.hypixel.hytale.server.core.modules.entitystats.asset.DefaultEntityStatTypes;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -27,7 +33,7 @@ public final class RooterManManager {
     private static final RooterManManager INSTANCE = new RooterManManager();
     private static final String ROOTER_BOSS_ROLE_PREFIX = "Rooter_Man_Boss";
 
-    private final ConcurrentHashMap<Ref<EntityStore>, BossSession> sessions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, BossSession> sessions = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, UUID> spawnedByRunWorld = new ConcurrentHashMap<>();
 
     private RooterManManager() {
@@ -80,7 +86,10 @@ public final class RooterManManager {
             return false;
         }
 
-        this.sessions.putIfAbsent(bossRef, new BossSession(playerRef.getWorldUuid(), bossRef, true));
+        UUID bossId = getEntityUuid(store, bossRef);
+        if (bossId != null) {
+            this.sessions.putIfAbsent(bossId, new BossSession(playerRef.getWorldUuid(), bossId, bossRef, true));
+        }
         sendWorldMessage(playerRef.getWorldUuid(), "Rooter Man emerges.");
         return true;
     }
@@ -107,7 +116,17 @@ public final class RooterManManager {
                     continue;
                 }
 
-                this.sessions.putIfAbsent(ref, new BossSession(worldId, ref, false));
+                UUID bossId = getEntityUuid(store, ref);
+                if (bossId == null) {
+                    continue;
+                }
+
+                BossSession existing = this.sessions.get(bossId);
+                if (existing == null) {
+                    this.sessions.put(bossId, new BossSession(worldId, bossId, ref, false));
+                } else {
+                    existing.bossRef = ref;
+                }
             }
         });
     }
@@ -150,15 +169,15 @@ public final class RooterManManager {
     }
 
     private void cleanupExpiredSessions(@Nonnull UUID worldId) {
-        List<Ref<EntityStore>> expired = new ArrayList<>();
+        List<UUID> expired = new ArrayList<>();
         for (BossSession session : this.sessions.values()) {
             if (!worldId.equals(session.worldId) || session.bossRef == null || !session.bossRef.isValid()) {
-                expired.add(session.bossRef);
+                expired.add(session.bossId);
             }
         }
 
-        for (Ref<EntityStore> ref : expired) {
-            this.sessions.remove(ref);
+        for (UUID bossId : expired) {
+            this.sessions.remove(bossId);
         }
     }
 
@@ -188,7 +207,10 @@ public final class RooterManManager {
         }
 
         this.spawnedByRunWorld.put(worldId, snapshot.runWorldUuid());
-        this.sessions.putIfAbsent(bossRef, new BossSession(worldId, bossRef, false));
+        UUID bossId = getEntityUuid(store, bossRef);
+        if (bossId != null) {
+            this.sessions.putIfAbsent(bossId, new BossSession(worldId, bossId, bossRef, false));
+        }
         sendWorldMessage(worldId, "Rooter Man rises near the infection core.");
     }
 
@@ -228,8 +250,32 @@ public final class RooterManManager {
         RooterShockwaveRuntime.clearWorld(worldId);
     }
 
+    private static int resolveCommandCauseIndex() {
+        int command = DamageCause.getAssetMap().getIndex("Command");
+        if (command != Integer.MIN_VALUE) {
+            return command;
+        }
+        int environment = DamageCause.getAssetMap().getIndex("Environment");
+        return environment != Integer.MIN_VALUE ? environment : 0;
+    }
+
     private static boolean isRooterBossRole(@Nullable String roleName) {
         return roleName != null && roleName.startsWith(ROOTER_BOSS_ROLE_PREFIX);
+    }
+
+    @Nullable
+    private static UUID getEntityUuid(@Nonnull Store<EntityStore> store, @Nullable Ref<EntityStore> ref) {
+        if (ref == null || !ref.isValid()) {
+            return null;
+        }
+
+        UUIDComponent uuidComponent;
+        try {
+            uuidComponent = store.getComponent(ref, UUIDComponent.getComponentType());
+        } catch (IllegalStateException ignored) {
+            return null;
+        }
+        return uuidComponent == null ? null : uuidComponent.getUuid();
     }
 
     @Nullable
@@ -257,13 +303,16 @@ public final class RooterManManager {
         @Nonnull
         private final UUID worldId;
         @Nonnull
-        private final Ref<EntityStore> bossRef;
+        private final UUID bossId;
+        @Nullable
+        private Ref<EntityStore> bossRef;
         private final boolean manualSpawned;
         @Nullable
         private String lastObservedRoleName;
 
-        private BossSession(@Nonnull UUID worldId, @Nonnull Ref<EntityStore> bossRef, boolean manualSpawned) {
+        private BossSession(@Nonnull UUID worldId, @Nonnull UUID bossId, @Nonnull Ref<EntityStore> bossRef, boolean manualSpawned) {
             this.worldId = worldId;
+            this.bossId = bossId;
             this.bossRef = bossRef;
             this.manualSpawned = manualSpawned;
             this.lastObservedRoleName = null;

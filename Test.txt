@@ -1,0 +1,52 @@
+  1. The Brewing Cycle (How long it takes)
+  At the start of the fight (and whenever her "deck" is empty), she enters a mandatory brewing state. She stops moving completely during this time.
+
+   * Choice of what to brew: She picks 3 potions at random from the full pool: [POISON, FIRE, HEALING, SHADOW, BLOOD, HOLY].
+   * Brewing Windup: She starts with a "Windup" of 60 frames (1 second). At the end of this second, she triggers a Shockwave that stuns you if you are too close.
+   * Brewing Duration: Each of the 3 potions takes 120 frames (2 seconds) to brew.
+   * Total Downtime: It takes exactly 7 seconds (1s windup + 3 potions x 2s) for her to fully reload her deck. During these 7 seconds, she is a "sitting duck" but takes 50%
+     less damage (if self.brewing_active: amount *= 0.5).
+
+  2. Movement (How she moves)
+  In Phase 1, her movement is highly predictable but defensive:
+   * Orbiting: She maintains a strict circular orbit around you at a radius of 4.5 units (ORBIT_RADIUS).
+   * Speed: She moves at a base speed of 0.06 units/frame.
+   * Blinking: If you get too close (within 2.5 units), she will immediately "Vanish" (Blink) to the opposite side of the arena to maintain her distance.
+
+  3. Throwing Timing (Time between potions)
+  Once she has her 3 potions ready, she begins her attack phase:
+   * Interval: In Phase 1, she throws one potion every 3 seconds (THROW_TIMINGS[0] is 3.0s).
+   * The Telegraph: 0.4 seconds before the throw, she stops moving, and a colored icon/glow appears above her head to tell you what she’s about to use.
+
+  4. The Decision Tree (The "Choice" Logic)
+
+  Which one does she pick to throw?
+  She doesn't follow a specific order. She picks a random index from her current list of 3 brewed potions. If she has [FIRE, HEALING, POISON], she might throw the POISON first
+  or the FIRE first.
+
+  Does she Drink or Throw?
+  Once she has picked a potion from her hand, she runs this check:
+
+   1. HEALING:
+       * Drink: If her HP is below 60%.
+       * Throw: If her HP is above 60% (she throws it at you, but it only creates a "Heal Zone" on the floor that she can stand in later).
+   2. SHADOW:
+       * Drink (50% chance): She turns invisible and tries to hit you with a melee "Assassin" strike.
+       * Throw (50% chance): She creates a "Shadow Zone" that blinds you if you enter it.
+   3. BLOOD:
+       * Drink (50% chance): She casts a defensive ring of spikes around herself.
+       * Throw (50% chance): She fires a homing blood projectile at you.
+   4. FIRE / POISON / HOLY:
+       * Drink (20% chance): She takes a small buff (Fire empowerment, Poison skin, or Holy shield).
+       * Throw (80% chance): She throws it as a standard AOE hazard to control where you can walk.
+
+  Summary of Phase 1 Flow:
+   1. Wait 1s (Shockwave at the end).
+   2. Wait 6s (Brews 3 random potions while stationary).
+   3. Move & Attack:
+       * Throw/Drink Potion 1.
+       * Wait 3s.
+       * Throw/Drink Potion 2.
+       * Wait 3s.
+       * Throw/Drink Potion 3.
+   4. Repeat (Return to Step 1).

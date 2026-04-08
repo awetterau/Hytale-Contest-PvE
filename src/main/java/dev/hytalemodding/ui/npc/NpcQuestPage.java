@@ -18,10 +18,10 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.npc.NpcDialogueManager;
 import dev.hytalemodding.npc.NpcDefinitionRegistry;
 import dev.hytalemodding.npc.NpcArchetype;
+import dev.hytalemodding.npc.runtime.NpcAvailabilityService;
 import dev.hytalemodding.quest.QuestDefinition;
 import dev.hytalemodding.quest.QuestDefinitionRegistry;
 import dev.hytalemodding.quest.QuestProgressManager;
-import dev.hytalemodding.domain.housing.BaseHousingManager;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -175,7 +175,7 @@ public class NpcQuestPage extends InteractiveCustomUIPage<NpcQuestPage.Data> {
         List<QuestDefinition> all = QuestDefinitionRegistry.get().getBySource("npc", this.npcKey);
         NpcArchetype archetype = NpcDefinitionRegistry.get().getArchetype(this.npcKey);
         boolean requiresWorkshop = archetype != null && archetype.plotType != null && !archetype.plotType.isBlank();
-        boolean workshopBuilt = BaseHousingManager.get().isWorkshopBuilt(this.npcKey);
+        boolean workshopBuilt = NpcAvailabilityService.get().isWorkshopBuilt(this.npcKey);
         if (requiresWorkshop
                 && !workshopBuilt
                 && archetype != null

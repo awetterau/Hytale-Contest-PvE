@@ -143,6 +143,7 @@ public final class QuestDefinitionRegistry {
         int requiredNpcKills = parseInt(p.getProperty(prefix + "progress.requiredNpcKills"), 0);
         String trackedNpcRoleName = p.getProperty(prefix + "progress.trackedNpcRole");
         List<String> requiredCompletedQuests = parseCsv(p.getProperty(prefix + "requirements.completedQuests"));
+        List<String> requiredFlags = parseCsv(p.getProperty(prefix + "requirements.flags"));
         boolean canBeMissed = Boolean.parseBoolean(p.getProperty(prefix + "canBeMissed", "false"));
         boolean repeatable = Boolean.parseBoolean(p.getProperty(prefix + "repeatable", "false"));
         List<String> rewardSetFlags = parseCsv(p.getProperty(prefix + "rewards.setFlags"));
@@ -183,6 +184,7 @@ public final class QuestDefinitionRegistry {
                 requiredNpcKills,
                 trackedNpcRoleName,
                 requiredCompletedQuests,
+                requiredFlags,
                 canBeMissed,
                 repeatable,
                 rewardSetFlags,

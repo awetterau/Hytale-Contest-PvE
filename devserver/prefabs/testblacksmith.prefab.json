@@ -2435,13 +2435,13 @@
       "x": -13,
       "y": 1,
       "z": 6,
-      "name": "Empty"
+      "name": "Rock_Basalt_Brick_Pillar_Base"
     },
     {
       "x": -13,
       "y": 2,
       "z": 6,
-      "name": "Empty"
+      "name": "Furniture_Village_Brazier"
     },
     {
       "x": -13,
@@ -2526,7 +2526,8 @@
       "x": -13,
       "y": 1,
       "z": 7,
-      "name": "Empty"
+      "name": "Rock_Basalt_Brick_Wall",
+      "rotation": 1
     },
     {
       "x": -13,

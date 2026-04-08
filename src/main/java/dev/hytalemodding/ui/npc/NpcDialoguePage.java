@@ -16,16 +16,16 @@ import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.domain.housing.BaseHousingManager;
-import dev.hytalemodding.game.HubNpcManager;
 import dev.hytalemodding.npc.NpcArchetype;
 import dev.hytalemodding.npc.NpcDefinitionRegistry;
 import dev.hytalemodding.npc.NpcDialogueManager;
-import dev.hytalemodding.npc.NpcProgressManager;
 import dev.hytalemodding.npc.economy.NpcEconomyDefinition;
 import dev.hytalemodding.npc.economy.NpcEconomyRegistry;
+import dev.hytalemodding.npc.runtime.NpcAvailabilityService;
 import dev.hytalemodding.quest.QuestProgressManager;
 
 import javax.annotation.Nonnull;
+import java.util.Locale;
 
 public class NpcDialoguePage extends InteractiveCustomUIPage<NpcDialoguePage.Data> {
     private final String npcKey;
@@ -54,30 +54,28 @@ public class NpcDialoguePage extends InteractiveCustomUIPage<NpcDialoguePage.Dat
         NpcDialogueManager.get().keepDialogueActive(this.playerRef);
         NpcDialogueManager.get().setTalkAnimation(this.playerRef, false);
 
+        NpcAvailabilityService.AvailabilitySnapshot availability = NpcAvailabilityService.get().getAvailability(this.npcKey);
         NpcArchetype archetype = NpcDefinitionRegistry.get().getArchetype(this.npcKey);
-        String name = archetype == null ? this.npcKey : archetype.displayName;
-        HubNpcManager.NpcData npcData = BaseHousingManager.get().getNpcData(this.npcKey);
-        boolean hasAssignedPlot = npcData.assignedPlotId != null;
-        boolean requiresWorkshop = archetype != null && archetype.plotType != null && !archetype.plotType.isBlank();
-        boolean preWorkshopQuestUnlocked = archetype != null
-                && archetype.prePlotQuestId != null
-                && !archetype.prePlotQuestId.isBlank()
-                && !QuestProgressManager.get().isCompleted(archetype.prePlotQuestId);
-        boolean preWorkshopUpgradeOnly = BaseHousingManager.get().canUsePreWorkshopUpgrade(this.npcKey);
-        boolean servicesUnlocked = !requiresWorkshop || hasAssignedPlot;
-        boolean hasTradeUnlocks = !NpcProgressManager.get().getUnlockedTrades(this.npcKey).isEmpty();
-        boolean canTrade = archetype != null && archetype.services.canTrade && servicesUnlocked && hasTradeUnlocks;
-        boolean canQuest = archetype != null
-                && archetype.services.canGiveQuests
-                && (servicesUnlocked || preWorkshopQuestUnlocked);
-        boolean canUpgrade = archetype != null && archetype.services.canUpgrade && (servicesUnlocked || preWorkshopUpgradeOnly);
+        String name = availability.displayName();
+        boolean canTrade = availability.canTrade();
+        boolean canQuest = availability.canQuest();
+        boolean canUpgrade = availability.canUpgrade();
+
+        // Hide quests tab for blacksmith after retrieving quest is completed
+        if ("blacksmith".equals(this.npcKey) && QuestProgressManager.get().isCompleted("retrieve_blacksmith_tools")) {
+            canQuest = false;
+        }
+        // Hide quests tab for farmer until farmer has a workshop
+        if ("farmer".equals(this.npcKey) && !BaseHousingManager.get().isWorkshopBuilt("farmer")) {
+            canQuest = false;
+        }
         NpcEconomyDefinition economy = NpcEconomyRegistry.get().getNpc(this.npcKey);
-        String readyText = economy == null ? (name + " is ready. What do you need?") : economy.readyDialogueText;
-        String lockedText = economy == null ? (name + " needs setup before full services are available.") : economy.noWorkshopDialogueText;
+        String readyText = economy == null ? availability.readyText() : economy.readyDialogueText;
+        String lockedText = economy == null ? availability.lockedText() : economy.noWorkshopDialogueText;
 
         commandBuilder.append("Pages/NpcDialogue.ui");
         commandBuilder.set("#NpcName.Text", name);
-        commandBuilder.set("#DialogueText.Text", servicesUnlocked
+        commandBuilder.set("#DialogueText.Text", availability.servicesUnlocked()
                 ? readyText
                 : lockedText);
         commandBuilder.set("#TradeButton.Visible", canTrade);
@@ -93,32 +91,33 @@ public class NpcDialoguePage extends InteractiveCustomUIPage<NpcDialoguePage.Dat
     @Override
     public void handleDataEvent(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull Data data) {
         String action = data.action == null ? "" : data.action.trim().toLowerCase();
-        HubNpcManager.NpcData npcData = BaseHousingManager.get().getNpcData(this.npcKey);
+        NpcAvailabilityService.AvailabilitySnapshot availability = NpcAvailabilityService.get().getAvailability(this.npcKey);
         NpcArchetype archetype = NpcDefinitionRegistry.get().getArchetype(this.npcKey);
-        boolean requiresWorkshop = archetype != null && archetype.plotType != null && !archetype.plotType.isBlank();
-        boolean preWorkshopQuestUnlocked = archetype != null
-                && archetype.prePlotQuestId != null
-                && !archetype.prePlotQuestId.isBlank()
-                && !QuestProgressManager.get().isCompleted(archetype.prePlotQuestId);
-        boolean preWorkshopUpgradeOnly = BaseHousingManager.get().canUsePreWorkshopUpgrade(this.npcKey);
+        boolean requiresWorkshop = availability.requiresWorkstation();
+        boolean preWorkshopQuestUnlocked = availability.preWorkshopQuestPending();
+        boolean preWorkshopUpgradeOnly = availability.preWorkshopUpgradeOnly();
+        String npcName = availability.displayName();
+        String npcNameLower = npcName == null || npcName.isBlank()
+                ? "npc"
+                : npcName.toLowerCase(Locale.ROOT);
         if ("trade".equals(action)
                 && requiresWorkshop
-                && npcData.assignedPlotId == null) {
-            this.playerRef.sendMessage(Message.raw("The blacksmith needs a workshop before those services unlock."));
+                && !availability.servicesUnlocked()) {
+            this.playerRef.sendMessage(Message.raw("The " + npcNameLower + " needs a workshop before those services unlock."));
             return;
         }
         if ("quests".equals(action)
                 && requiresWorkshop
-                && npcData.assignedPlotId == null
+                && !availability.servicesUnlocked()
                 && !preWorkshopQuestUnlocked) {
-            this.playerRef.sendMessage(Message.raw("The blacksmith needs a workshop before those services unlock."));
+            this.playerRef.sendMessage(Message.raw("The " + npcNameLower + " needs a workshop before those services unlock."));
             return;
         }
-        if ("upgrades".equals(action) && !preWorkshopUpgradeOnly && requiresWorkshop && npcData.assignedPlotId == null) {
+        if ("upgrades".equals(action) && !preWorkshopUpgradeOnly && requiresWorkshop && !availability.servicesUnlocked()) {
             if (archetype != null && archetype.prePlotQuestId != null && !archetype.prePlotQuestId.isBlank()) {
-                this.playerRef.sendMessage(Message.raw("Complete the blacksmith's prerequisite quest before workshop upgrades unlock."));
+                this.playerRef.sendMessage(Message.raw("Complete the " + npcNameLower + "'s prerequisite quest before workshop upgrades unlock."));
             } else {
-                this.playerRef.sendMessage(Message.raw("The blacksmith needs a workshop before those services unlock."));
+                this.playerRef.sendMessage(Message.raw("The " + npcNameLower + " needs a workshop before those services unlock."));
             }
             return;
         }

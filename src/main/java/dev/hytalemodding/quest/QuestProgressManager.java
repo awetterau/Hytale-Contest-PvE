@@ -6,6 +6,7 @@ import dev.hytalemodding.npc.NpcProgressManager;
 import dev.hytalemodding.npc.economy.NpcEconomyDefinition;
 import dev.hytalemodding.npc.economy.NpcInventoryService;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import dev.hytalemodding.state.run.FarmerAnimalRescueManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -27,6 +28,7 @@ public final class QuestProgressManager {
     private static final String CONFIG_FILE_NAME = "quest-progress.properties";
     private static final String BLACKSMITH_HAMMER_QUEST_ID = "retrieve_blacksmith_tools";
     private static final String BLACKSMITH_HAMMER_ITEM_ID = "Tool_Hammer_Iron";
+    private static final String FARMER_ANIMALS_QUEST_ID = "save_the_farm_animals";
     private static final QuestProgressManager INSTANCE = new QuestProgressManager();
 
     private final ConcurrentHashMap<String, QuestProgress> byQuestId = new ConcurrentHashMap<>();
@@ -132,6 +134,11 @@ public final class QuestProgressManager {
                 return false;
             }
         }
+        for (String requiredFlag : definition.requiredFlags) {
+            if (!QuestFlagManager.get().hasFlag(requiredFlag)) {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -140,6 +147,9 @@ public final class QuestProgressManager {
         String key = normalize(questId);
         if (key.isBlank()) {
             return;
+        }
+        if (FARMER_ANIMALS_QUEST_ID.equalsIgnoreCase(key)) {
+            FarmerAnimalRescueManager.get().resetQuestRuntimeAndHubAnimalsIfLoaded();
         }
         this.byQuestId.put(key, QuestProgress.defaultFor(key));
         saveQuietly();
@@ -247,6 +257,9 @@ public final class QuestProgressManager {
 
     @Nonnull
     public synchronized List<String> getProgressLines(@Nonnull QuestDefinition definition) {
+        if (FARMER_ANIMALS_QUEST_ID.equalsIgnoreCase(definition.questId)) {
+            return FarmerAnimalRescueManager.get().getQuestProgressLines();
+        }
         QuestProgress progress = getOrCreate(definition.questId);
         List<String> lines = new ArrayList<>();
         if (definition.requiredSuccessfulExtractions > 0) {
@@ -259,6 +272,15 @@ public final class QuestProgressManager {
                     + Math.min(progress.trackedNpcKills, definition.requiredNpcKills)
                     + "/" + definition.requiredNpcKills);
         }
+        if (!definition.requiredFlags.isEmpty()) {
+            int metFlags = 0;
+            for (String requiredFlag : definition.requiredFlags) {
+                if (QuestFlagManager.get().hasFlag(requiredFlag)) {
+                    metFlags++;
+                }
+            }
+            lines.add("Objectives complete: " + metFlags + "/" + definition.requiredFlags.size());
+        }
         if (lines.isEmpty() && definition.hudMarkerText != null && !definition.hudMarkerText.isBlank()) {
             lines.add(definition.hudMarkerText);
         }
@@ -266,6 +288,9 @@ public final class QuestProgressManager {
     }
 
     public synchronized double getOverallProgressRatio(@Nonnull QuestDefinition definition) {
+        if (FARMER_ANIMALS_QUEST_ID.equalsIgnoreCase(definition.questId)) {
+            return FarmerAnimalRescueManager.get().getQuestProgressRatio();
+        }
         QuestProgress progress = getOrCreate(definition.questId);
         double total = 0.0;
         int parts = 0;
@@ -275,6 +300,16 @@ public final class QuestProgressManager {
         }
         if (definition.requiredNpcKills > 0) {
             total += cappedRatio(progress.trackedNpcKills, definition.requiredNpcKills);
+            parts++;
+        }
+        if (!definition.requiredFlags.isEmpty()) {
+            int metFlags = 0;
+            for (String requiredFlag : definition.requiredFlags) {
+                if (QuestFlagManager.get().hasFlag(requiredFlag)) {
+                    metFlags++;
+                }
+            }
+            total += cappedRatio(metFlags, definition.requiredFlags.size());
             parts++;
         }
         if (parts == 0) {
@@ -295,6 +330,9 @@ public final class QuestProgressManager {
 
     @Nonnull
     public synchronized String describeIncompleteObjectives(@Nonnull QuestDefinition definition) {
+        if (FARMER_ANIMALS_QUEST_ID.equalsIgnoreCase(definition.questId)) {
+            return FarmerAnimalRescueManager.get().describeIncompleteObjectives();
+        }
         List<String> missing = new ArrayList<>();
         QuestProgress progress = getOrCreate(definition.questId);
         if (definition.requiredSuccessfulExtractions > 0 && progress.successfulExtractions < definition.requiredSuccessfulExtractions) {
@@ -302,6 +340,17 @@ public final class QuestProgressManager {
         }
         if (definition.requiredNpcKills > 0 && progress.trackedNpcKills < definition.requiredNpcKills) {
             missing.add("Blight Beasts slain " + progress.trackedNpcKills + "/" + definition.requiredNpcKills);
+        }
+        if (!definition.requiredFlags.isEmpty()) {
+            ArrayList<String> missingFlags = new ArrayList<>();
+            for (String requiredFlag : definition.requiredFlags) {
+                if (!QuestFlagManager.get().hasFlag(requiredFlag)) {
+                    missingFlags.add(requiredFlag);
+                }
+            }
+            if (!missingFlags.isEmpty()) {
+                missing.add("required flags " + String.join(",", missingFlags));
+            }
         }
         return String.join(", ", missing);
     }
@@ -366,6 +415,17 @@ public final class QuestProgressManager {
         if (definition.requiredNpcKills > 0
                 && current.trackedNpcKills < definition.requiredNpcKills) {
             return false;
+        }
+        if (FARMER_ANIMALS_QUEST_ID.equalsIgnoreCase(definition.questId)) {
+            if (!FarmerAnimalRescueManager.get().areQuestRequirementsMet()) {
+                return false;
+            }
+        } else if (!definition.requiredFlags.isEmpty()) {
+            for (String requiredFlag : definition.requiredFlags) {
+                if (!QuestFlagManager.get().hasFlag(requiredFlag)) {
+                    return false;
+                }
+            }
         }
         if (playerRef != null && !definition.requiredItems.isEmpty()) {
             java.util.List<NpcEconomyDefinition.ItemAmount> costs = toEconomyItems(definition.requiredItems);

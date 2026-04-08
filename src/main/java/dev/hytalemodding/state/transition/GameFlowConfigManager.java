@@ -52,6 +52,8 @@ public final class GameFlowConfigManager {
     @Nullable
     private Transform rescueRunSpawn;
     @Nonnull
+    private HashMap<String, Transform> rescueRunSpawnsByNpc = new HashMap<>();
+    @Nonnull
     private Set<String> rescuedNpcKeys = new HashSet<>();
     @Nonnull
     private HashMap<String, ArrayList<RedCoreProfileRegistry.RedCoreProfile>> crimsonCoreProfilesByWorld = new HashMap<>();
@@ -173,6 +175,16 @@ public final class GameFlowConfigManager {
         saveQuietly();
     }
 
+    public synchronized void setRescueRunSpawn(@Nonnull String npcKey, @Nonnull Transform rescueRunSpawn) {
+        ensureLoaded();
+        String normalizedNpc = normalizeNpcKey(npcKey);
+        if (normalizedNpc.isEmpty()) {
+            return;
+        }
+        this.rescueRunSpawnsByNpc.put(normalizedNpc, copyTransform(rescueRunSpawn));
+        saveQuietly();
+    }
+
     public synchronized void clearRunSpawn() {
         ensureLoaded();
         this.runSpawn = null;
@@ -188,6 +200,16 @@ public final class GameFlowConfigManager {
     public synchronized void clearRescueRunSpawn() {
         ensureLoaded();
         this.rescueRunSpawn = null;
+        saveQuietly();
+    }
+
+    public synchronized void clearRescueRunSpawn(@Nonnull String npcKey) {
+        ensureLoaded();
+        String normalizedNpc = normalizeNpcKey(npcKey);
+        if (normalizedNpc.isEmpty()) {
+            return;
+        }
+        this.rescueRunSpawnsByNpc.remove(normalizedNpc);
         saveQuietly();
     }
 
@@ -208,6 +230,12 @@ public final class GameFlowConfigManager {
         } else {
             this.rescuedNpcKeys.remove(key);
         }
+        saveQuietly();
+    }
+
+    public synchronized void clearRescuedNpcKeys() {
+        ensureLoaded();
+        this.rescuedNpcKeys.clear();
         saveQuietly();
     }
 
@@ -270,6 +298,14 @@ public final class GameFlowConfigManager {
         return this.rescueRunSpawn == null ? null : copyTransform(this.rescueRunSpawn);
     }
 
+    @Nullable
+    public synchronized Transform getRescueRunSpawn(@Nonnull String npcKey) {
+        ensureLoaded();
+        String normalizedNpc = normalizeNpcKey(npcKey);
+        Transform transform = this.rescueRunSpawnsByNpc.get(normalizedNpc);
+        return transform == null ? null : copyTransform(transform);
+    }
+
     public synchronized boolean isConfigured() {
         ensureLoaded();
         return this.runSpawn != null && this.baseSpawn != null;
@@ -294,6 +330,13 @@ public final class GameFlowConfigManager {
         lines.add("Run spawn: " + formatTransform(this.runSpawn));
         lines.add("Base spawn: " + formatTransform(this.baseSpawn));
         lines.add("Rescue run spawn: " + formatTransform(this.rescueRunSpawn));
+        if (!this.rescueRunSpawnsByNpc.isEmpty()) {
+            ArrayList<String> npcKeys = new ArrayList<>(this.rescueRunSpawnsByNpc.keySet());
+            npcKeys.sort(String::compareToIgnoreCase);
+            for (String npcKey : npcKeys) {
+                lines.add("Rescue run spawn [" + npcKey + "]: " + formatTransform(this.rescueRunSpawnsByNpc.get(npcKey)));
+            }
+        }
         lines.add("Door block: " + formatVector(this.doorBlock));
         lines.add("Run duration seconds: " + this.runDurationSeconds);
         lines.add("Run time hour range: " + this.runTimeHourMin + "-" + this.runTimeHourMax);
@@ -340,6 +383,7 @@ public final class GameFlowConfigManager {
         this.runSpawn = readTransform(properties, "runSpawn");
         this.baseSpawn = readTransform(properties, "baseSpawn");
         this.rescueRunSpawn = readTransform(properties, "rescueRunSpawn");
+        this.rescueRunSpawnsByNpc = readNpcTransforms(properties, "rescueRunSpawnNpc.");
         this.rescuedNpcKeys = new HashSet<>(parseCsv(properties.getProperty("rescuedNpcs")));
         this.crimsonCoreProfilesByWorld = readCrimsonProfiles(properties);
     }
@@ -366,6 +410,7 @@ public final class GameFlowConfigManager {
         writeTransform(properties, "runSpawn", this.runSpawn);
         writeTransform(properties, "baseSpawn", this.baseSpawn);
         writeTransform(properties, "rescueRunSpawn", this.rescueRunSpawn);
+        writeNpcTransforms(properties, "rescueRunSpawnNpc.", this.rescueRunSpawnsByNpc);
         properties.setProperty("rescuedNpcs", String.join(",", this.rescuedNpcKeys));
         writeCrimsonProfiles(properties, this.crimsonCoreProfilesByWorld);
 
@@ -425,6 +470,52 @@ public final class GameFlowConfigManager {
         properties.setProperty(prefix + ".rot.x", Float.toString(transform.getRotation().getX()));
         properties.setProperty(prefix + ".rot.y", Float.toString(transform.getRotation().getY()));
         properties.setProperty(prefix + ".rot.z", Float.toString(transform.getRotation().getZ()));
+    }
+
+    @Nonnull
+    private static HashMap<String, Transform> readNpcTransforms(@Nonnull Properties properties, @Nonnull String prefix) {
+        HashMap<String, Transform> out = new HashMap<>();
+        HashSet<String> npcKeys = new HashSet<>();
+        for (String key : properties.stringPropertyNames()) {
+            if (!key.startsWith(prefix)) {
+                continue;
+            }
+            String suffix = key.substring(prefix.length());
+            int dotIndex = suffix.indexOf('.');
+            if (dotIndex <= 0) {
+                continue;
+            }
+            String npcKey = normalizeNpcKey(suffix.substring(0, dotIndex));
+            if (!npcKey.isEmpty()) {
+                npcKeys.add(npcKey);
+            }
+        }
+        for (String npcKey : npcKeys) {
+            Transform transform = readTransform(properties, prefix + npcKey);
+            if (transform != null) {
+                out.put(npcKey, transform);
+            }
+        }
+        return out;
+    }
+
+    private static void writeNpcTransforms(
+            @Nonnull Properties properties,
+            @Nonnull String prefix,
+            @Nonnull HashMap<String, Transform> byNpc
+    ) {
+        for (String key : new ArrayList<>(properties.stringPropertyNames())) {
+            if (key.startsWith(prefix)) {
+                properties.remove(key);
+            }
+        }
+        for (var entry : byNpc.entrySet()) {
+            String npcKey = normalizeNpcKey(entry.getKey());
+            if (npcKey.isEmpty()) {
+                continue;
+            }
+            writeTransform(properties, prefix + npcKey, entry.getValue());
+        }
     }
 
     @Nullable

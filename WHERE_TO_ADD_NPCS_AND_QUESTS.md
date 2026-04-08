@@ -30,8 +30,8 @@ Use this as the implementation map when adding/removing content.
 - `hubRole` / `runRescueRole` must match loaded role names.
 
 5. Test in game
-- `/npcdev rescue <npcKey> true`
-- `/npcdev dump`
+- `/npcadmin`
+- Open the NPC detail page, inspect validation, and use reset/default tools if needed
 - If plot-based: `/baseplot settype <plotId> <plotType>` then purchase/assign flow
 
 ## Add a new quest (NPC or non-NPC)

@@ -1,0 +1,157 @@
+{
+  "Class": "Instruction",
+  "Interface": "Hytale.Instruction.AttackSequence",
+  "Parameters": {
+    "AttackDistance": {
+      "Value": 2,
+      "Description": "The distance at which an NPC will execute attacks"
+    },
+    "CombatRelativeTurnSpeed": {
+      "Value": 1.5,
+      "Description": "Modifier that decides turn speed difference in combat"
+    }
+  },
+  "Content": {
+    "TreeMode": true,
+    "Instructions": [
+      {
+        "Sensor": {
+          "Type": "And",
+          "Sensors": [
+            {
+              "Type": "Target",
+              "Range": 5,
+              "Filters": [
+                {
+                  "Type": "LineOfSight"
+                }
+              ]
+            },
+            {
+              "Type": "Self",
+              "Filters": []
+            }
+          ]
+        },
+        "Actions": [
+          {
+            "Type": "Attack",
+            "Attack": "Crimson_Witch_Fire_Trap_Attack",
+            "AimingTimeRange": [ 2, 2 ],
+            "AttackPauseRange": [ 4, 5 ]
+          }
+        ],
+        "HeadMotion": {
+          "Type": "Aim",
+          "RelativeTurnSpeed": { "Compute": "CombatRelativeTurnSpeed" }
+        }
+      },
+      {
+        "Sensor": {
+          "Type": "And",
+          "Sensors": [
+            {
+              "Type": "Target",
+              "Range": 9,
+              "Filters": [
+                {
+                  "Type": "LineOfSight"
+                }
+              ]
+            },
+            {
+              "Type": "Self",
+              "Filters": [
+                {
+                  "Type": "Stat",
+                  "StatTarget": "Value",
+                  "RelativeTo": "Health",
+                  "Stat": "Health",
+                  "RelativeToTarget": "Max",
+                  "ValueRange": [ 0, 0.45 ]
+                }
+              ]
+            }
+          ]
+        },
+        "Actions": [
+          {
+            "Type": "Attack",
+            "Attack": "Crimson_Witch_Fire_Trap_Attack",
+            "AimingTimeRange": [ 1.8, 1.8 ],
+            "AttackPauseRange": [ 4, 5 ]
+          }
+        ],
+        "HeadMotion": {
+          "Type": "Aim",
+          "RelativeTurnSpeed": { "Compute": "CombatRelativeTurnSpeed" }
+        }
+      },
+      {
+        "Sensor": {
+          "Type": "And",
+          "Sensors": [
+            {
+              "Type": "Target",
+              "Range": { "Compute": "AttackDistance" },
+              "Filters": [
+                {
+                  "Type": "LineOfSight"
+                }
+              ]
+            },
+            {
+              "Type": "Self",
+              "Filters": [
+                {
+                  "Type": "Stat",
+                  "StatTarget": "Value",
+                  "RelativeTo": "Health",
+                  "Stat": "Health",
+                  "RelativeToTarget": "Max",
+                  "ValueRange": [ 0.46, 1.0 ]
+                }
+              ]
+            }
+          ]
+        },
+        "Actions": [
+          {
+            "Type": "Attack",
+            "Attack": "Skeleton_Sand_Mage_Spellbook_Corruption_Orb",
+            "AimingTimeRange": [ 3, 3 ],
+            "AttackPauseRange": [ 2, 3 ]
+          }
+        ],
+        "HeadMotion": {
+          "Type": "Aim",
+          "RelativeTurnSpeed": { "Compute": "CombatRelativeTurnSpeed" }
+        }
+      },
+      {
+        "Sensor": {
+          "Type": "Target",
+          "Range": { "Compute": "AttackDistance" },
+          "Filters": [
+            {
+              "Type": "LineOfSight"
+            }
+          ]
+        },
+        "Actions": [
+          {
+            "Type": "Attack",
+            "Attack": "Skeleton_Sand_Mage_Spellbook_Corruption_Orb",
+            "AimingTimeRange": [ 3, 3 ],
+            "AttackPauseRange": [ 2, 3 ]
+          }
+        ],
+        "HeadMotion": {
+          "Type": "Aim",
+          "RelativeTurnSpeed": { "Compute": "CombatRelativeTurnSpeed" }
+        }
+      }
+    ]
+  },
+  "Type": "Component"
+}

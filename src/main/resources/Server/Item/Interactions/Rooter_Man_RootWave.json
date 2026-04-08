@@ -1,6 +1,6 @@
 {
   "Type": "Simple",
-  "RunTime": 0.7,
+  "RunTime": 1.2,
   "Effects": {
     "WorldSoundEventId": "SFX_Unarmed_Impact",
     "LocalSoundEventId": "SFX_Unarmed_Impact"

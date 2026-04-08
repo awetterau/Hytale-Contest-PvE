@@ -1,0 +1,1036 @@
+// Workshop UI - Crafting blueprint selection and resource management
+// Blueprint grid: 3 columns × 8 rows evenly spaced
+// Materials: 4 slots shown bottom-up as needed
+$C = "../Common.ui";
+
+// Sizing vars
+@RootWidth = 1700;
+@RootHeight = 880;
+
+@Pad = 50;
+@LeftWidth = 460;
+@RightWidth = 430;
+@PreviewSize = 220;
+@WeaponSlotWidth = 208;
+@WeaponSlotHeight = 130;
+
+@CardPad = 36;
+@TagPadX = 16;
+@TagPadY = 5;
+
+@QtyBtnWidth = 60;
+@QtyBtnHeight = 52;
+@QtyValWidth = 110;
+
+@MainBtnHeight = 60;
+
+// Material slot sizing
+@MatSlotHeight = 70;
+@MatIconSize = 46;
+@MatGap = 8;
+
+// Colors - darker overlay background
+@OverlayBg = #000000(0.0);
+
+@BpBtnBg = #141e28(0.95);
+@BpBtnBorderColor = #64788c(0.6);
+
+@CardBg = #f5f0e8;
+@ReqIconBoxBg = #1a2332;
+
+@QtyBtnBg = #4a76a8;
+@QtyValBg = #ffffff;
+@QtyValBorderColor = #d0d0d0;
+
+@CraftBg = #fbbf24;
+@TagBg = #4ade80;
+
+@HitBg = #ffffff(0.01); // tiny alpha so it receives input
+
+// Text colors
+@White = #ffffff;
+@Black = #1a1a1a;
+@GrayA = #aaaaaa;
+@Gray6 = #666666;
+@Gray3 = #333333;
+@TagText = #064e3b;
+@DividerColor = #d0d0d0;
+
+// Workbench nav sizing
+@WbNavHeight = 120;
+@WbBtnSize = 90;
+@WbBtnGap = 20;
+@WbBtnBg = #2a3a4a;
+@WbBtnSelectedBg = #5a8fc8;
+@BpSlotSize = 110;
+@BpIconSize = 96;
+@BpGap = 10;
+
+// Root overlay
+Group #PageOverlay {
+  FlexWeight: 1;
+  LayoutMode: Middle;
+  Background: @OverlayBg;
+
+  // Main container centered
+  Group #WorkshopRoot {
+    Anchor: (Width: @RootWidth, Height: @RootHeight);
+    LayoutMode: Top;
+    Padding: (Left: @Pad, Right: @Pad, Bottom: @Pad);
+
+    Group #TopControls {
+      Anchor: (Height: 48);
+      LayoutMode: Right;
+
+      Button #BackBtn {
+        Anchor: (Width: 140, Height: 44);
+        Style: (
+          Default: (Background: #1e2d3f(0.95)),
+          Hovered: (Background: #2a3d54(0.95)),
+          Pressed: (Background: #172434(0.95))
+        );
+        Label {
+          Text: "BACK";
+          Style: (FontSize: 16, TextColor: @White, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center);
+        }
+      }
+    }
+
+    Group { Anchor: (Height: 10); }
+
+    // Main content area - three panels side by side (fixed height to prevent resizing)
+    Group #WorkshopContent {
+      Anchor: (Height: 670);
+      LayoutMode: Left;
+
+      // LEFT PANEL - Blueprints (3 columns × 8 rows evenly spaced)
+      Group #LeftPanel {
+      Anchor: (Width: @LeftWidth);
+      LayoutMode: Top;
+      Padding: (Right: 0);
+
+      Label #BpTitle {
+        Text: "TRADES";
+        Style: (
+          FontSize: 24,
+          TextColor: @White,
+          RenderBold: true
+        );
+        Anchor: (Height: 30);
+      }
+
+      Group { Anchor: (Height: 14); }
+
+      Group #BpGrid {
+        FlexWeight: 1;
+        LayoutMode: Top;
+
+        // Blueprint slot template - each cell contains 6 possible states (3 rarities × 2 lock states)
+        // Usage: BpXCommonUnlocked, BpXUncommonUnlocked, BpXRareUnlocked, BpXCommonLocked, etc.
+
+        // Row 0
+        Group { LayoutMode: Left;
+          Group #Bp0Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Group #Bp0CommonUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotUnselected.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp0CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp0UncommonUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotUncommon.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp0UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp0RareUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotRare.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp0RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp0CommonLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedCommon.png");
+              ItemIcon #Bp0CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp0UncommonLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedUncommon.png");
+              ItemIcon #Bp0UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp0RareLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedRare.png");
+              ItemIcon #Bp0RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp1Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Group #Bp1CommonUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotUnselected.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp1CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp1UncommonUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotUncommon.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp1UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp1RareUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotRare.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp1RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp1CommonLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedCommon.png");
+              ItemIcon #Bp1CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp1UncommonLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedUncommon.png");
+              ItemIcon #Bp1UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp1RareLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedRare.png");
+              ItemIcon #Bp1RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 1
+        Group { LayoutMode: Left;
+          Group #Bp2Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Group #Bp2CommonUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotUnselected.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp2CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp2UncommonUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotUncommon.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp2UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp2RareUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotRare.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp2RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp2CommonLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedCommon.png");
+              ItemIcon #Bp2CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp2UncommonLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedUncommon.png");
+              ItemIcon #Bp2UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp2RareLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedRare.png");
+              ItemIcon #Bp2RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp3Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Group #Bp3CommonUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotUnselected.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp3CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp3UncommonUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotUncommon.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp3UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp3RareUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotRare.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp3RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp3CommonLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedCommon.png");
+              ItemIcon #Bp3CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp3UncommonLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedUncommon.png");
+              ItemIcon #Bp3UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp3RareLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedRare.png");
+              ItemIcon #Bp3RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 2
+        Group { LayoutMode: Left;
+          Group #Bp4Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Group #Bp4CommonUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotUnselected.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp4CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp4UncommonUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotUncommon.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp4UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp4RareUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotRare.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp4RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp4CommonLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedCommon.png");
+              ItemIcon #Bp4CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp4UncommonLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedUncommon.png");
+              ItemIcon #Bp4UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp4RareLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedRare.png");
+              ItemIcon #Bp4RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp5Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Group #Bp5CommonUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotUnselected.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp5CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp5UncommonUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotUncommon.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp5UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp5RareUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotRare.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp5RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp5CommonLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedCommon.png");
+              ItemIcon #Bp5CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp5UncommonLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedUncommon.png");
+              ItemIcon #Bp5UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp5RareLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedRare.png");
+              ItemIcon #Bp5RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+          }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 3
+        Group { LayoutMode: Left;
+          Group #Bp6Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight);
+            Group #Bp6CommonUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotUnselected.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp6CommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp6UncommonUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotUncommon.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp6UncommonUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp6RareUnlocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotRare.png");
+              Group #Selected { Visible: false; Anchor: (Full: 0); Background: (TexturePath: "Workshop/ItemSlotSelected.png"); }
+              ItemIcon #Bp6RareUnlockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp6CommonLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedCommon.png");
+              ItemIcon #Bp6CommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp6UncommonLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedUncommon.png");
+              ItemIcon #Bp6UncommonLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+            Group #Bp6RareLocked { Visible: false; Anchor: (Full: 0); LayoutMode: Middle; Background: (TexturePath: "Workshop/ItemSlotLockedRare.png");
+              ItemIcon #Bp6RareLockedIcon { Anchor: (Width: 80, Height: 80); }
+            }
+          }
+          Group { Anchor: (Width: 20); }
+          Group #Bp7Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 4
+        Group { LayoutMode: Left;
+          Group #Bp8Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp9Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 5
+        Group { LayoutMode: Left;
+          Group #Bp10Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp11Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 6
+        Group { LayoutMode: Left;
+          Group #Bp12Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp13Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 7
+        Group { LayoutMode: Left;
+          Group #Bp14Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp15Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 8
+        Group { LayoutMode: Left;
+          Group #Bp16Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp17Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 9
+        Group { LayoutMode: Left;
+          Group #Bp18Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp19Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 10
+        Group { LayoutMode: Left;
+          Group #Bp20Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp21Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 11
+        Group { LayoutMode: Left;
+          Group #Bp22Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp23Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 12
+        Group { LayoutMode: Left;
+          Group #Bp24Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp25Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 13
+        Group { LayoutMode: Left;
+          Group #Bp26Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp27Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 14
+        Group { LayoutMode: Left;
+          Group #Bp28Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp29Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 15
+        Group { LayoutMode: Left;
+          Group #Bp30Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp31Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 16
+        Group { LayoutMode: Left;
+          Group #Bp32Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp33Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 17
+        Group { LayoutMode: Left;
+          Group #Bp34Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp35Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 18
+        Group { LayoutMode: Left;
+          Group #Bp36Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp37Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 19
+        Group { LayoutMode: Left;
+          Group #Bp38Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp39Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 20
+        Group { LayoutMode: Left;
+          Group #Bp40Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp41Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 21
+        Group { LayoutMode: Left;
+          Group #Bp42Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp43Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 22
+        Group { LayoutMode: Left;
+          Group #Bp44Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp45Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 23
+        Group { LayoutMode: Left;
+          Group #Bp46Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp47Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 24
+        Group { LayoutMode: Left;
+          Group #Bp48Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp49Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 25
+        Group { LayoutMode: Left;
+          Group #Bp50Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp51Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        // Row 26
+        Group { LayoutMode: Left;
+          Group #Bp52Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+          Group { Anchor: (Width: 20); }
+          Group #Bp53Cell { Anchor: (Width: @WeaponSlotWidth, Height: @WeaponSlotHeight); }
+        }
+        Group { Anchor: (Height: 20); }
+
+        Group { FlexWeight: 1; }
+      }
+    }
+
+    // MIDDLE PANEL - intentionally empty (reserved spacing for layout balance)
+    Group #MiddlePanel {
+      FlexWeight: 1;
+      LayoutMode: Top;
+      Padding: (Left: (@Pad + 200), Right: (@Pad + 200));
+      Group { FlexWeight: 1; }
+    }
+
+    // RIGHT PANEL - Info Card with MaterialsBackground
+    Group #RightPanel {
+      Anchor: (Width: @RightWidth);
+      LayoutMode: Middle;
+
+      Group #Card {
+        Anchor: (Width: @RightWidth);
+        LayoutMode: Top;
+        Padding: (Left: @CardPad, Right: @CardPad, Top: @CardPad, Bottom: @CardPad);
+        Background: (TexturePath: "Workshop/MaterialsBackground.png");
+
+        // Tag row - just rarity
+        Group #TagRow {
+          LayoutMode: Left;
+
+          Group #TagRarity {
+            LayoutMode: Middle;
+            Background: (Color: @TagBg);
+            Padding: (Left: @TagPadX, Right: @TagPadX, Top: @TagPadY, Bottom: @TagPadY);
+
+            Label #RarityLabel {
+              Text: "UNCOMMON";
+              Style: (FontSize: 12, TextColor: @TagText, RenderBold: true, VerticalAlignment: Center, HorizontalAlignment: Center);
+              Anchor: (Height: 16);
+            }
+          }
+        }
+
+        Group { Anchor: (Height: 10); }
+
+        Label #ItemName {
+          Text: "MYSTIC BINDING CLOTH";
+          Style: (FontSize: 26, TextColor: @Black, RenderBold: true);
+          Anchor: (Height: 20);
+        }
+
+        Group { Anchor: (Height: 16); }
+
+        Label #ItemDesc {
+          Text: "Used to craft a wide-range of items. Can be recycled into crafting materials.";
+          Style: (FontSize: 15, TextColor: @Gray6);
+        }
+
+        Group { Anchor: (Height: 32); }
+
+        Label #ReqTitle {
+          Text: "REQUIRED RESOURCES";
+          Style: (FontSize: 14, TextColor: @Gray3, RenderBold: true);
+          Anchor: (Height: 18);
+        }
+
+        Group { Anchor: (Height: 20); }
+
+        // 4 Material slots (shown bottom-up, hidden when not needed)
+        // Slot 0 (top)
+        Group #ReqRow0 {
+          LayoutMode: Left;
+          Padding: (Top: 12, Bottom: 12);
+
+          Group #ReqIconBox0 {
+            Anchor: (Width: @MatSlotHeight, Height: @MatSlotHeight);
+            LayoutMode: Middle;
+            Background: (TexturePath: "Stash/Item/Weapon/Item.png");
+
+            ItemIcon #ReqIcon0 {
+              Anchor: (Width: @MatIconSize, Height: @MatIconSize);
+            }
+          }
+
+          Group { Anchor: (Width: 18); }
+
+          Group #ReqText0 {
+            FlexWeight: 1;
+            LayoutMode: Top;
+
+            Label #ReqName0 {
+              Text: "Material Name";
+              Style: (FontSize: 16, TextColor: @Black, RenderBold: true);
+              Anchor: (Height: 20);
+            }
+
+            Group { Anchor: (Height: 6); }
+
+            Label #ReqCount0 {
+              Text: "0/1";
+              Style: (FontSize: 15, TextColor: @Gray6);
+              Anchor: (Height: 18);
+            }
+          }
+        }
+
+        // Divider 0-1
+        Group #Divider0 {
+          Anchor: (Height: 1);
+          Background: (Color: @DividerColor);
+        }
+
+        // Slot 1
+        Group #ReqRow1 {
+          LayoutMode: Left;
+          Padding: (Top: 12, Bottom: 12);
+
+          Group #ReqIconBox1 {
+            Anchor: (Width: @MatSlotHeight, Height: @MatSlotHeight);
+            LayoutMode: Middle;
+            Background: (TexturePath: "Stash/Item/Weapon/Item.png");
+
+            ItemIcon #ReqIcon1 {
+              Anchor: (Width: @MatIconSize, Height: @MatIconSize);
+            }
+          }
+
+          Group { Anchor: (Width: 18); }
+
+          Group #ReqText1 {
+            FlexWeight: 1;
+            LayoutMode: Top;
+
+            Label #ReqName1 {
+              Text: "Material Name";
+              Style: (FontSize: 16, TextColor: @Black, RenderBold: true);
+              Anchor: (Height: 20);
+            }
+
+            Group { Anchor: (Height: 6); }
+
+            Label #ReqCount1 {
+              Text: "0/1";
+              Style: (FontSize: 15, TextColor: @Gray6);
+              Anchor: (Height: 18);
+            }
+          }
+        }
+
+        // Divider 1-2
+        Group #Divider1 {
+          Anchor: (Height: 1);
+          Background: (Color: @DividerColor);
+        }
+
+        // Slot 2
+        Group #ReqRow2 {
+          LayoutMode: Left;
+          Padding: (Top: 12, Bottom: 12);
+
+          Group #ReqIconBox2 {
+            Anchor: (Width: @MatSlotHeight, Height: @MatSlotHeight);
+            LayoutMode: Middle;
+            Background: (TexturePath: "Stash/Item/Weapon/Item.png");
+
+            ItemIcon #ReqIcon2 {
+              Anchor: (Width: @MatIconSize, Height: @MatIconSize);
+            }
+          }
+
+          Group { Anchor: (Width: 18); }
+
+          Group #ReqText2 {
+            FlexWeight: 1;
+            LayoutMode: Top;
+
+            Label #ReqName2 {
+              Text: "Material Name";
+              Style: (FontSize: 16, TextColor: @Black, RenderBold: true);
+              Anchor: (Height: 20);
+            }
+
+            Group { Anchor: (Height: 6); }
+
+            Label #ReqCount2 {
+              Text: "0/1";
+              Style: (FontSize: 15, TextColor: @Gray6);
+              Anchor: (Height: 18);
+            }
+          }
+        }
+
+        // Divider 2-3
+        Group #Divider2 {
+          Anchor: (Height: 1);
+          Background: (Color: @DividerColor);
+        }
+
+        // Slot 3 (bottom)
+        Group #ReqRow3 {
+          LayoutMode: Left;
+          Padding: (Top: 12, Bottom: 12);
+
+          Group #ReqIconBox3 {
+            Anchor: (Width: @MatSlotHeight, Height: @MatSlotHeight);
+            LayoutMode: Middle;
+            Background: (TexturePath: "Stash/Item/Weapon/Item.png");
+
+            ItemIcon #ReqIcon3 {
+              Anchor: (Width: @MatIconSize, Height: @MatIconSize);
+            }
+          }
+
+          Group { Anchor: (Width: 18); }
+
+          Group #ReqText3 {
+            FlexWeight: 1;
+            LayoutMode: Top;
+
+            Label #ReqName3 {
+              Text: "Material Name";
+              Style: (FontSize: 16, TextColor: @Black, RenderBold: true);
+              Anchor: (Height: 20);
+            }
+
+            Group { Anchor: (Height: 6); }
+
+            Label #ReqCount3 {
+              Text: "0/1";
+              Style: (FontSize: 15, TextColor: @Gray6);
+              Anchor: (Height: 18);
+            }
+          }
+        }
+
+        // Quantity controls
+        Group #QtyRow {
+          LayoutMode: Top;
+
+          Group { Anchor: (Height: 32); }
+
+          Group #QtyControls {
+            LayoutMode: Left;
+
+            Group { FlexWeight: 1; }
+
+            Button #QtyDec {
+              Anchor: (Width: @QtyBtnWidth, Height: @QtyBtnHeight);
+              Style: (Default: (Background: (Color: @QtyBtnBg)));
+              Label {
+                Text: "-";
+                Style: (FontSize: 22, TextColor: @White, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center);
+              }
+            }
+
+            Group #QtyValBox {
+              Anchor: (Width: @QtyValWidth, Height: @QtyBtnHeight);
+              LayoutMode: Middle;
+              Background: (Color: @QtyValBg);
+
+              Label #QtyVal {
+                Text: "1";
+                Style: (FontSize: 22, TextColor: @Gray3, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center);
+              }
+            }
+
+            Button #QtyInc {
+              Anchor: (Width: @QtyBtnWidth, Height: @QtyBtnHeight);
+              Style: (Default: (Background: (Color: @QtyBtnBg)));
+              Label {
+                Text: "+";
+                Style: (FontSize: 22, TextColor: @White, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center);
+              }
+            }
+
+            Group { FlexWeight: 1; }
+          }
+
+          Group { Anchor: (Height: 20); }
+        }
+
+        // Craft button with custom background
+        Button #CraftBtn {
+          Anchor: (Height: @MainBtnHeight);
+          Background: (TexturePath: "Workshop/CraftButton.png");
+
+          Label {
+            Text: "CRAFT";
+            Style: (FontSize: 16, TextColor: @Black, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center);
+          }
+        }
+      }
+    }
+    }
+
+    // Empty state - only bottom bar visible until a workbench is selected
+    Group #WorkshopEmpty {
+      Anchor: (Height: 670);
+      LayoutMode: Middle;
+    }
+
+    Group #WorkshopUpgradeView {
+      Anchor: (Height: 670);
+      LayoutMode: Left;
+      Visible: false;
+
+      Group #UpgradeLeftPanel {
+        Anchor: (Width: @LeftWidth);
+      }
+
+      Group #UpgradeMiddlePanel {
+        FlexWeight: 1;
+        LayoutMode: Middle;
+        Padding: (Left: (@Pad + 200), Right: (@Pad + 200));
+        ItemIcon #UpgradeBenchIcon {
+          Anchor: (Width: @PreviewSize, Height: @PreviewSize);
+        }
+      }
+
+      Group #UpgradeRightPanel {
+        Anchor: (Width: @RightWidth);
+        LayoutMode: Middle;
+
+        Group #UpgradeCard {
+          Anchor: (Width: @RightWidth);
+          LayoutMode: Top;
+          Padding: (Left: @CardPad, Right: @CardPad, Top: @CardPad, Bottom: @CardPad);
+          Background: (TexturePath: "Workshop/MaterialsBackground.png");
+
+          Label #UpgradeTitle {
+            Text: "UPGRADE TO TIER 2";
+            Style: (FontSize: 28, TextColor: @Black, RenderBold: true, HorizontalAlignment: Center);
+            Anchor: (Height: 36);
+          }
+
+          Group { Anchor: (Height: 20); }
+
+          Label #UpgradeReqTitle {
+            Text: "REQUIRED RESOURCES";
+            Style: (FontSize: 14, TextColor: @Gray3, RenderBold: true);
+            Anchor: (Height: 20);
+          }
+
+          Group { Anchor: (Height: 10); }
+
+          Group #UpgradeReqRow0 {
+            LayoutMode: Left;
+            Padding: (Top: 10, Bottom: 10);
+            Group #UpgradeReqIconBox0 {
+              Anchor: (Width: @MatSlotHeight, Height: @MatSlotHeight);
+              LayoutMode: Middle;
+              Background: (TexturePath: "Stash/Item/Weapon/Item.png");
+              ItemIcon #UpgradeReqIcon0 { Anchor: (Width: @MatIconSize, Height: @MatIconSize); }
+            }
+            Group { Anchor: (Width: 16); }
+            Group {
+              FlexWeight: 1;
+              LayoutMode: Top;
+              Label #UpgradeReqName0 { Text: "Material"; Style: (FontSize: 16, TextColor: @Black, RenderBold: true); Anchor: (Height: 20); }
+              Group { Anchor: (Height: 4); }
+              Label #UpgradeReqCount0 { Text: "0/0"; Style: (FontSize: 15, TextColor: @Gray6); Anchor: (Height: 18); }
+            }
+          }
+
+          Group #UpgradeReqRow1 {
+            LayoutMode: Left;
+            Padding: (Top: 10, Bottom: 10);
+            Group #UpgradeReqIconBox1 {
+              Anchor: (Width: @MatSlotHeight, Height: @MatSlotHeight);
+              LayoutMode: Middle;
+              Background: (TexturePath: "Stash/Item/Weapon/Item.png");
+              ItemIcon #UpgradeReqIcon1 { Anchor: (Width: @MatIconSize, Height: @MatIconSize); }
+            }
+            Group { Anchor: (Width: 16); }
+            Group {
+              FlexWeight: 1;
+              LayoutMode: Top;
+              Label #UpgradeReqName1 { Text: "Material"; Style: (FontSize: 16, TextColor: @Black, RenderBold: true); Anchor: (Height: 20); }
+              Group { Anchor: (Height: 4); }
+              Label #UpgradeReqCount1 { Text: "0/0"; Style: (FontSize: 15, TextColor: @Gray6); Anchor: (Height: 18); }
+            }
+          }
+
+          Group #UpgradeReqRow2 {
+            LayoutMode: Left;
+            Padding: (Top: 10, Bottom: 10);
+            Group #UpgradeReqIconBox2 {
+              Anchor: (Width: @MatSlotHeight, Height: @MatSlotHeight);
+              LayoutMode: Middle;
+              Background: (TexturePath: "Stash/Item/Weapon/Item.png");
+              ItemIcon #UpgradeReqIcon2 { Anchor: (Width: @MatIconSize, Height: @MatIconSize); }
+            }
+            Group { Anchor: (Width: 16); }
+            Group {
+              FlexWeight: 1;
+              LayoutMode: Top;
+              Label #UpgradeReqName2 { Text: "Material"; Style: (FontSize: 16, TextColor: @Black, RenderBold: true); Anchor: (Height: 20); }
+              Group { Anchor: (Height: 4); }
+              Label #UpgradeReqCount2 { Text: "0/0"; Style: (FontSize: 15, TextColor: @Gray6); Anchor: (Height: 18); }
+            }
+          }
+
+          Group #UpgradeReqRow3 {
+            LayoutMode: Left;
+            Padding: (Top: 10, Bottom: 10);
+            Group #UpgradeReqIconBox3 {
+              Anchor: (Width: @MatSlotHeight, Height: @MatSlotHeight);
+              LayoutMode: Middle;
+              Background: (TexturePath: "Stash/Item/Weapon/Item.png");
+              ItemIcon #UpgradeReqIcon3 { Anchor: (Width: @MatIconSize, Height: @MatIconSize); }
+            }
+            Group { Anchor: (Width: 16); }
+            Group {
+              FlexWeight: 1;
+              LayoutMode: Top;
+              Label #UpgradeReqName3 { Text: "Material"; Style: (FontSize: 16, TextColor: @Black, RenderBold: true); Anchor: (Height: 20); }
+              Group { Anchor: (Height: 4); }
+              Label #UpgradeReqCount3 { Text: "0/0"; Style: (FontSize: 15, TextColor: @Gray6); Anchor: (Height: 18); }
+            }
+          }
+
+          Group { Anchor: (Height: 20); }
+
+          Button #UpgradeBtn {
+            Anchor: (Height: @MainBtnHeight);
+            Background: (TexturePath: "Workshop/CraftButton.png");
+            Label #UpgradeBtnLabel {
+              Text: "UPGRADE TO TIER 2";
+              Style: (FontSize: 16, TextColor: @Black, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center);
+            }
+          }
+        }
+      }
+    }
+
+    Group { Anchor: (Height: 0); }
+
+    // WORKBENCH NAVIGATION
+
+
+    Group #WorkbenchNav {
+      Visible: false;
+      LayoutMode: Left;
+
+      Group { FlexWeight: 1; }
+
+      Button #WbWorkbench {
+        Anchor: (Width: @WbBtnSize, Height: @WbBtnSize);
+        TooltipText: "Workbench";
+        Background: (TexturePath: "Workshop/ItemSlotUnselected.png");
+        Group #Selected {
+          Visible: false;
+          Anchor: (Full: 0);
+          Background: (TexturePath: "Workshop/ItemSlotSelected.png");
+        }
+        ItemIcon #WbWorkbenchIcon {
+          Anchor: (Full: 0);
+          ItemId: "Workshop_Workbench";
+        }
+      }
+
+      Group { Anchor: (Width: @WbBtnGap); }
+
+      Button #WbAlchemyTable {
+        Anchor: (Width: @WbBtnSize, Height: @WbBtnSize);
+        TooltipText: "Alchemy Table";
+        Background: (TexturePath: "Workshop/ItemSlotUnselected.png");
+        Group #Selected {
+          Visible: false;
+          Anchor: (Full: 0);
+          Background: (TexturePath: "Workshop/ItemSlotSelected.png");
+        }
+        ItemIcon #WbAlchemyTableIcon {
+          Anchor: (Full: 0);
+          ItemId: "Workshop_AlchemyTable";
+        }
+      }
+
+      Group { Anchor: (Width: @WbBtnGap); }
+
+      Button #WbDemolitionsTable {
+        Anchor: (Width: @WbBtnSize, Height: @WbBtnSize);
+        TooltipText: "Furnace";
+        Background: (TexturePath: "Workshop/ItemSlotUnselected.png");
+        Group #Selected {
+          Visible: false;
+          Anchor: (Full: 0);
+          Background: (TexturePath: "Workshop/ItemSlotSelected.png");
+        }
+        ItemIcon #WbDemolitionsTableIcon {
+          Anchor: (Full: 0);
+          ItemId: "Workshop_Furnace";
+        }
+      }
+
+      Group { Anchor: (Width: @WbBtnGap); }
+
+      Button #WbUtilityBench {
+        Anchor: (Width: @WbBtnSize, Height: @WbBtnSize);
+        TooltipText: "Utility Bench";
+        Background: (TexturePath: "Workshop/ItemSlotUnselected.png");
+        Group #Selected {
+          Visible: false;
+          Anchor: (Full: 0);
+          Background: (TexturePath: "Workshop/ItemSlotSelected.png");
+        }
+        ItemIcon #WbUtilityBenchIcon {
+          Anchor: (Full: 0);
+          ItemId: "Workshop_UtilityBench";
+        }
+      }
+
+      Group { Anchor: (Width: @WbBtnGap); }
+
+      Button #WbWeaponsForge {
+        Anchor: (Width: @WbBtnSize, Height: @WbBtnSize);
+        TooltipText: "Weapons Forge";
+        Background: (TexturePath: "Workshop/ItemSlotUnselected.png");
+        Group #Selected {
+          Visible: false;
+          Anchor: (Full: 0);
+          Background: (TexturePath: "Workshop/ItemSlotSelected.png");
+        }
+        ItemIcon #WbWeaponsForgeIcon {
+          Anchor: (Full: 0);
+          ItemId: "Workshop_WeaponsForge";
+        }
+      }
+
+      Group { FlexWeight: 1; }
+    }
+  }
+}
+
+
+
+
+
+

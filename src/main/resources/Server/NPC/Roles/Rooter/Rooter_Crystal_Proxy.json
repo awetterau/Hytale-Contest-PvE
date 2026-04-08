@@ -1,0 +1,55 @@
+{
+  "Type": "Generic",
+  "StartState": "Idle",
+  "Appearance": "Rooter_Crystal_Proxy",
+  "DefaultPlayerAttitude": "Neutral",
+  "DisableDamageGroups": [
+    "Self"
+  ],
+  "KnockbackScale": 0,
+  "MaxHealth": 5000,
+  "MotionControllerList": [
+    {
+      "Type": "Walk",
+      "MaxWalkSpeed": 0.01,
+      "MinWalkSpeed": 0,
+      "Gravity": 10,
+      "MaxFallSpeed": 20,
+      "MaxRotationSpeed": 0.01,
+      "Acceleration": 0.01
+    }
+  ],
+  "Instructions": [
+    {
+      "Instructions": [
+        {
+          "Sensor": {
+            "Type": "State",
+            "State": "Idle"
+          },
+          "Instructions": [
+            {
+              "Sensor": {
+                "Type": "Any"
+              },
+              "HeadMotion": {
+                "Type": "Nothing"
+              },
+              "BodyMotion": {
+                "Type": "Nothing"
+              },
+              "Actions": [
+                {
+                  "Type": "PlayAnimation",
+                  "Slot": "Status",
+                  "Animation": "Idle"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "NameTranslationKey": "server.npcRoles.Game_Start_Trigger.name"
+}

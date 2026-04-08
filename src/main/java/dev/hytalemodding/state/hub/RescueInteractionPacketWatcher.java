@@ -12,10 +12,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import com.hypixel.hytale.server.npc.entities.NPCEntity;
-import dev.hytalemodding.npc.NpcDefinitionRegistry;
-import dev.hytalemodding.npc.NpcDialogueManager;
-import dev.hytalemodding.state.run.RescueObjectiveManager;
+import dev.hytalemodding.npc.runtime.NpcInteractionRouter;
 
 import javax.annotation.Nonnull;
 import java.util.UUID;
@@ -34,7 +31,6 @@ public final class RescueInteractionPacketWatcher implements PacketWatcher {
             PacketAdapters.class.getMethod("unregisterInbound", PacketWatcher.class).invoke(null, this);
         } catch (NoSuchMethodException ignored) {
         } catch (Exception e) {
-            System.out.println("[RescueDebug] packet watcher unregister failed: " + e.getMessage());
         }
     }
 
@@ -79,15 +75,7 @@ public final class RescueInteractionPacketWatcher implements PacketWatcher {
             if (targetRef == null || !targetRef.isValid()) {
                 continue;
             }
-            NPCEntity npc = targetRef.getStore().getComponent(targetRef, NPCEntity.getComponentType());
-            if (npc != null && npc.getRoleName() != null) {
-                String npcKey = NpcDefinitionRegistry.get().getNpcKeyByHubRole(npc.getRoleName());
-                if (npcKey != null && !npcKey.isBlank()) {
-                    NpcDialogueManager.get().openDialogue(playerRef, targetRef);
-                    continue;
-                }
-            }
-            RescueObjectiveManager.get().markFollowingFromNpcRef(playerRef, targetRef, chain.interactionType);
+            NpcInteractionRouter.get().handleInteraction(playerRef, targetRef, chain.interactionType);
         }
     }
 

@@ -40,7 +40,7 @@ This plugin currently has 4 main systems:
 5. In run world, interact with the active rescue NPC so they follow.
 6. Return to the run door and press `F` to extract.
 7. Confirm you return to hub with your inventory preserved and that NPC is marked rescued.
-8. Run `/npcdev rescue <npcKey> <true|false>` if you need to force/verify rescued state during testing.
+8. Run `/npcadmin` if you need to inspect NPC state, validation, or reset an NPC to unified defaults during testing.
 
 ## System behavior details
 
@@ -91,7 +91,6 @@ This plugin currently has 4 main systems:
 - Blacksmith currently uses:
   - `src/main/resources/Common/NpcData/npcs/blacksmith.properties`
 - Pack goat currently uses:
-  - `src/main/resources/Common/NpcData/npcs/pack_goat.properties`
 - Legacy split NPC economy files (`craft_sets`, `trade_sets`, `upgrade_trees`) are removed from active workflow.
 - NPC dialogue action menu is currently:
   - `Trade`, `Upgrades`, `Quests`, `Close`
@@ -191,20 +190,8 @@ This plugin currently has 4 main systems:
 ### Dev/testing commands
 - `/devpanel`
   - Opens the in-game Dev Admin Panel for step-by-step flow testing.
-- `/npcdev hud [on|off]`
-  - Toggle or set live NPC debug HUD.
-- `/npcdev rescue <npcKey> <true|false>`
-  - Set rescued state for any NPC key.
-- `/npcdev state <profession> <wandering|moving|working>`
-  - Force an NPC state for testing.
-- `/npcdev assign <profession> <plotId>`
-  - Force-assign NPC to plot.
-- `/npcdev unassign <profession|plotId>`
-  - Clear assignment.
-- `/npcdev dump`
-  - Print current NPC data.
-- `/npcdev reset`
-  - Reset NPC dev state.
+- `/npcadmin`
+  - Opens the unified NPC admin flow for browsing NPCs, inspecting state, validating setup, and resetting one NPC to unified defaults.
 - `/questdev list`
   - Print all registered quests with accept/complete state.
 - `/questdev accept <questId>`
@@ -262,7 +249,7 @@ This plugin currently has 4 main systems:
 1. Place `Base_Plot_Marker` blocks where desired.
 2. Register one with `/baseplot add smithPlot`.
 3. Reserve the plot for blacksmith with `/baseplot settype smithPlot blacksmith`.
-4. Ensure blacksmith is rescued (`/npcdev rescue blacksmith true` for fast test).
+4. Ensure blacksmith is configured/rescued through the unified admin panel (`/npcadmin`) for fast test setup.
 5. Interact marker and purchase the plot.
 6. Confirm house is built and blacksmith appears at plot home/workshop.
 
@@ -277,7 +264,7 @@ This plugin currently has 4 main systems:
 4. Interact blacksmith and verify workshop/quest pages only appear when plot is assigned.
 
 ### Quest + NPC unlock smoke test
-1. Run `/npcdev rescue blacksmith true`.
+1. Open `/npcadmin` and inspect/reset blacksmith as needed before quest testing.
 2. Run `/questdev accept ember_core_hunt`.
 3. Run `/questdev complete ember_core_hunt`.
 4. Interact blacksmith and confirm new trade/upgrades unlock effects are available in NPC UI.
@@ -297,6 +284,7 @@ This plugin currently has 4 main systems:
 - Some config/state is persisted under universe plugin config:
   - `game-flow.properties` (world names, spawns, rescued NPC keys)
   - `base-housing.properties` (plot metadata, type, purchase, assignment, level)
+  - `npc-state-v2.properties` (unified NPC runtime state used by the new admin/runtime layer)
   - `hub-npcs.properties` (hub NPC state/data)
   - `npc-progress.properties` (rescued/progression + unlocks by NPC key)
   - `quest-progress.properties` (quest accepted/completed state)

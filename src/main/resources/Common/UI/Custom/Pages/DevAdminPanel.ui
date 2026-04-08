@@ -54,6 +54,13 @@ Group #DevAdminRoot {
       Button #RefreshBtn { Anchor: (Width: 120, Height: 40); OutlineColor: #93a9c5; OutlineSize: 1; Label { Text: "Refresh"; Style: (FontSize: 14, TextColor: #f2f6ff, HorizontalAlignment: Center, VerticalAlignment: Center); } }
     }
 
+    Group #ButtonsC {
+      LayoutMode: Right;
+      Anchor: (Height: 44, Bottom: 8);
+
+      Button #FullNpcResetBtn { Anchor: (Width: 240, Height: 40); OutlineColor: #c59a93; OutlineSize: 1; Label { Text: "Full NPC Reset"; Style: (FontSize: 14, TextColor: #fff2f0, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+    }
+
     Group {
       LayoutMode: Right;
       Anchor: (Height: 42);

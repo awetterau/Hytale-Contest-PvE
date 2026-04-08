@@ -1,0 +1,6 @@
+{
+  "Type": "Switch",
+  "InitialState": 0.0,
+  "FinalState": 1.0,
+  "SwitchPoint": 0.5
+}

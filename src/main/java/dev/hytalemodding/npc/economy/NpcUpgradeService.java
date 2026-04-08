@@ -42,8 +42,15 @@ public final class NpcUpgradeService {
         }
 
         boolean blacksmithWorkshopUpgrade = "blacksmith".equalsIgnoreCase(npcKey) && upgrade.targetTier == 1;
+        boolean farmerWorkshopUpgrade = "farmer".equalsIgnoreCase(npcKey) && upgrade.targetTier == 1;
         if (blacksmithWorkshopUpgrade) {
             BaseHousingManager.AssignmentResult precheck = BaseHousingManager.get().beginBlacksmithWorkshopUpgradePrecheck(playerRef);
+            if (!precheck.success) {
+                return Result.fail(precheck.message);
+            }
+        }
+        if (farmerWorkshopUpgrade) {
+            BaseHousingManager.AssignmentResult precheck = BaseHousingManager.get().beginFarmerWorkshopUpgradePrecheck(playerRef);
             if (!precheck.success) {
                 return Result.fail(precheck.message);
             }
@@ -54,6 +61,12 @@ public final class NpcUpgradeService {
 
         if (blacksmithWorkshopUpgrade) {
             BaseHousingManager.AssignmentResult workshopResult = BaseHousingManager.get().beginBlacksmithWorkshopUpgrade(playerRef);
+            if (!workshopResult.success) {
+                return Result.fail(workshopResult.message);
+            }
+        }
+        if (farmerWorkshopUpgrade) {
+            BaseHousingManager.AssignmentResult workshopResult = BaseHousingManager.get().beginFarmerWorkshopUpgrade(playerRef);
             if (!workshopResult.success) {
                 return Result.fail(workshopResult.message);
             }
@@ -71,6 +84,9 @@ public final class NpcUpgradeService {
         if (blacksmithWorkshopUpgrade) {
             return Result.ok("Blacksmith workshop construction will begin shortly.", true);
         }
+        if (farmerWorkshopUpgrade) {
+            return Result.ok("Farmer workstation construction will begin shortly.", true);
+        }
         return Result.ok("Upgrade applied: " + upgrade.title + ".", false);
     }
 
@@ -80,6 +96,19 @@ public final class NpcUpgradeService {
             return false;
         }
         return hasRequiredFlags(upgrade.requiredFlags);
+    }
+
+    public boolean hasAvailableUpgrade(@Nonnull String npcKey) {
+        NpcEconomyDefinition npc = NpcEconomyRegistry.get().getNpc(npcKey);
+        if (npc == null) {
+            return false;
+        }
+        for (NpcEconomyDefinition.UpgradeDefinition upgrade : npc.upgrades) {
+            if (canUpgrade(npcKey, upgrade)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean hasRequiredFlags(@Nonnull Set<String> requiredFlags) {

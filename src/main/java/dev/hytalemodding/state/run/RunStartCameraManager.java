@@ -1,6 +1,7 @@
 package dev.hytalemodding.state.run;
 
 import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.protocol.AnimationSlot;
@@ -12,8 +13,11 @@ import com.hypixel.hytale.protocol.PositionType;
 import com.hypixel.hytale.protocol.RotationType;
 import com.hypixel.hytale.protocol.ServerCameraSettings;
 import com.hypixel.hytale.protocol.packets.camera.SetServerCamera;
+import com.hypixel.hytale.protocol.packets.interface_.HudComponent;
+import com.hypixel.hytale.protocol.packets.interface_.Page;
 import com.hypixel.hytale.server.core.asset.common.BlockyAnimationCache;
 import com.hypixel.hytale.server.core.entity.AnimationUtils;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -75,6 +79,7 @@ public final class RunStartCameraManager {
     public void playSpawnIntro(@Nonnull PlayerRef playerRef) {
         if (!RunStartPresentationConfig.isIntroCameraEnabled()) {
             restoreDefaultCamera(playerRef);
+            restoreIntroHud(playerRef);
             this.introByPlayer.remove(playerRef.getUuid());
             return;
         }
@@ -115,12 +120,13 @@ public final class RunStartCameraManager {
                 }
                 continue;
             }
-            if (now >= session.endsAtMs) {
-                restoreDefaultCamera(playerRef);
-                this.introByPlayer.remove(playerId, session);
+            if (!worldId.equals(playerRef.getWorldUuid())) {
                 continue;
             }
-            if (!worldId.equals(playerRef.getWorldUuid())) {
+            if (now >= session.endsAtMs) {
+                restoreDefaultCamera(playerRef);
+                restoreIntroHud(playerRef);
+                this.introByPlayer.remove(playerId, session);
                 continue;
             }
             if (now < session.startsAtMs) {
@@ -131,6 +137,7 @@ public final class RunStartCameraManager {
                 session.cameraOffset = captureCameraOffset(world, playerRef);
             }
             if (!session.cameraApplied) {
+                hideIntroHud(playerRef);
                 applyTrackingCamera(playerRef, session.cameraOffset);
                 applyIntroPresentation(world, playerRef, session);
                 session.cameraApplied = true;
@@ -221,6 +228,34 @@ public final class RunStartCameraManager {
 
     private static void restoreDefaultCamera(@Nonnull PlayerRef playerRef) {
         playerRef.getPacketHandler().writeNoCache(new SetServerCamera(ClientCameraView.FirstPerson, false, null));
+    }
+
+    private static void hideIntroHud(@Nonnull PlayerRef playerRef) {
+        Ref<EntityStore> playerEntityRef = playerRef.getReference();
+        if (playerEntityRef == null || !playerEntityRef.isValid() || playerEntityRef.getStore() == null) {
+            return;
+        }
+        Store<EntityStore> store = playerEntityRef.getStore();
+        Player player = store.getComponent(playerEntityRef, Player.getComponentType());
+        if (player == null) {
+            return;
+        }
+        player.getHudManager().setVisibleHudComponents(playerRef, new HudComponent[0]);
+        player.getHudManager().setCustomHud(playerRef, null);
+        player.getPageManager().setPage(playerEntityRef, store, Page.None);
+    }
+
+    private static void restoreIntroHud(@Nonnull PlayerRef playerRef) {
+        Ref<EntityStore> playerEntityRef = playerRef.getReference();
+        if (playerEntityRef == null || !playerEntityRef.isValid() || playerEntityRef.getStore() == null) {
+            return;
+        }
+        Store<EntityStore> store = playerEntityRef.getStore();
+        Player player = store.getComponent(playerEntityRef, Player.getComponentType());
+        if (player == null) {
+            return;
+        }
+        player.getHudManager().resetHud(playerRef);
     }
 
     private static void applyIntroPresentation(@Nonnull World world, @Nonnull PlayerRef playerRef, @Nonnull IntroSession session) {

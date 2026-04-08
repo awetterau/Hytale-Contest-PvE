@@ -2,6 +2,7 @@ package dev.hytalemodding.state.run;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.RemoveReason;
+import dev.hytalemodding.blob.OrangeBlobBlockManager;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.math.vector.Transform;
@@ -64,7 +65,8 @@ public final class GameSessionManager {
     private static final String BLIGHT_BEAST_ROLE = "Blight_Beast";
     private static final String RUN_WORLD_PREFIX = "run-session-";
     private static final long CRIMSON_START_DELAY_MS = 10_000L;
-    private static final long RUN_DURATION_MS = 5L * 60L * 1000L;
+    private static final int GAME_TIME_MINUTES = 20;
+    private static final long RUN_DURATION_MS = GAME_TIME_MINUTES * 60L * 1000L;
     private static final float DEFAULT_CRIMSON_SPREAD_SECONDS = RUN_DURATION_MS / 1000.0f;
     private static final int MAX_RUN_CRIMSON_RADIUS_BLOCKS = 24;
     private static final long PLAYER_TRANSFER_TIMEOUT_SECONDS = 15L;
@@ -771,6 +773,7 @@ public final class GameSessionManager {
         RedCoreProfileRegistry.clear(runWorldUuid);
         RooterManManager.get().clearRuntimeForWorld(runWorldUuid);
         LootChestRuntime.get().clearWorld(runWorldUuid);
+        OrangeBlobBlockManager.clearRuntimeForWorld(runWorldUuid);
     }
 
     private static void scrubRunWorldMarkersAndUnusedCores(@Nonnull World runWorld, @Nonnull ActiveSession session) {
@@ -812,6 +815,13 @@ public final class GameSessionManager {
         if (!LootChestAccess.populate(chest, List.of(contents))) {
             return;
         }
+
+        // FORCE SYNC: Ensure the chest items are pushed to ECS and synchronized with clients.
+        Ref<com.hypixel.hytale.server.core.universe.world.storage.ChunkStore> blockRef = chest.chunk().getBlockComponentEntity(pos.getX(), pos.getY(), pos.getZ());
+        if (blockRef != null && blockRef.isValid()) {
+            runWorld.getChunkStore().getStore().putComponent(blockRef, com.hypixel.hytale.server.core.modules.block.components.ItemContainerBlock.getComponentType(), chest.containerBlock());
+        }
+
         runtime.processedChests().add(LifeEssenceContainerKey.of(worldUuid, pos));
         if (shouldPlaceHammer) {
             runtime.registerQuestChest(new LootChestRuntime.QuestChestState(

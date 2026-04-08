@@ -1,0 +1,417 @@
+Group #NpcAdminDetailRoot {
+  Anchor: (Top: 0, Bottom: 0, Left: 0, Right: 0);
+  LayoutMode: Middle;
+
+  Group #Panel {
+    Anchor: (Width: 1100, Height: 820);
+    Background: (Color: #0f1724(0.97));
+    OutlineColor: #8aa1bd;
+    OutlineSize: 1;
+    Padding: (Full: 18);
+    LayoutMode: Top;
+
+    Label #Title {
+      Text: "NPC Detail";
+      Anchor: (Height: 36, Bottom: 4);
+      Style: (FontSize: 28, TextColor: #eef5ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+    }
+
+    Label #Subtitle {
+      Text: "Subtitle";
+      Anchor: (Height: 22, Bottom: 10);
+      Style: (FontSize: 14, TextColor: #9db2ca, HorizontalAlignment: Start, VerticalAlignment: Center);
+    }
+
+    Group #Tabs {
+      Anchor: (Height: 44, Bottom: 10);
+      LayoutMode: Right;
+      Button #OverviewTab { Anchor: (Width: 100, Height: 40, Right: 8); Style: (Default: (Background: (Color: #294055)), Hovered: (Background: (Color: #34516b)), Pressed: (Background: (Color: #223547))); Label #OverviewTabLabel { Text: "Overview"; Style: (FontSize: 14, TextColor: #eef6ff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #StoryTab { Anchor: (Width: 90, Height: 40, Right: 8); Style: (Default: (Background: (Color: #33543d)), Hovered: (Background: (Color: #40694c)), Pressed: (Background: (Color: #294434))); Label #StoryTabLabel { Text: "Story"; Style: (FontSize: 14, TextColor: #effff3, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #PlacementTab { Anchor: (Width: 110, Height: 40, Right: 8); Style: (Default: (Background: (Color: #6f5429)), Hovered: (Background: (Color: #856530)), Pressed: (Background: (Color: #5b4522))); Label #PlacementTabLabel { Text: "Placement"; Style: (FontSize: 14, TextColor: #fff7ec, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #WorkstationTab { Anchor: (Width: 125, Height: 40, Right: 8); Style: (Default: (Background: (Color: #5e4d2f)), Hovered: (Background: (Color: #75603a)), Pressed: (Background: (Color: #4a3c25))); Label #WorkstationTabLabel { Text: "Workstation"; Style: (FontSize: 14, TextColor: #fff8ef, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #QuestsTab { Anchor: (Width: 95, Height: 40, Right: 8); Style: (Default: (Background: (Color: #2f5c50)), Hovered: (Background: (Color: #3a7263)), Pressed: (Background: (Color: #26483f))); Label #QuestsTabLabel { Text: "Quests"; Style: (FontSize: 14, TextColor: #f0fffb, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #TradesTab { Anchor: (Width: 95, Height: 40, Right: 8); Style: (Default: (Background: (Color: #6c4b25)), Hovered: (Background: (Color: #845c2d)), Pressed: (Background: (Color: #583d1f))); Label #TradesTabLabel { Text: "Trading"; Style: (FontSize: 14, TextColor: #fff7ee, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #DebugTab { Anchor: (Width: 90, Height: 40); Style: (Default: (Background: (Color: #5b375e)), Hovered: (Background: (Color: #704374)), Pressed: (Background: (Color: #4a2d4c))); Label #DebugTabLabel { Text: "Debug"; Style: (FontSize: 14, TextColor: #fff0ff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+    }
+
+    Label #SectionTitle {
+      Text: "Section";
+      Anchor: (Height: 24, Bottom: 4);
+      Style: (FontSize: 22, TextColor: #f1f6ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+    }
+
+    Label #SectionDescription {
+      Text: "Section description";
+      Anchor: (Height: 22, Bottom: 10);
+      Style: (FontSize: 14, TextColor: #b6c8dd, HorizontalAlignment: Start, VerticalAlignment: Center);
+    }
+
+    Group #StateCard {
+      Anchor: (Height: 92, Bottom: 12);
+      Background: (Color: #162334(0.95));
+      OutlineColor: #506279;
+      OutlineSize: 1;
+      Padding: (Full: 12);
+      LayoutMode: Top;
+
+      Label #StatusLine {
+        Text: "Status";
+        Anchor: (Height: 24, Bottom: 6);
+        Style: (FontSize: 18, TextColor: #f1f6ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+      }
+
+      Label #ServiceLine {
+        Text: "Services";
+        Anchor: (Height: 22);
+        Style: (FontSize: 15, TextColor: #d6e4f5, HorizontalAlignment: Start, VerticalAlignment: Center);
+      }
+    }
+
+    Group #StoryCard {
+      Anchor: (Height: 126, Bottom: 14);
+      Background: (Color: #122031(0.92));
+      OutlineColor: #4e6077;
+      OutlineSize: 1;
+      Padding: (Full: 12);
+      LayoutMode: Top;
+
+      Label {
+        Text: "Story & Dependencies";
+        Anchor: (Height: 22, Bottom: 6);
+        Style: (FontSize: 18, TextColor: #eef5ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+      }
+
+      Label #StoryText {
+        Text: "Story";
+        Anchor: (Height: 82);
+        Style: (FontSize: 15, TextColor: #d9e6f6, Wrap: true, HorizontalAlignment: Start, VerticalAlignment: Start);
+      }
+    }
+
+    Group #SpawnCard {
+      Anchor: (Height: 92, Bottom: 14);
+      Background: (Color: #131f2c(0.92));
+      OutlineColor: #4e6077;
+      OutlineSize: 1;
+      Padding: (Full: 12);
+      LayoutMode: Top;
+
+      Label {
+        Text: "Spawn Overrides";
+        Anchor: (Height: 22, Bottom: 6);
+        Style: (FontSize: 18, TextColor: #eef5ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+      }
+
+      Label #SpawnText {
+        Text: "Spawns";
+        Anchor: (Height: 40);
+        Style: (FontSize: 15, TextColor: #d9e6f6, Wrap: true, HorizontalAlignment: Start, VerticalAlignment: Start);
+      }
+    }
+
+    Group #WorkstationCard {
+      Anchor: (Height: 172, Bottom: 14);
+      Background: (Color: #152131(0.93));
+      OutlineColor: #4e6077;
+      OutlineSize: 1;
+      Padding: (Full: 12);
+      LayoutMode: Top;
+
+      Label {
+        Text: "Workstation Setup";
+        Anchor: (Height: 22, Bottom: 6);
+        Style: (FontSize: 18, TextColor: #eef5ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+      }
+
+      Label #WorkstationText {
+        Text: "Workstation";
+        Anchor: (Height: 128);
+        Style: (FontSize: 15, TextColor: #d9e6f6, Wrap: true, HorizontalAlignment: Start, VerticalAlignment: Start);
+      }
+    }
+
+    Group #QuestCard {
+      Anchor: (Height: 140, Bottom: 14);
+      Background: (Color: #14222a(0.93));
+      OutlineColor: #4e6077;
+      OutlineSize: 1;
+      Padding: (Full: 12);
+      LayoutMode: Top;
+
+      Label {
+        Text: "Quest State";
+        Anchor: (Height: 22, Bottom: 6);
+        Style: (FontSize: 18, TextColor: #eef5ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+      }
+
+      Label #QuestText {
+        Text: "Quests";
+        Anchor: (Height: 98);
+        Style: (FontSize: 15, TextColor: #d9e6f6, Wrap: true, HorizontalAlignment: Start, VerticalAlignment: Start);
+      }
+    }
+
+    Group #TradeCard {
+      Anchor: (Height: 150, Bottom: 14);
+      Background: (Color: #1b2230(0.93));
+      OutlineColor: #4e6077;
+      OutlineSize: 1;
+      Padding: (Full: 12);
+      LayoutMode: Top;
+
+      Label {
+        Text: "Trade Offer";
+        Anchor: (Height: 22, Bottom: 6);
+        Style: (FontSize: 18, TextColor: #eef5ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+      }
+
+      Label #TradeMeta {
+        Text: "Trade meta";
+        Anchor: (Height: 20, Bottom: 4);
+        Style: (FontSize: 14, TextColor: #a9bdd5, HorizontalAlignment: Start, VerticalAlignment: Center);
+      }
+
+      Label #TradeText {
+        Text: "Trade";
+        Anchor: (Height: 96);
+        Style: (FontSize: 15, TextColor: #d9e6f6, Wrap: true, HorizontalAlignment: Start, VerticalAlignment: Start);
+      }
+    }
+
+    Group #TradeEditorCard {
+      Anchor: (Height: 176, Bottom: 14);
+      Background: (Color: #151f2d(0.93));
+      OutlineColor: #4e6077;
+      OutlineSize: 1;
+      Padding: (Full: 12);
+      LayoutMode: Top;
+
+      Label {
+        Text: "Direct Edit";
+        Anchor: (Height: 22, Bottom: 6);
+        Style: (FontSize: 18, TextColor: #eef5ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+      }
+
+      Group {
+        Anchor: (Height: 28, Bottom: 6);
+        LayoutMode: Right;
+        Label { Text: "Trade Title"; Anchor: (Width: 130, Height: 24, Right: 8); Style: (FontSize: 14, TextColor: #b9cbe0, HorizontalAlignment: Start, VerticalAlignment: Center); }
+        TextField #TradeTitleInput { Anchor: (Width: 780, Height: 28); Style: (FontSize: 14, TextColor: #eef6ff); }
+      }
+
+      Group {
+        Anchor: (Height: 28, Bottom: 6);
+        LayoutMode: Right;
+        Label { Text: "Cost Item ID"; Anchor: (Width: 130, Height: 24, Right: 8); Style: (FontSize: 14, TextColor: #b9cbe0, HorizontalAlignment: Start, VerticalAlignment: Center); }
+        TextField #TradeCostItemInput { Anchor: (Width: 480, Height: 28, Right: 10); Style: (FontSize: 14, TextColor: #eef6ff); }
+        Label { Text: "Cost Amt"; Anchor: (Width: 90, Height: 24, Right: 8); Style: (FontSize: 14, TextColor: #b9cbe0, HorizontalAlignment: End, VerticalAlignment: Center); }
+        NumberField #TradeCostAmountInput { Anchor: (Width: 120, Height: 28); Style: (FontSize: 14, TextColor: #eef6ff); }
+      }
+
+      Group {
+        Anchor: (Height: 28);
+        LayoutMode: Right;
+        Label { Text: "Sold Item ID"; Anchor: (Width: 130, Height: 24, Right: 8); Style: (FontSize: 14, TextColor: #b9cbe0, HorizontalAlignment: Start, VerticalAlignment: Center); }
+        TextField #TradeRewardItemInput { Anchor: (Width: 480, Height: 28, Right: 10); Style: (FontSize: 14, TextColor: #eef6ff); }
+        Label { Text: "Sold Amt"; Anchor: (Width: 90, Height: 24, Right: 8); Style: (FontSize: 14, TextColor: #b9cbe0, HorizontalAlignment: End, VerticalAlignment: Center); }
+        NumberField #TradeRewardAmountInput { Anchor: (Width: 120, Height: 28); Style: (FontSize: 14, TextColor: #eef6ff); }
+      }
+    }
+
+    Label #StoryStateLabel {
+      Text: "Story Progress";
+      Anchor: (Height: 22, Bottom: 6);
+      Style: (FontSize: 17, TextColor: #eef5ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+    }
+
+    Label #StoryStateNote {
+      Text: "Story note";
+      Anchor: (Height: 20, Bottom: 10);
+      Style: (FontSize: 14, TextColor: #b9cbe0, HorizontalAlignment: Start, VerticalAlignment: Center);
+    }
+
+    Group #RescueActions {
+      Anchor: (Height: 44, Bottom: 14);
+      LayoutMode: Right;
+      Button #RescueOnBtn { Anchor: (Width: 170, Height: 40, Right: 8); Style: (Default: (Background: (Color: #2f6f4f)), Hovered: (Background: (Color: #398760)), Pressed: (Background: (Color: #275c41))); Label { Text: "Story: Rescued"; Style: (FontSize: 15, TextColor: #f1fff8, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #RescueOffBtn { Anchor: (Width: 190, Height: 40); Style: (Default: (Background: (Color: #7a3f3f)), Hovered: (Background: (Color: #915050)), Pressed: (Background: (Color: #653333))); Label { Text: "Story: Not Rescued"; Style: (FontSize: 15, TextColor: #fff2f2, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+    }
+
+    Label #PresenceLabel {
+      Text: "Where This NPC Appears";
+      Anchor: (Height: 22, Bottom: 6);
+      Style: (FontSize: 17, TextColor: #eef5ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+    }
+
+    Label #PresenceNote {
+      Text: "Presence note";
+      Anchor: (Height: 20, Bottom: 10);
+      Style: (FontSize: 14, TextColor: #b9cbe0, HorizontalAlignment: Start, VerticalAlignment: Center);
+    }
+
+    Group #PresenceActions {
+      Anchor: (Height: 44, Bottom: 14);
+      LayoutMode: Right;
+      Button #PresenceHiddenBtn { Anchor: (Width: 130, Height: 40, Right: 8); Style: (Default: (Background: (Color: #384353)), Hovered: (Background: (Color: #455264)), Pressed: (Background: (Color: #2c3542))); Label { Text: "Hide NPC"; Style: (FontSize: 15, TextColor: #eef4fb, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #PresenceHubBtn { Anchor: (Width: 150, Height: 40, Right: 8); Style: (Default: (Background: (Color: #325777)), Hovered: (Background: (Color: #3b688f)), Pressed: (Background: (Color: #294864))); Label { Text: "Show In Hub"; Style: (FontSize: 15, TextColor: #eef6ff, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #PresenceRunBtn { Anchor: (Width: 220, Height: 40); Style: (Default: (Background: (Color: #76522a)), Hovered: (Background: (Color: #8d6332)), Pressed: (Background: (Color: #624423))); Label { Text: "Use Rescue Encounter"; Style: (FontSize: 15, TextColor: #fff7ec, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+    }
+
+    Label #BehaviorLabel {
+      Text: "Hub Activity";
+      Anchor: (Height: 22, Bottom: 6);
+      Style: (FontSize: 17, TextColor: #eef5ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+    }
+
+    Label #BehaviorNote {
+      Text: "Behavior note";
+      Anchor: (Height: 20, Bottom: 10);
+      Style: (FontSize: 14, TextColor: #b9cbe0, HorizontalAlignment: Start, VerticalAlignment: Center);
+    }
+
+    Group #BehaviorActions {
+      Anchor: (Height: 44, Bottom: 14);
+      LayoutMode: Right;
+      Button #BehaviorStandingBtn { Anchor: (Width: 130, Height: 40, Right: 8); Style: (Default: (Background: (Color: #2f4156)), Hovered: (Background: (Color: #3c536d)), Pressed: (Background: (Color: #253445))); Label { Text: "Standing"; Style: (FontSize: 15, TextColor: #eef6ff, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #BehaviorWanderingBtn { Anchor: (Width: 140, Height: 40, Right: 8); Style: (Default: (Background: (Color: #2f5b56)), Hovered: (Background: (Color: #37706a)), Pressed: (Background: (Color: #264944))); Label { Text: "Wandering"; Style: (FontSize: 15, TextColor: #effffc, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #BehaviorWaitingBtn { Anchor: (Width: 180, Height: 40, Right: 8); Style: (Default: (Background: (Color: #725f2c)), Hovered: (Background: (Color: #887136)), Pressed: (Background: (Color: #5f4f24))); Label { Text: "Waiting For Work"; Style: (FontSize: 15, TextColor: #fff9ec, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #BehaviorWorkingBtn { Anchor: (Width: 130, Height: 40); Style: (Default: (Background: (Color: #6f3f2f)), Hovered: (Background: (Color: #87503c)), Pressed: (Background: (Color: #5b3427))); Label { Text: "Working"; Style: (FontSize: 15, TextColor: #fff3ee, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+    }
+
+    Label #SpawnLabel {
+      Text: "Saved Spawn Positions";
+      Anchor: (Height: 22, Bottom: 6);
+      Style: (FontSize: 17, TextColor: #eef5ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+    }
+
+    Label #SpawnNote {
+      Text: "Spawn note";
+      Anchor: (Height: 20, Bottom: 10);
+      Style: (FontSize: 14, TextColor: #b9cbe0, HorizontalAlignment: Start, VerticalAlignment: Center);
+    }
+
+    Group #SpawnActions {
+      Anchor: (Height: 44, Bottom: 14);
+      LayoutMode: Right;
+      Button #CaptureHubSpawnBtn { Anchor: (Width: 240, Height: 40, Right: 8); Style: (Default: (Background: (Color: #1d5b59)), Hovered: (Background: (Color: #24706d)), Pressed: (Background: (Color: #184847))); Label { Text: "Save My Position As Hub Spawn"; Style: (FontSize: 15, TextColor: #edfffd, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #ClearHubSpawnBtn { Anchor: (Width: 210, Height: 40, Right: 8); Style: (Default: (Background: (Color: #364156)), Hovered: (Background: (Color: #435066)), Pressed: (Background: (Color: #2a3445))); Label { Text: "Use Default Hub Spawn"; Style: (FontSize: 15, TextColor: #eef5ff, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #CaptureRescueSpawnBtn { Anchor: (Width: 260, Height: 40, Right: 8); Style: (Default: (Background: (Color: #7b5a29)), Hovered: (Background: (Color: #926a31)), Pressed: (Background: (Color: #664b22))); Label { Text: "Save My Position As Rescue Spawn"; Style: (FontSize: 15, TextColor: #fff8ee, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #ClearRescueSpawnBtn { Anchor: (Width: 230, Height: 40); Style: (Default: (Background: (Color: #3f4658)), Hovered: (Background: (Color: #4b5368)), Pressed: (Background: (Color: #303646))); Label { Text: "Use Default Rescue Spawn"; Style: (FontSize: 15, TextColor: #eef5ff, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+    }
+
+    Label #WorkstationLabel {
+      Text: "Workstation Testing";
+      Anchor: (Height: 22, Bottom: 6);
+      Style: (FontSize: 17, TextColor: #eef5ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+    }
+
+    Label #WorkstationNote {
+      Text: "Workstation note";
+      Anchor: (Height: 20, Bottom: 10);
+      Style: (FontSize: 14, TextColor: #b9cbe0, HorizontalAlignment: Start, VerticalAlignment: Center);
+    }
+
+    Group #WorkstationActions {
+      Anchor: (Height: 44, Bottom: 14);
+      LayoutMode: Right;
+      Button #WorkstationAssignBtn { Anchor: (Width: 180, Height: 40, Right: 8); Style: (Default: (Background: (Color: #2f6a58)), Hovered: (Background: (Color: #387d69)), Pressed: (Background: (Color: #265347))); Label { Text: "Mark Workstation Ready"; Style: (FontSize: 15, TextColor: #effff9, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #WorkstationClearBtn { Anchor: (Width: 170, Height: 40, Right: 8); Style: (Default: (Background: (Color: #594045)), Hovered: (Background: (Color: #6b4d54)), Pressed: (Background: (Color: #483438))); Label { Text: "Clear Assignment"; Style: (FontSize: 15, TextColor: #fff2f5, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #WorkstationLevelDownBtn { Anchor: (Width: 150, Height: 40, Right: 8); Style: (Default: (Background: (Color: #43526b)), Hovered: (Background: (Color: #526580)), Pressed: (Background: (Color: #354154))); Label { Text: "Level -1"; Style: (FontSize: 15, TextColor: #eef6ff, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #WorkstationLevelUpBtn { Anchor: (Width: 150, Height: 40); Style: (Default: (Background: (Color: #315d78)), Hovered: (Background: (Color: #3a7192)), Pressed: (Background: (Color: #284c62))); Label { Text: "Level +1"; Style: (FontSize: 15, TextColor: #eef8ff, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+    }
+
+    Label #QuestLabel {
+      Text: "Quest Testing";
+      Anchor: (Height: 22, Bottom: 6);
+      Style: (FontSize: 17, TextColor: #eef5ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+    }
+
+    Label #QuestNote {
+      Text: "Quest note";
+      Anchor: (Height: 20, Bottom: 10);
+      Style: (FontSize: 14, TextColor: #b9cbe0, HorizontalAlignment: Start, VerticalAlignment: Center);
+    }
+
+    Group #QuestActions {
+      Anchor: (Height: 44, Bottom: 14);
+      LayoutMode: Right;
+      Button #QuestResetBtn { Anchor: (Width: 160, Height: 40, Right: 8); Style: (Default: (Background: (Color: #7a3f3f)), Hovered: (Background: (Color: #915050)), Pressed: (Background: (Color: #653333))); Label { Text: "Reset Quest State"; Style: (FontSize: 15, TextColor: #fff2f2, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #QuestClearAcceptedBtn { Anchor: (Width: 170, Height: 40, Right: 8); Style: (Default: (Background: (Color: #3e566f)), Hovered: (Background: (Color: #4b6888)), Pressed: (Background: (Color: #334559))); Label { Text: "Clear Accepted"; Style: (FontSize: 15, TextColor: #eef6ff, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #QuestClearCompletedBtn { Anchor: (Width: 175, Height: 40, Right: 8); Style: (Default: (Background: (Color: #40586a)), Hovered: (Background: (Color: #4d6b80)), Pressed: (Background: (Color: #344754))); Label { Text: "Clear Completed"; Style: (FontSize: 15, TextColor: #eef8ff, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #QuestCompleteLinkedBtn { Anchor: (Width: 190, Height: 40); Style: (Default: (Background: (Color: #2f6f4f)), Hovered: (Background: (Color: #398760)), Pressed: (Background: (Color: #275c41))); Label { Text: "Complete Linked Quests"; Style: (FontSize: 15, TextColor: #f1fff8, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+    }
+
+    Label #TradeLabel {
+      Text: "Trade Editor";
+      Anchor: (Height: 22, Bottom: 6);
+      Style: (FontSize: 17, TextColor: #eef5ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+    }
+
+    Label #TradeNote {
+      Text: "Trade note";
+      Anchor: (Height: 20, Bottom: 10);
+      Style: (FontSize: 14, TextColor: #b9cbe0, HorizontalAlignment: Start, VerticalAlignment: Center);
+    }
+
+    Group #TradeNavigation {
+      Anchor: (Height: 44, Bottom: 14);
+      LayoutMode: Right;
+      Button #TradePrevBtn { Anchor: (Width: 120, Height: 40, Right: 8); Style: (Default: (Background: (Color: #384353)), Hovered: (Background: (Color: #455264)), Pressed: (Background: (Color: #2c3542))); Label { Text: "Previous"; Style: (FontSize: 15, TextColor: #eef4fb, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #TradeNextBtn { Anchor: (Width: 120, Height: 40, Right: 8); Style: (Default: (Background: (Color: #384353)), Hovered: (Background: (Color: #455264)), Pressed: (Background: (Color: #2c3542))); Label { Text: "Next"; Style: (FontSize: 15, TextColor: #eef4fb, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #TradeAddBtn { Anchor: (Width: 130, Height: 40, Right: 8); Style: (Default: (Background: (Color: #2f6f4f)), Hovered: (Background: (Color: #398760)), Pressed: (Background: (Color: #275c41))); Label { Text: "Add Trade"; Style: (FontSize: 15, TextColor: #f1fff8, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #TradeDuplicateBtn { Anchor: (Width: 150, Height: 40, Right: 8); Style: (Default: (Background: (Color: #2f5c71)), Hovered: (Background: (Color: #396f88)), Pressed: (Background: (Color: #264a5b))); Label { Text: "Duplicate Trade"; Style: (FontSize: 15, TextColor: #eef7ff, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #TradeRemoveBtn { Anchor: (Width: 140, Height: 40); Style: (Default: (Background: (Color: #7a3f3f)), Hovered: (Background: (Color: #915050)), Pressed: (Background: (Color: #653333))); Label { Text: "Remove Trade"; Style: (FontSize: 15, TextColor: #fff2f2, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+    }
+
+    Group #TradeActionsPrimary {
+      Anchor: (Height: 44, Bottom: 14);
+      LayoutMode: Right;
+      Button #TradeCostItemPrevBtn { Anchor: (Width: 160, Height: 40, Right: 8); Style: (Default: (Background: (Color: #3d556b)), Hovered: (Background: (Color: #4c6982)), Pressed: (Background: (Color: #314555))); Label { Text: "Prev Cost Item"; Style: (FontSize: 15, TextColor: #eef6ff, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #TradeCostItemNextBtn { Anchor: (Width: 160, Height: 40, Right: 8); Style: (Default: (Background: (Color: #3d556b)), Hovered: (Background: (Color: #4c6982)), Pressed: (Background: (Color: #314555))); Label { Text: "Next Cost Item"; Style: (FontSize: 15, TextColor: #eef6ff, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #TradeRewardItemPrevBtn { Anchor: (Width: 170, Height: 40, Right: 8); Style: (Default: (Background: (Color: #6a5233)), Hovered: (Background: (Color: #7f633e)), Pressed: (Background: (Color: #584429))); Label { Text: "Prev Sold Item"; Style: (FontSize: 15, TextColor: #fff7ed, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #TradeRewardItemNextBtn { Anchor: (Width: 170, Height: 40); Style: (Default: (Background: (Color: #6a5233)), Hovered: (Background: (Color: #7f633e)), Pressed: (Background: (Color: #584429))); Label { Text: "Next Sold Item"; Style: (FontSize: 15, TextColor: #fff7ed, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+    }
+
+    Group #TradeActionsItem {
+      Anchor: (Height: 44, Bottom: 14);
+      LayoutMode: Right;
+      Button #TradeCostAmountDownBtn { Anchor: (Width: 150, Height: 40, Right: 8); Style: (Default: (Background: (Color: #4f4358)), Hovered: (Background: (Color: #63536c)), Pressed: (Background: (Color: #413748))); Label { Text: "Cost Amount -1"; Style: (FontSize: 15, TextColor: #f7f1ff, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #TradeCostAmountUpBtn { Anchor: (Width: 150, Height: 40, Right: 8); Style: (Default: (Background: (Color: #4f4358)), Hovered: (Background: (Color: #63536c)), Pressed: (Background: (Color: #413748))); Label { Text: "Cost Amount +1"; Style: (FontSize: 15, TextColor: #f7f1ff, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #TradeRewardAmountDownBtn { Anchor: (Width: 160, Height: 40, Right: 8); Style: (Default: (Background: (Color: #42575b)), Hovered: (Background: (Color: #506c71)), Pressed: (Background: (Color: #364649))); Label { Text: "Sold Amount -1"; Style: (FontSize: 15, TextColor: #effffd, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #TradeRewardAmountUpBtn { Anchor: (Width: 160, Height: 40); Style: (Default: (Background: (Color: #42575b)), Hovered: (Background: (Color: #506c71)), Pressed: (Background: (Color: #364649))); Label { Text: "Sold Amount +1"; Style: (FontSize: 15, TextColor: #effffd, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+    }
+
+    Group #TradeActionsAmount { Anchor: (Height: 0); }
+
+    Group #ValidationCard {
+      Anchor: (Height: 110, Bottom: 14);
+      Background: (Color: #141d28(0.92));
+      OutlineColor: #4e6077;
+      OutlineSize: 1;
+      Padding: (Full: 12);
+      LayoutMode: Top;
+
+      Label {
+        Text: "Validation";
+        Anchor: (Height: 22, Bottom: 6);
+        Style: (FontSize: 18, TextColor: #eef5ff, RenderBold: true, HorizontalAlignment: Start, VerticalAlignment: Center);
+      }
+
+      Label #ValidationText {
+        Text: "Validation";
+        Anchor: (Height: 60);
+        Style: (FontSize: 15, TextColor: #dbe8f8, Wrap: true, HorizontalAlignment: Start, VerticalAlignment: Start);
+      }
+    }
+
+    Group #Buttons {
+      LayoutMode: Right;
+      Anchor: (Height: 44, Bottom: 10);
+      Button #ResetBtn { Anchor: (Width: 190, Height: 40, Right: 8); Style: (Default: (Background: (Color: #7b3434)), Hovered: (Background: (Color: #944040)), Pressed: (Background: (Color: #652b2b))); Label { Text: "Reset NPC State"; Style: (FontSize: 15, TextColor: #fff2f2, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #ValidateBtn { Anchor: (Width: 130, Height: 40, Right: 8); Style: (Default: (Background: (Color: #2f5c71)), Hovered: (Background: (Color: #396f88)), Pressed: (Background: (Color: #264a5b))); Label { Text: "Validate"; Style: (FontSize: 15, TextColor: #eef7ff, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #RefreshBtn { Anchor: (Width: 120, Height: 40, Right: 8); Style: (Default: (Background: (Color: #1f5f58)), Hovered: (Background: (Color: #26736b)), Pressed: (Background: (Color: #194a45))); Label { Text: "Refresh"; Style: (FontSize: 15, TextColor: #edfffd, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #BackBtn { Anchor: (Width: 120, Height: 40, Right: 8); Style: (Default: (Background: (Color: #2e3e53)), Hovered: (Background: (Color: #394d67)), Pressed: (Background: (Color: #253345))); Label { Text: "Back"; Style: (FontSize: 15, TextColor: #eef5ff, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+      Button #CloseBtn { Anchor: (Width: 120, Height: 40); Style: (Default: (Background: (Color: #3a2f45)), Hovered: (Background: (Color: #4a3b58)), Pressed: (Background: (Color: #2d2435))); Label { Text: "Close"; Style: (FontSize: 15, TextColor: #f6efff, HorizontalAlignment: Center, VerticalAlignment: Center); } }
+    }
+  }
+}

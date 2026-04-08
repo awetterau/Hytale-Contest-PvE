@@ -1,0 +1,11 @@
+{
+  "Type": "Projectile",
+  "Config": "Projectile_Config_Potion_Brewer_Witch_Binding_Potion",
+  "Tags": {
+    "AimingReference": []
+  },
+  "Next": {
+    "Type": "Simple",
+    "RunTime": 0.2
+  }
+}

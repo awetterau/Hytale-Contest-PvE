@@ -171,6 +171,22 @@ public final class NpcProgressManager {
         saveQuietly();
     }
 
+    public synchronized void resetAllToDefaults() {
+        ensureLoaded();
+        this.progressByNpc.clear();
+        for (NpcArchetype archetype : NpcDefinitionRegistry.get().getAll()) {
+            this.progressByNpc.put(
+                    archetype.npcKey,
+                    NpcProgress.defaultFor(
+                            archetype.npcKey,
+                            archetype.defaultCraftUnlocks,
+                            archetype.defaultTradeUnlocks
+                    )
+            );
+        }
+        saveQuietly();
+    }
+
     @Nonnull
     public synchronized List<String> describeAll() {
         ensureLoaded();

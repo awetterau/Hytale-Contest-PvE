@@ -3,21 +3,29 @@ package dev.hytalemodding;
 import com.hypixel.hytale.server.core.event.events.ecs.PlaceBlockEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerMouseButtonEvent;
+import dev.hytalemodding.commands.run. SpawnExtractionPrototypeCommand;
+import dev.hytalemodding.blob.OrangeBlobBlockSystem;
+import dev.hytalemodding.blob.OrangeBlobBlockUseInteraction;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Interaction;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import dev.hytalemodding.commands.dev.DevPanelCommand;
+import dev.hytalemodding.commands.dev.BloodSpikesCommand;
+import dev.hytalemodding.commands.dev.BindingTestCommand;
 import dev.hytalemodding.commands.dev.ExampleCommand;
+import dev.hytalemodding.commands.dev.HolyTrackCommand;
 import dev.hytalemodding.commands.dev.MapOpenCommand;
 import dev.hytalemodding.commands.dev.PasteBlacksmithBuildCommand;
 import dev.hytalemodding.commands.dev.PasteBlacksmithCommand;
+import dev.hytalemodding.commands.dev.PasteFarmerBuildCommand;
+import dev.hytalemodding.commands.dev.PasteFarmerCommand;
 import dev.hytalemodding.commands.dev.UndoBlacksmithCommand;
+import dev.hytalemodding.commands.dev.UndoFarmerCommand;
 import dev.hytalemodding.commands.hub.GameConfigCommand;
 import dev.hytalemodding.commands.hub.SetBaseSpawnCommand;
 import dev.hytalemodding.commands.hub.SetRescueSpawnCommand;
-import dev.hytalemodding.commands.npc.BlacksmithDevCommand;
-import dev.hytalemodding.commands.npc.NpcDevCommand;
+import dev.hytalemodding.commands.npc.NpcAdminCommand;
 import dev.hytalemodding.commands.npc.NpcRolesCommand;
 import dev.hytalemodding.commands.npc.NpcSpawnCommand;
 import dev.hytalemodding.commands.npc.SpawnRooterCommand;
@@ -40,6 +48,9 @@ import dev.hytalemodding.commands.run.RunChunkSelectionCommand;
 import dev.hytalemodding.commands.run.SpawnStartTriggerCommand;
 import dev.hytalemodding.commands.run.SpawnUiCommand;
 import dev.hytalemodding.domain.housing.BaseHousingManager;
+import dev.hytalemodding.crimson.CrimsonWitchHelperSummonSystem;
+import dev.hytalemodding.crimson.CrimsonWitchGroundTrapProjectileSystem;
+import dev.hytalemodding.crimson.CrimsonWitchEnvironmentalPressureSystem;
 import dev.hytalemodding.game.DevDebugHudSystem;
 import dev.hytalemodding.loot.LifeEssenceChestBreakCleanupSystem;
 import dev.hytalemodding.loot.LifeEssenceChestOpenSystem;
@@ -49,15 +60,29 @@ import dev.hytalemodding.loot.QuestChestConfigManager;
 import dev.hytalemodding.loot.QuestChestPositionManager;
 import dev.hytalemodding.map.MapReplacementPacketController;
 import dev.hytalemodding.map.BlacksmithSharedMarkerManager;
+import dev.hytalemodding.map.FarmerAnimalMarkerPacketController;
 import dev.hytalemodding.map.QuestChestMarkerPacketController;
 import dev.hytalemodding.map.SpawnMarkerPacketController;
 import dev.hytalemodding.map.RunChunkSelectionMapController;
 import dev.hytalemodding.npc.NpcDefinitionRegistry;
 import dev.hytalemodding.npc.NpcProgressManager;
 import dev.hytalemodding.npc.RunRescueRegistry;
+import dev.hytalemodding.npc.admin.NpcAdminService;
+import dev.hytalemodding.npc.config.NpcUnifiedRegistry;
 import dev.hytalemodding.quest.QuestDefinitionRegistry;
 import dev.hytalemodding.quest.QuestFlagManager;
 import dev.hytalemodding.quest.QuestProgressManager;
+import dev.hytalemodding.potion.PotionBrewerWitchHealZoneHealingSystem;
+import dev.hytalemodding.potion.PotionBrewerWitchHealZoneRuntime;
+import dev.hytalemodding.potion.PotionBrewerWitchPoisonDamageSystem;
+import dev.hytalemodding.potion.PotionBrewerWitchBindingSystem;
+import dev.hytalemodding.potion.PotionBrewerWitchBloodSystem;
+import dev.hytalemodding.potion.PotionBrewerWitchHudSystem;
+import dev.hytalemodding.potion.PotionBrewerWitchHolySystem;
+import dev.hytalemodding.potion.PotionBrewerWitchProjectileSystem;
+import dev.hytalemodding.potion.PotionBrewerWitchShockwaveDamageSystem;
+import dev.hytalemodding.potion.PotionBrewerWitchShockwaveSystem;
+import dev.hytalemodding.potion.PotionBrewerWitchSystem;
 import dev.hytalemodding.redwave.CrimsonCoreDetectionSystem;
 import dev.hytalemodding.redwave.RedWaveBlockSweepSystem;
 import dev.hytalemodding.redwave.RedWoolDamageSystem;
@@ -72,6 +97,8 @@ import dev.hytalemodding.state.hub.BlacksmithPrefabBuildSystem;
 import dev.hytalemodding.state.hub.BlacksmithWorkshopEntityMarker;
 import dev.hytalemodding.state.hub.BasePlotInteractionHandler;
 import dev.hytalemodding.state.hub.BasePlotUseInteraction;
+import dev.hytalemodding.state.hub.FarmerPrefabBuildSystem;
+import dev.hytalemodding.state.hub.FarmerWorkshopEntityMarker;
 import dev.hytalemodding.state.hub.RescueInteractionPacketWatcher;
 import dev.hytalemodding.state.hub.TransparentLightProtectionSystem;
 import dev.hytalemodding.state.run.GameDoorInteractionHandler;
@@ -80,6 +107,8 @@ import dev.hytalemodding.state.run.GameDoorBlockDetectionSystem;
 import dev.hytalemodding.state.run.GameRunDirectorSystem;
 import dev.hytalemodding.state.run.GameSessionManager;
 import dev.hytalemodding.state.run.BlightBeastKillTrackerSystem;
+import dev.hytalemodding.state.run.FarmerAnimalRescueManager;
+import dev.hytalemodding.state.run.FarmerAnimalRescueSystem;
 import dev.hytalemodding.state.run.GameDoorTriggerSystem;
 import dev.hytalemodding.state.run.RescueObjectiveManager;
 import dev.hytalemodding.state.run.RescueObjectiveSystem;
@@ -93,6 +122,7 @@ import dev.hytalemodding.state.run.InfectionCoreDetectionSystem;
 import dev.hytalemodding.state.run.SpawnPointDetectionSystem;
 import dev.hytalemodding.state.run.SpawnPointPlacementHandler;
 import dev.hytalemodding.state.transition.PlayerSpawnSafety;
+import dev.hytalemodding.npc.state.NpcStateManager;
 
 import javax.annotation.Nonnull;
 
@@ -104,6 +134,7 @@ public class ExamplePlugin extends JavaPlugin {
     private SpawnMarkerPacketController spawnMarkerPacketController;
     private QuestChestMarkerPacketController questChestMarkerPacketController;
     private RunChunkSelectionMapController runChunkSelectionMapController;
+    private FarmerAnimalMarkerPacketController farmerAnimalMarkerPacketController;
 
     public ExamplePlugin(@Nonnull JavaPluginInit init) {
         super(init);
@@ -118,7 +149,15 @@ public class ExamplePlugin extends JavaPlugin {
                         BlacksmithWorkshopEntityMarker.CODEC
                 )
         );
+        FarmerWorkshopEntityMarker.setComponentType(
+                this.getEntityStoreRegistry().registerComponent(
+                        FarmerWorkshopEntityMarker.class,
+                        "FarmerWorkshopEntity",
+                        FarmerWorkshopEntityMarker.CODEC
+                )
+        );
         this.getCommandRegistry().registerCommand(new GameStartCommand());
+        this.getCommandRegistry().registerCommand(new SpawnExtractionPrototypeCommand());
         this.getCommandRegistry().registerCommand(new GameEndCommand());
         this.getCommandRegistry().registerCommand(new GameResetCommand());
         this.getCommandRegistry().registerCommand(new BlightfallCommand());
@@ -132,22 +171,33 @@ public class ExamplePlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new NpcRolesCommand());
         this.getCommandRegistry().registerCommand(new NpcSpawnCommand());
         this.getCommandRegistry().registerCommand(new SpawnRooterCommand());
-        this.getCommandRegistry().registerCommand(new BlacksmithDevCommand());
-        this.getCommandRegistry().registerCommand(new NpcDevCommand());
+        this.getCommandRegistry().registerCommand(new NpcAdminCommand());
         this.getCommandRegistry().registerCommand(new QuestDevCommand());
         this.getCommandRegistry().registerCommand(new QuestLogCommand());
         this.getCommandRegistry().registerCommand(new SetQuestChestCommand());
         this.getCommandRegistry().registerCommand(new DevPanelCommand());
+        this.getCommandRegistry().registerCommand(new BloodSpikesCommand());
+        this.getCommandRegistry().registerCommand(new BindingTestCommand());
+        this.getCommandRegistry().registerCommand(new HolyTrackCommand());
         this.getCommandRegistry().registerCommand(new MapOpenCommand());
         this.getCommandRegistry().registerCommand(new PasteBlacksmithBuildCommand());
         this.getCommandRegistry().registerCommand(new PasteBlacksmithCommand());
         this.getCommandRegistry().registerCommand(new UndoBlacksmithCommand());
+        this.getCommandRegistry().registerCommand(new PasteFarmerBuildCommand());
+        this.getCommandRegistry().registerCommand(new PasteFarmerCommand());
+        this.getCommandRegistry().registerCommand(new UndoFarmerCommand());
         this.getCommandRegistry().registerCommand(new ExampleCommand("example", "An example command"));
         this.getCodecRegistry(Interaction.CODEC).register(
                 "game_door_use_interaction",
                 GameDoorUseInteraction.class,
                 GameDoorUseInteraction.CODEC
         );
+        this.getCodecRegistry(Interaction.CODEC).register(
+                "orange_blob_block_use_interaction",
+                OrangeBlobBlockUseInteraction.class,
+                OrangeBlobBlockUseInteraction.CODEC
+        );
+
         this.getCodecRegistry(Interaction.CODEC).register(
                 "base_plot_use_interaction",
                 BasePlotUseInteraction.class,
@@ -156,6 +206,7 @@ public class ExamplePlugin extends JavaPlugin {
         this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, GameSessionManager.get()::onPlayerReady);
         this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, PlayerSpawnSafety::onPlayerReady);
         this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, BaseHousingManager::onPlayerReady);
+        this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, FarmerAnimalRescueManager.get()::onPlayerReady);
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, GameDoorInteractionHandler::onPlayerInteract);
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, BasePlotInteractionHandler::onPlayerInteract);
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, RescueObjectiveManager.get()::onPlayerInteract);
@@ -187,8 +238,12 @@ public class ExamplePlugin extends JavaPlugin {
         QuestFlagManager.get().initialize();
         QuestChestConfigManager.get().initialize();
         QuestChestPositionManager.get().initialize();
+        FarmerAnimalRescueManager.get().initialize();
         RooterConfig.get().initialize();
         RooterManManager.get().initialize();
+        NpcUnifiedRegistry.get().initialize();
+        NpcStateManager.get().initialize();
+        NpcAdminService.get().initialize();
         BlacksmithSharedMarkerManager.sync();
         this.mapReplacementPacketController = new MapReplacementPacketController(this);
         this.mapReplacementPacketController.register();
@@ -199,6 +254,8 @@ public class ExamplePlugin extends JavaPlugin {
         this.questChestMarkerPacketController.register();
         this.runChunkSelectionMapController = new RunChunkSelectionMapController(this);
         this.runChunkSelectionMapController.register();
+        this.farmerAnimalMarkerPacketController = new FarmerAnimalMarkerPacketController(this);
+        this.farmerAnimalMarkerPacketController.register();
         this.rescueInteractionPacketWatcher = new RescueInteractionPacketWatcher();
         this.rescueInteractionPacketWatcher.register();
         this.runClientReadyPacketWatcher = new RunClientReadyPacketWatcher();
@@ -208,6 +265,7 @@ public class ExamplePlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new LifeEssenceChestBreakCleanupSystem(processedLifeEssenceContainers));
         this.getEntityStoreRegistry().registerSystem(new GameRunDirectorSystem());
         this.getEntityStoreRegistry().registerSystem(new RescueObjectiveSystem());
+        this.getEntityStoreRegistry().registerSystem(new FarmerAnimalRescueSystem());
         this.getEntityStoreRegistry().registerSystem(new RunStartCameraSystem());
         this.getEntityStoreRegistry().registerSystem(new RunStartMovementLockSystem());
         this.getEntityStoreRegistry().registerSystem(new RunChunkMapRefreshTickingSystem());
@@ -215,8 +273,10 @@ public class ExamplePlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new BlightBeastKillTrackerSystem());
         this.getEntityStoreRegistry().registerSystem(new BaseHousingSystem());
         this.getEntityStoreRegistry().registerSystem(new BlacksmithPrefabBuildSystem());
+        this.getEntityStoreRegistry().registerSystem(new FarmerPrefabBuildSystem());
         this.getEntityStoreRegistry().registerSystem(new TransparentLightProtectionSystem());
         this.getEntityStoreRegistry().registerSystem(new DevDebugHudSystem());
+        this.getEntityStoreRegistry().registerSystem(new OrangeBlobBlockSystem());
 
         try {
             this.getChunkStoreRegistry().registerSystem(new CrimsonCoreDetectionSystem());
@@ -233,8 +293,20 @@ public class ExamplePlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new RooterEncounterSystem());
         this.getEntityStoreRegistry().registerSystem(new RooterShockwaveEmitterSystem());
         this.getEntityStoreRegistry().registerSystem(new RooterShockwaveDamageSystem());
-    }
-
+        this.getEntityStoreRegistry().registerSystem(new CrimsonWitchGroundTrapProjectileSystem());
+        this.getEntityStoreRegistry().registerSystem(new CrimsonWitchHelperSummonSystem());
+        this.getEntityStoreRegistry().registerSystem(new CrimsonWitchEnvironmentalPressureSystem());
+        this.getEntityStoreRegistry().registerSystem(new PotionBrewerWitchSystem());
+        this.getEntityStoreRegistry().registerSystem(new PotionBrewerWitchHudSystem());
+        this.getEntityStoreRegistry().registerSystem(new PotionBrewerWitchBindingSystem());
+        this.getEntityStoreRegistry().registerSystem(new PotionBrewerWitchBloodSystem());
+        this.getEntityStoreRegistry().registerSystem(new PotionBrewerWitchHolySystem());
+        this.getEntityStoreRegistry().registerSystem(new PotionBrewerWitchShockwaveSystem());
+        this.getEntityStoreRegistry().registerSystem(new PotionBrewerWitchShockwaveDamageSystem());
+        this.getEntityStoreRegistry().registerSystem(new PotionBrewerWitchProjectileSystem());
+        this.getEntityStoreRegistry().registerSystem(new PotionBrewerWitchHealZoneHealingSystem());
+        this.getEntityStoreRegistry().registerSystem(new PotionBrewerWitchPoisonDamageSystem());
+        }
     @Override
     protected void shutdown() {
         if (this.rescueInteractionPacketWatcher != null) {
@@ -260,6 +332,18 @@ public class ExamplePlugin extends JavaPlugin {
         if (this.runChunkSelectionMapController != null) {
             this.runChunkSelectionMapController.unregister();
             this.runChunkSelectionMapController = null;
+        }
+        if (this.farmerAnimalMarkerPacketController != null) {
+            this.farmerAnimalMarkerPacketController.unregister();
+            this.farmerAnimalMarkerPacketController = null;
+        }
+
+        for (com.hypixel.hytale.server.core.universe.PlayerRef player : com.hypixel.hytale.server.core.universe.Universe.get().getPlayers()) {
+            java.util.UUID worldId = player.getWorldUuid();
+            if (worldId != null) {
+                PotionBrewerWitchProjectileSystem.clearWorld(worldId);
+                PotionBrewerWitchHealZoneRuntime.clearWorld(worldId);
+            }
         }
     }
 

@@ -16,6 +16,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.domain.housing.BaseHousingManager;
+import dev.hytalemodding.state.hub.FarmerPrefabController;
 import dev.hytalemodding.state.run.RescueObjectiveManager;
 
 import javax.annotation.Nonnull;
@@ -119,6 +120,7 @@ public class BasePlotCommand extends AbstractPlayerCommand {
                 context.sendMessage(Message.raw(ok ? "Assignment cleared for plot '" + id + "'." : "Plot not found: " + id));
             }
             case "resetall" -> {
+                FarmerPrefabController.undoFarmer();
                 manager.resetAll();
                 RescueObjectiveManager.get().resetRuntimeStatePreserveRescued();
                 context.sendMessage(Message.raw("Reset complete: cleared plots/assignments and transient rescue runtime state. Rescued status was preserved."));

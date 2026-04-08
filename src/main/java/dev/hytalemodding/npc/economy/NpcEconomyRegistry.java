@@ -44,6 +44,11 @@ public final class NpcEconomyRegistry {
         System.out.println("[NpcEconomy] Loaded npc economy files: " + this.byNpcKey.size());
     }
 
+    public synchronized void reload() {
+        this.loaded = false;
+        initialize();
+    }
+
     @Nullable
     public NpcEconomyDefinition getNpc(@Nonnull String npcKey) {
         initialize();
@@ -54,6 +59,34 @@ public final class NpcEconomyRegistry {
     public Set<String> getNpcKeys() {
         initialize();
         return Set.copyOf(this.byNpcKey.keySet());
+    }
+
+    @Nonnull
+    public Set<String> getAllItemIds() {
+        initialize();
+        HashSet<String> itemIds = new HashSet<>();
+        for (NpcEconomyDefinition definition : this.byNpcKey.values()) {
+            for (NpcEconomyDefinition.OfferDefinition offer : definition.offers) {
+                for (NpcEconomyDefinition.ItemAmount item : offer.cost) {
+                    if (!item.itemId.isBlank()) {
+                        itemIds.add(item.itemId);
+                    }
+                }
+                for (NpcEconomyDefinition.ItemAmount item : offer.reward) {
+                    if (!item.itemId.isBlank()) {
+                        itemIds.add(item.itemId);
+                    }
+                }
+            }
+            for (NpcEconomyDefinition.UpgradeDefinition upgrade : definition.upgrades) {
+                for (NpcEconomyDefinition.ItemAmount item : upgrade.cost) {
+                    if (!item.itemId.isBlank()) {
+                        itemIds.add(item.itemId);
+                    }
+                }
+            }
+        }
+        return Set.copyOf(itemIds);
     }
 
     private void loadAll() {

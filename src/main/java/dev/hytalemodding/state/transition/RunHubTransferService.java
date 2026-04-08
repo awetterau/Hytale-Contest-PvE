@@ -32,28 +32,35 @@ public final class RunHubTransferService {
     }
 
     public void spawnQueuedRescueInBase(@Nonnull PlayerRef playerRef, @Nonnull World hubWorld, @Nonnull Transform baseSpawn) {
-        RescueObjectiveManager.get().spawnQueuedRescueInBase(hubWorld, baseSpawn).whenComplete((result, spawnErr) -> {
+        RescueObjectiveManager.get().spawnQueuedRescueInBase(hubWorld, baseSpawn).whenComplete((results, spawnErr) -> {
             if (spawnErr != null) {
                 String reason = spawnErr.getMessage();
                 playerRef.sendMessage(Message.raw("Rescue transfer failed: " + reason));
                 return;
             }
-            if (result == null || result.npcKey() == null || result.npcKey().isBlank()) {
+            if (results == null || results.isEmpty()) {
                 playerRef.sendMessage(Message.raw("No queued rescue to transfer."));
                 return;
             }
-            if (!result.spawned()) {
-                if (isNpcAlreadyPresentInHub(result.npcKey(), hubWorld)) {
-                    RescueObjectiveManager.get().setNpcRescued(result.npcKey(), true);
-                    playerRef.sendMessage(Message.raw(result.npcKey() + " rescued and added to base."));
-                    return;
-                }
-                String reason = result.reason() == null ? "spawn returned false" : result.reason();
-                playerRef.sendMessage(Message.raw("Rescue transfer failed for " + result.npcKey() + ": " + reason));
+            if (results.size() == 1 && (results.get(0).npcKey() == null || results.get(0).npcKey().isBlank())) {
+                playerRef.sendMessage(Message.raw("No queued rescue to transfer."));
                 return;
             }
-            RescueObjectiveManager.get().setNpcRescued(result.npcKey(), true);
-            playerRef.sendMessage(Message.raw(result.npcKey() + " rescued and added to base."));
+            for (RescueObjectiveManager.QueuedRescueSpawnResult result : results) {
+                if (result == null || result.npcKey() == null || result.npcKey().isBlank()) {
+                    continue;
+                }
+                if (!result.spawned()) {
+                    if (isNpcAlreadyPresentInHub(result.npcKey(), hubWorld)) {
+                        playerRef.sendMessage(Message.raw(result.npcKey() + " already present in base."));
+                        continue;
+                    }
+                    String reason = result.reason() == null ? "spawn returned false" : result.reason();
+                    playerRef.sendMessage(Message.raw(result.npcKey() + " rescued, but base placement failed: " + reason));
+                    continue;
+                }
+                playerRef.sendMessage(Message.raw(result.npcKey() + " added to base."));
+            }
         });
     }
 
@@ -84,5 +91,6 @@ public final class RunHubTransferService {
         });
         return found[0];
     }
+
 }
 

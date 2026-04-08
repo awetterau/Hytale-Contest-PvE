@@ -46,10 +46,17 @@ public final class RunRescueRegistry {
 
     @Nullable
     public synchronized String chooseNpcForTemplateWorld(@Nonnull String templateWorldName) {
+        java.util.List<String> keys = getNpcKeysForTemplateWorld(templateWorldName);
+        return keys.isEmpty() ? null : keys.get(0);
+    }
+
+    @Nonnull
+    public synchronized java.util.List<String> getNpcKeysForTemplateWorld(@Nonnull String templateWorldName) {
         initialize();
         String world = normalize(templateWorldName);
         java.util.ArrayList<String> keys = new java.util.ArrayList<>(this.byNpcKey.keySet());
         keys.sort(String::compareTo);
+        java.util.ArrayList<String> out = new java.util.ArrayList<>();
         for (String key : keys) {
             RescueSpawnDefinition def = this.byNpcKey.get(key);
             if (def == null) {
@@ -68,14 +75,18 @@ public final class RunRescueRegistry {
             if (archetype == null || archetype.runRescueRole == null || archetype.runRescueRole.isBlank()) {
                 continue;
             }
-            return def.npcKey;
+            out.add(def.npcKey);
         }
-        return null;
+        return java.util.List.copyOf(out);
     }
 
     @Nullable
     public synchronized Transform getConfiguredSpawn(@Nonnull String npcKey, @Nonnull String templateWorldName) {
         initialize();
+        Transform override = GameFlowConfigManager.get().getRescueRunSpawn(npcKey);
+        if (override != null) {
+            return override;
+        }
         RescueSpawnDefinition def = this.byNpcKey.get(normalize(npcKey));
         if (def == null || !def.enabled) {
             return null;

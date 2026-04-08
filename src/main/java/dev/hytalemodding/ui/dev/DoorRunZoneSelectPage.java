@@ -25,6 +25,9 @@ import javax.annotation.Nonnull;
 
 public class DoorRunZoneSelectPage extends InteractiveCustomUIPage<DoorRunZoneSelectPage.Data> {
     private static final int MAX_ZONE_BUTTONS = 8;
+    private static final int VISIBLE_ZONE_BUTTONS = 3;
+    private int hoveredZoneIndex = -1;
+    private boolean cancelHovered;
 
     public static final class Data {
         public String action;
@@ -51,17 +54,25 @@ public class DoorRunZoneSelectPage extends InteractiveCustomUIPage<DoorRunZoneSe
 
         int zoneCount = SpawnPointZoneManager.getZoneCount();
         for (int zoneIndex = 0; zoneIndex < MAX_ZONE_BUTTONS; zoneIndex++) {
-            boolean visible = zoneIndex < zoneCount;
+            boolean visible = zoneIndex < zoneCount && zoneIndex < VISIBLE_ZONE_BUTTONS;
             String buttonId = "#DoorZone" + (zoneIndex + 1) + "Button";
             ui.set(buttonId + ".Visible", visible);
+            applyZoneHoverState(ui, zoneIndex, visible);
             if (visible) {
                 int worldZoneIndex = toWorldZoneIndex(zoneIndex, zoneCount);
-                ui.set("#DoorZone" + (zoneIndex + 1) + "Label.Text", SpawnPointZoneManager.getFormattedZoneLabel(worldZoneIndex));
+                String zoneLabel = SpawnPointZoneManager.getFormattedZoneLabel(worldZoneIndex);
+                ui.set("#DoorZone" + (zoneIndex + 1) + "LabelDefault.Text", zoneLabel);
+                ui.set("#DoorZone" + (zoneIndex + 1) + "LabelHover.Text", zoneLabel);
                 events.addEventBinding(CustomUIEventBindingType.Activating, buttonId, EventData.of("Action", "door_zone_" + zoneIndex), false);
+                events.addEventBinding(CustomUIEventBindingType.MouseEntered, buttonId, EventData.of("Action", "hover_enter_zone_" + zoneIndex), false);
+                events.addEventBinding(CustomUIEventBindingType.MouseExited, buttonId, EventData.of("Action", "hover_exit_zone_" + zoneIndex), false);
             }
         }
 
         events.addEventBinding(CustomUIEventBindingType.Activating, "#CancelButton", EventData.of("Action", "cancel"), false);
+        events.addEventBinding(CustomUIEventBindingType.MouseEntered, "#CancelButton", EventData.of("Action", "hover_enter_cancel"), false);
+        events.addEventBinding(CustomUIEventBindingType.MouseExited, "#CancelButton", EventData.of("Action", "hover_exit_cancel"), false);
+        applyCancelHoverState(ui);
     }
 
     @Override
@@ -81,6 +92,29 @@ public class DoorRunZoneSelectPage extends InteractiveCustomUIPage<DoorRunZoneSe
             if (displayZoneIndex >= 0) {
                 setZoneAndStart(player, ref, store, toWorldZoneIndex(displayZoneIndex, SpawnPointZoneManager.getZoneCount()));
             }
+            return;
+        }
+        if (eventData.contains("hover_enter_zone_")) {
+            hoveredZoneIndex = parseTrailingIndex(eventData, "hover_enter_zone_");
+            sendHoverUpdate();
+            return;
+        }
+        if (eventData.contains("hover_exit_zone_")) {
+            int zoneIndex = parseTrailingIndex(eventData, "hover_exit_zone_");
+            if (hoveredZoneIndex == zoneIndex) {
+                hoveredZoneIndex = -1;
+            }
+            sendHoverUpdate();
+            return;
+        }
+        if (eventData.contains("hover_enter_cancel")) {
+            cancelHovered = true;
+            sendHoverUpdate();
+            return;
+        }
+        if (eventData.contains("hover_exit_cancel")) {
+            cancelHovered = false;
+            sendHoverUpdate();
             return;
         }
         if (eventData.contains("cancel")) {
@@ -129,5 +163,26 @@ public class DoorRunZoneSelectPage extends InteractiveCustomUIPage<DoorRunZoneSe
             return displayZoneIndex;
         }
         return (zoneCount - 1) - displayZoneIndex;
+    }
+
+    private void sendHoverUpdate() {
+        UICommandBuilder commandBuilder = new UICommandBuilder();
+        int zoneCount = SpawnPointZoneManager.getZoneCount();
+        for (int zoneIndex = 0; zoneIndex < MAX_ZONE_BUTTONS; zoneIndex++) {
+            applyZoneHoverState(commandBuilder, zoneIndex, zoneIndex < zoneCount && zoneIndex < VISIBLE_ZONE_BUTTONS);
+        }
+        applyCancelHoverState(commandBuilder);
+        this.sendUpdate(commandBuilder, null, false);
+    }
+
+    private void applyZoneHoverState(@Nonnull UICommandBuilder ui, int zoneIndex, boolean visible) {
+        String prefix = "#DoorZone" + (zoneIndex + 1);
+        ui.set(prefix + "LabelDefault.Visible", visible && hoveredZoneIndex != zoneIndex);
+        ui.set(prefix + "LabelHover.Visible", visible && hoveredZoneIndex == zoneIndex);
+    }
+
+    private void applyCancelHoverState(@Nonnull UICommandBuilder ui) {
+        ui.set("#CancelLabelDefault.Visible", !cancelHovered);
+        ui.set("#CancelLabelHover.Visible", cancelHovered);
     }
 }

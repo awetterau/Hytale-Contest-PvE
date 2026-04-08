@@ -240,7 +240,7 @@
                         {
                           "Type": "PlayAnimation",
                           "Slot": "Action",
-                          "Animation": "Attack1"
+                          "Animation": "Attack3"
                         },
                         {
                           "Type": "Timeout",

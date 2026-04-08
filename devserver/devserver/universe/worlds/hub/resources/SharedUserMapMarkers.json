@@ -1,3 +1,17 @@
 {
-  "UserMarkers": []
+  "UserMarkers": [
+    {
+      "Id": "blacksmith_workshop",
+      "X": 592.0,
+      "Z": -11.0,
+      "Name": "Blacksmith",
+      "Icon": "UserF.png",
+      "ColorTint": "#ff7512",
+      "CreatedByUuid": {
+        "$binary": "AAAAAAAAAAAAAAAAAAAAAQ\u003d\u003d",
+        "$type": "04"
+      },
+      "CreatedByName": "System"
+    }
+  ]
 }

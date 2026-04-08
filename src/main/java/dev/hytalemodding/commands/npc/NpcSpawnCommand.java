@@ -20,12 +20,12 @@ import it.unimi.dsi.fastutil.Pair;
 import javax.annotation.Nonnull;
 
 public class NpcSpawnCommand extends AbstractPlayerCommand {
-    private static final String DEFAULT_ROLE = "Blacksmith_Escort_Base";
+    private static final String DEFAULT_ROLE = "Crimson_Witch";
     @Nonnull
     private final OptionalArg<String> roleArg = this.withOptionalArg("role", "Optional NPC role name", ArgTypes.STRING);
 
     public NpcSpawnCommand() {
-        super("npcspawn", "Spawn an escort NPC with role-based movement.");
+        super("spawnnpc", "Spawn an NPC role at the player's position.");
         this.setPermissionGroup(null);
     }
 
@@ -39,6 +39,9 @@ public class NpcSpawnCommand extends AbstractPlayerCommand {
     ) {
         NPCPlugin npcPlugin = NPCPlugin.get();
         String requestedRole = this.roleArg.provided(context) ? this.roleArg.get(context) : DEFAULT_ROLE;
+        if ("crimson_witch".equalsIgnoreCase(requestedRole)) {
+            requestedRole = DEFAULT_ROLE;
+        }
         if (requestedRole == null || requestedRole.isEmpty()) {
             context.sendMessage(Message.raw("Default NPC role is unavailable: " + DEFAULT_ROLE));
             return;
@@ -73,7 +76,7 @@ public class NpcSpawnCommand extends AbstractPlayerCommand {
             return;
         }
 
-        context.sendMessage(Message.raw("Spawned companion role '" + requestedRole + "' at " + spawnPos + ". Press F to toggle follow."));
+        context.sendMessage(Message.raw("Spawned NPC role '" + requestedRole + "' at " + spawnPos + "."));
     }
 }
 

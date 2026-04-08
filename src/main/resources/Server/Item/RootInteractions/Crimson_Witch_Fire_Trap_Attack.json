@@ -1,0 +1,13 @@
+{
+  "Tags": {
+    "Attack": [
+      "Ranged"
+    ]
+  },
+  "Cooldown": {
+    "Cooldown": 20.0
+  },
+  "Interactions": [
+    "Crimson_Witch_Fire_Trap"
+  ]
+}
