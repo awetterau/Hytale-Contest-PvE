@@ -17,7 +17,9 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.state.run.DoorRunZoneSelectionManager;
 import dev.hytalemodding.state.run.GameDoorInteractionHandler;
+import dev.hytalemodding.state.run.RunStartMovementLockManager;
 import dev.hytalemodding.state.run.SpawnPointZoneManager;
+import dev.hytalemodding.state.transition.GameFlowConfigManager;
 
 import javax.annotation.Nonnull;
 
@@ -94,7 +96,10 @@ public class DoorRunZoneSelectPage extends InteractiveCustomUIPage<DoorRunZoneSe
             int zoneIndex
     ) {
         DoorRunZoneSelectionManager.setSelectedZone(this.playerRef.getUuid(), zoneIndex);
-        player.sendMessage(Message.raw("Door run zone selected: " + DoorRunZoneSelectionManager.getSelectedZoneLabel(this.playerRef.getUuid()) + ". Loading run."));
+        if (GameFlowConfigManager.get().isStatusMessagesEnabled()) {
+            player.sendMessage(Message.raw("Door run zone selected: " + DoorRunZoneSelectionManager.getSelectedZoneLabel(this.playerRef.getUuid()) + ". Loading run."));
+        }
+        RunStartMovementLockManager.get().lockPlayerForIntro(this.playerRef);
         close();
         GameDoorInteractionHandler.tryStartFromDoorSelection(this.playerRef);
     }

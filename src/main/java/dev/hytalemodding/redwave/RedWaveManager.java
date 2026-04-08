@@ -10,6 +10,7 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,6 +29,8 @@ public final class RedWaveManager {
     private static final ConcurrentHashMap<UUID, ConcurrentHashMap<String, ArrayList<UndoSession>>> UNDO_HISTORY_BY_CORE = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, ConcurrentHashMap<String, UndoProcess>> UNDO_PROCESSES = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, Boolean> WORLD_READY_FLAGS = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, Integer> WORLD_SPREAD_SPEED = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, Integer> WORLD_FRONTIER_LIMIT = new ConcurrentHashMap<>();
     private static final Vector3i[] ADJACENT_OFFSETS = new Vector3i[]{
             new Vector3i(1, 0, 0),
             new Vector3i(-1, 0, 0),
@@ -126,6 +129,24 @@ public final class RedWaveManager {
         UNDO_HISTORY_BY_CORE.remove(worldId);
         UNDO_PROCESSES.remove(worldId);
         WORLD_READY_FLAGS.remove(worldId);
+        WORLD_SPREAD_SPEED.remove(worldId);
+        WORLD_FRONTIER_LIMIT.remove(worldId);
+    }
+
+    public static void setWorldSpreadSpeed(@Nonnull UUID worldId, int speed) {
+        WORLD_SPREAD_SPEED.put(worldId, Math.max(1, speed));
+    }
+
+    public static int getWorldSpreadSpeed(@Nonnull UUID worldId) {
+        return Math.max(1, WORLD_SPREAD_SPEED.getOrDefault(worldId, RedWaveConfig.DEFAULT_SPREAD_SPEED_BLOCKS_PER_TICK));
+    }
+
+    public static void setWorldFrontierLimit(@Nonnull UUID worldId, int limit) {
+        WORLD_FRONTIER_LIMIT.put(worldId, Math.max(512, limit));
+    }
+
+    public static int getWorldFrontierLimit(@Nonnull UUID worldId) {
+        return Math.max(512, WORLD_FRONTIER_LIMIT.getOrDefault(worldId, RedWaveConfig.DEFAULT_FRONTIER_LIMIT));
     }
 
     public static void clearWave(@Nonnull UUID worldId, @Nonnull Vector3i corePos) {
@@ -144,6 +165,9 @@ public final class RedWaveManager {
     }
 
     public static void beginUndoSession(@Nonnull UUID worldId, @Nonnull Vector3i corePos) {
+        if (!RedWaveConfig.ENABLE_UNDO_RECORDING) {
+            return;
+        }
         UndoSession session = new UndoSession();
         String coreKey = coreKey(corePos);
         ACTIVE_UNDO_SESSIONS
@@ -156,6 +180,9 @@ public final class RedWaveManager {
     }
 
     public static void recordOriginalBlock(@Nonnull UUID worldId, int x, int y, int z, @Nonnull String blockId) {
+        if (!RedWaveConfig.ENABLE_UNDO_RECORDING) {
+            return;
+        }
         ConcurrentHashMap<String, UndoSession> sessions = ACTIVE_UNDO_SESSIONS.get(worldId);
         if (sessions == null || sessions.isEmpty()) {
             return;
@@ -164,6 +191,9 @@ public final class RedWaveManager {
     }
 
     public static void recordOriginalBlock(@Nonnull UUID worldId, @Nonnull Vector3i corePos, int x, int y, int z, @Nonnull String blockId) {
+        if (!RedWaveConfig.ENABLE_UNDO_RECORDING) {
+            return;
+        }
         ConcurrentHashMap<String, UndoSession> sessions = ACTIVE_UNDO_SESSIONS.get(worldId);
         if (sessions == null) {
             return;
@@ -338,7 +368,7 @@ public final class RedWaveManager {
         if (id == null || id.isEmpty()) {
             return false;
         }
-        if (RedWaveConfig.CRIMSON_BLOCK_ID.equals(id) || RedWaveConfig.isCoreBlockId(id)) {
+        if (isCrimsonFamilyId(id) || RedWaveConfig.isCoreBlockId(id)) {
             return false;
         }
 
@@ -363,33 +393,32 @@ public final class RedWaveManager {
     }
 
     public static boolean hasAdjacentSolidBlock(@Nonnull World world, @Nonnull Vector3i pos) {
-        for (Vector3i offset : ADJACENT_OFFSETS) {
-            BlockType neighbor = world.getBlockType(pos.x + offset.x, pos.y + offset.y, pos.z + offset.z);
-            if (isFullCubeBlock(neighbor)) {
-                return true;
-            }
-        }
-        return false;
+        return countFullCubeNeighbors(world, pos, ADJACENT_OFFSETS, 1) > 0;
     }
 
     public static boolean hasSideAdjacentSolidBlock(@Nonnull World world, @Nonnull Vector3i pos) {
-        for (Vector3i offset : SIDE_ADJACENT_OFFSETS) {
-            BlockType neighbor = world.getBlockType(pos.x + offset.x, pos.y + offset.y, pos.z + offset.z);
-            if (isFullCubeBlock(neighbor)) {
-                return true;
-            }
-        }
-        return false;
+        return countFullCubeNeighbors(world, pos, SIDE_ADJACENT_OFFSETS, 1) > 0;
     }
 
     public static boolean isHiddenBySurroundingBlocks(@Nonnull World world, @Nonnull Vector3i pos) {
-        for (Vector3i offset : ADJACENT_OFFSETS) {
-            BlockType neighbor = world.getBlockType(pos.x + offset.x, pos.y + offset.y, pos.z + offset.z);
-            if (!isFullCubeBlock(neighbor)) {
-                return false;
+        return countFullCubeNeighbors(world, pos, ADJACENT_OFFSETS, ADJACENT_OFFSETS.length) == ADJACENT_OFFSETS.length;
+    }
+
+    public static boolean isExposedToAirOrEdge(@Nonnull World world, @Nonnull Vector3i pos) {
+        for (int x = -1; x <= 1; x++) {
+            for (int y = -1; y <= 1; y++) {
+                for (int z = -1; z <= 1; z++) {
+                    if (x == 0 && y == 0 && z == 0) {
+                        continue;
+                    }
+                    BlockType neighbor = world.getBlockType(pos.x + x, pos.y + y, pos.z + z);
+                    if (!isFullCubeBlock(neighbor)) {
+                        return true;
+                    }
+                }
             }
         }
-        return true;
+        return false;
     }
 
     public static boolean hasAdjacentWaveAnchor(@Nonnull World world, @Nonnull Vector3i pos) {
@@ -399,11 +428,39 @@ public final class RedWaveManager {
                 continue;
             }
             String id = neighbor.getId();
-            if (RedWaveConfig.CRIMSON_BLOCK_ID.equals(id) || RedWaveConfig.isCoreBlockId(id)) {
+            if (isCrimsonFamilyId(id) || RedWaveConfig.isCoreBlockId(id)) {
                 return true;
             }
         }
         return false;
+    }
+
+    public static boolean isCrimsonFamilyId(@Nullable String blockId) {
+        if (blockId == null || blockId.isEmpty()) {
+            return false;
+        }
+        return RedWaveConfig.CRIMSON_LAYER_BLOCK_ID.equals(blockId)
+                || RedWaveConfig.CRIMSON_PLATE_BLOCK_ID.equals(blockId);
+    }
+
+    private static int countFullCubeNeighbors(
+            @Nonnull World world,
+            @Nonnull Vector3i pos,
+            @Nonnull Vector3i[] offsets,
+            int stopAfter
+    ) {
+        int count = 0;
+        for (Vector3i offset : offsets) {
+            BlockType neighbor = world.getBlockType(pos.x + offset.x, pos.y + offset.y, pos.z + offset.z);
+            if (!isFullCubeBlock(neighbor)) {
+                continue;
+            }
+            count++;
+            if (count >= stopAfter) {
+                return count;
+            }
+        }
+        return count;
     }
 
     public static final class Selection {
@@ -440,6 +497,14 @@ public final class RedWaveManager {
     }
 
     public static final class ActiveWave {
+        private static final int[][] LOCAL_SPREAD_OFFSETS = new int[][]{
+                {1, 0, 0}, {-1, 0, 0}, {0, 0, 1}, {0, 0, -1},
+                {1, 0, 1}, {1, 0, -1}, {-1, 0, 1}, {-1, 0, -1},
+                {1, 1, 0}, {-1, 1, 0}, {0, 1, 1}, {0, 1, -1},
+                {1, -1, 0}, {-1, -1, 0}, {0, -1, 1}, {0, -1, -1},
+                {0, 1, 0}, {0, -1, 0}
+        };
+        private static final int FINAL_MASK_SIDES = 24;
         @Nonnull
         private final UUID worldId;
         @Nonnull
@@ -450,7 +515,15 @@ public final class RedWaveManager {
         private final int minZ;
         private final int width;
         private final long totalBlocks;
-        private final float blocksPerTick;
+        private final double targetBlocksPerSecond;
+        private final float targetSeconds;
+        private final int conversionLimit;
+        private final int frontierLimit;
+        private final long noiseSeed;
+        @Nonnull
+        private final double[] lobeLengthByIndex;
+        @Nonnull
+        private final double[] lobeSharpnessByIndex;
         @Nonnull
         private final Random random;
         @Nonnull
@@ -462,24 +535,16 @@ public final class RedWaveManager {
         @Nonnull
         private final boolean[] queued;
         @Nonnull
-        private final List<Integer> frontier = new ArrayList<>();
-        private final long noiseSalt;
-        private final float noiseScale;
-        private final float waveScale;
-        private final float fringeChance;
-        private final float phaseX;
-        private final float phaseZ;
-        private final float lobeAmplitude;
-        private final float lobeFrequency;
-        private final float lobePhase;
+        private final ArrayDeque<Integer> frontier = new ArrayDeque<>();
         private final float innerUniformRadius;
         private final float innerUniformHeight;
         private final int innerCenter;
-        @Nonnull
-        private final int[] nextEligibleTick;
         private boolean bootstrapped;
         private long convertedCount;
-        private float carry;
+        private long convertedActualCount;
+        private long horizontalFootprintBlocks;
+        private double convertedRingSum;
+        private double tickBudget;
         private int tickCounter;
 
         private ActiveWave(@Nonnull UUID worldId, @Nonnull Vector3i corePos, int radiusBlocks, float seconds) {
@@ -498,25 +563,23 @@ public final class RedWaveManager {
             this.expanded = new boolean[totalCells];
             this.converted = new boolean[totalCells];
             this.queued = new boolean[totalCells];
-            this.nextEligibleTick = new int[totalCells];
             long seed = worldId.getLeastSignificantBits() ^ worldId.getMostSignificantBits() ^ corePos.hashCode() ^ System.nanoTime();
             this.random = new Random(seed);
-            this.noiseSalt = this.random.nextLong();
-            this.noiseScale = 1.6f + (this.random.nextFloat() * 1.8f);
-            this.waveScale = 0.45f + (this.random.nextFloat() * 0.75f);
-            this.fringeChance = 0.05f + (this.random.nextFloat() * 0.17f);
-            this.phaseX = this.random.nextFloat() * 6.2831855f;
-            this.phaseZ = this.random.nextFloat() * 6.2831855f;
-            this.lobeAmplitude = 0.4f + (this.random.nextFloat() * 1.8f);
-            this.lobeFrequency = 1.2f + (this.random.nextFloat() * 4.3f);
-            this.lobePhase = this.random.nextFloat() * 6.2831855f;
-            this.innerUniformRadius = Math.max(1.0f, this.radiusBlocks * (2.0f / 3.0f));
-            this.innerUniformHeight = Math.max(2.0f, this.radiusBlocks * 0.35f);
+            this.innerUniformRadius = Math.max(1.0f, this.radiusBlocks);
+            this.innerUniformHeight = Math.max(1.0f, this.radiusBlocks);
             this.innerCenter = this.radiusBlocks + padding;
+            this.lobeLengthByIndex = new double[FINAL_MASK_SIDES];
+            this.lobeSharpnessByIndex = new double[FINAL_MASK_SIDES];
+            this.prepareLobeJitter(seed);
+            this.horizontalFootprintBlocks = 0L;
             this.totalBlocks = this.prepareRadiusMask(padding);
 
-            int totalTicks = Math.max(1, Math.round(seconds * 20.0f));
-            this.blocksPerTick = Math.max(0.01f, (float) this.totalBlocks / (float) totalTicks);
+            this.frontierLimit = getWorldFrontierLimit(worldId);
+            this.conversionLimit = (int) Math.min(this.totalBlocks, this.frontierLimit);
+            this.targetSeconds = Math.max(0.1f, seconds);
+            double targetWork = Math.max(1.0d, this.horizontalFootprintBlocks * RedWaveConfig.FINAL_SHAPE_WORK_SCALE);
+            this.targetBlocksPerSecond = Math.max(0.0001d, targetWork / this.targetSeconds);
+            this.noiseSeed = seed ^ 0x9E3779B97F4A7C15L;
             this.seedAtCore(padding);
         }
 
@@ -534,26 +597,59 @@ public final class RedWaveManager {
             return this.radiusBlocks;
         }
 
+        public double spreadSpeedPerTick() {
+            return this.targetBlocksPerSecond / 20.0d;
+        }
+
         public long totalBlocks() {
             return this.totalBlocks;
         }
 
-        public boolean done() {
-            return this.convertedCount >= this.totalBlocks || this.frontier.isEmpty();
+        public float progress() {
+            if (this.totalBlocks <= 0L) {
+                return 0.0f;
+            }
+            return Math.max(0.0f, Math.min(1.0f, this.convertedCount / (float) this.totalBlocks));
         }
 
-        public int takeBlocksForTick() {
+        public boolean done() {
+            if (!this.bootstrapped) {
+                return false;
+            }
+            return this.convertedActualCount >= this.conversionLimit || this.frontier.isEmpty();
+        }
+
+        public int takeBlocksForTick(float dt) {
             if (this.done()) {
                 return 0;
             }
             this.tickCounter++;
-            this.carry += this.blocksPerTick;
-            int amount = (int) this.carry;
+            this.tickBudget += this.targetBlocksPerSecond * Math.max(0.0f, dt);
+            int amount = (int) Math.floor(this.tickBudget);
             if (amount <= 0) {
                 return 0;
             }
-            this.carry -= amount;
+            this.tickBudget -= amount;
             return amount;
+        }
+
+        public boolean shouldEmitRadiusSample() {
+            return this.tickCounter > 0 && (this.tickCounter % 20) == 0;
+        }
+
+        public float averageConvertedRadius() {
+            if (this.convertedActualCount <= 0L) {
+                return 0.0f;
+            }
+            return (float) (this.convertedRingSum / this.convertedActualCount);
+        }
+
+        public float areaEquivalentRadius() {
+            if (this.totalBlocks <= 0L) {
+                return 0.0f;
+            }
+            float fillRatio = Math.max(0.0f, Math.min(1.0f, this.convertedActualCount / (float) this.totalBlocks));
+            return this.radiusBlocks * (float) Math.sqrt(fillRatio);
         }
 
         @Nullable
@@ -565,8 +661,6 @@ public final class RedWaveManager {
                 }
 
                 this.expanded[index] = true;
-                this.convertedCount++;
-                this.enqueueNeighbors(index);
                 return this.toWorldPosition(index);
             }
             return null;
@@ -574,24 +668,17 @@ public final class RedWaveManager {
 
         public void markConverted(@Nonnull Vector3i pos) {
             int index = this.toIndex(pos);
-            if (index >= 0) {
+            if (index >= 0 && !this.converted[index]) {
                 this.converted[index] = true;
+                int localX = index % this.width;
+                int yz = index / this.width;
+                int localZ = yz / this.width;
+                int dx = localX - this.innerCenter;
+                int dz = localZ - this.innerCenter;
+                this.convertedRingSum += Math.sqrt((dx * dx) + (dz * dz));
+                this.convertedActualCount++;
+                this.convertedCount = this.convertedActualCount;
             }
-        }
-
-        public boolean isInInnerUniformCore(@Nonnull Vector3i pos) {
-            int localX = pos.x - this.minX;
-            int localY = pos.y - this.minY;
-            int localZ = pos.z - this.minZ;
-            if (localX < 0 || localY < 0 || localZ < 0 || localX >= this.width || localY >= this.width || localZ >= this.width) {
-                return false;
-            }
-
-            int dx = localX - this.innerCenter;
-            int dy = localY - this.innerCenter;
-            int dz = localZ - this.innerCenter;
-            float horizontalDistance = (float) Math.sqrt((dx * dx) + (dz * dz));
-            return horizontalDistance <= this.innerUniformRadius && Math.abs(dy) <= this.innerUniformHeight;
         }
 
         public void discardGrowth(@Nonnull Vector3i pos) {
@@ -612,45 +699,37 @@ public final class RedWaveManager {
             this.enqueue(index);
         }
 
-        public boolean shouldDelayCrowdedGrowth(@Nonnull Vector3i pos) {
-            int index = this.toIndex(pos);
-            if (index < 0) {
-                return false;
-            }
-            if (this.tickCounter < this.nextEligibleTick[index]) {
-                return true;
-            }
-
-            int crowdedNeighbors = this.countConvertedNeighbors(index);
-            if (crowdedNeighbors < 3) {
-                return false;
-            }
-
-            float delayChance;
-            if (crowdedNeighbors == 3) {
-                delayChance = 0.78f;
-            } else if (crowdedNeighbors == 4) {
-                delayChance = 0.62f;
-            } else if (crowdedNeighbors == 5) {
-                delayChance = 0.48f;
-            } else {
-                delayChance = 0.35f;
-            }
-
-            if (this.random.nextFloat() < delayChance) {
-                this.nextEligibleTick[index] = this.tickCounter + 2 + this.random.nextInt(7);
-                return true;
-            }
-            return false;
-        }
-
         public void bootstrapAroundCore(@Nonnull World world, @Nonnull UUID worldId) {
             if (this.bootstrapped) {
                 return;
             }
             this.bootstrapped = true;
 
+            int frontierSeeds = this.seedFrontierFromExistingCrimson(world);
+            if (frontierSeeds > 0) {
+                System.out.println(
+                        "[RedWave] core="
+                                + this.corePos.x + "," + this.corePos.y + "," + this.corePos.z
+                                + " seeded frontier from existing crimson=" + frontierSeeds
+                );
+                return;
+            }
+
             int placed = this.tryBootstrapTarget(world, worldId, new Vector3i(this.corePos.x, this.corePos.y - 1, this.corePos.z), 0);
+
+            List<Vector3i> oppositeCandidates = List.of(
+                    new Vector3i(this.corePos.x + this.radiusBlocks, this.corePos.y, this.corePos.z),
+                    new Vector3i(this.corePos.x - this.radiusBlocks, this.corePos.y, this.corePos.z),
+                    new Vector3i(this.corePos.x, this.corePos.y, this.corePos.z + this.radiusBlocks),
+                    new Vector3i(this.corePos.x, this.corePos.y, this.corePos.z - this.radiusBlocks)
+            );
+            for (Vector3i opposite : oppositeCandidates) {
+                if (placed >= 2) {
+                    break;
+                }
+                Vector3i fallbackTarget = this.findNearbyBootstrapTarget(world, opposite, 3, 2);
+                placed = this.tryBootstrapTarget(world, worldId, fallbackTarget != null ? fallbackTarget : opposite, placed);
+            }
 
             List<Vector3i> offsets = new ArrayList<>(ALL_ADJACENT_OFFSETS.length);
             for (Vector3i offset : ALL_ADJACENT_OFFSETS) {
@@ -675,43 +754,137 @@ public final class RedWaveManager {
             if (!shouldConvertBlock(existing)) {
                 return placed;
             }
+            if (!isExposedToAirOrEdge(world, target)) {
+                return placed;
+            }
 
-            recordOriginalBlock(worldId, target.x, target.y, target.z, existing.getId());
-            world.setBlock(target.x, target.y, target.z, RedWaveConfig.CRIMSON_BLOCK_ID);
+            recordOriginalBlock(worldId, this.corePos, target.x, target.y, target.z, existing.getId());
+            world.setBlock(target.x, target.y, target.z, RedWaveConfig.CRIMSON_LAYER_BLOCK_ID);
             this.markConverted(target);
             int targetIndex = this.toIndex(target);
             if (targetIndex >= 0) {
-                this.enqueueNeighbors(targetIndex);
+                this.onConverted(target);
             }
             return placed + 1;
         }
 
-        private int popPriorityFrontierIndex() {
-            if (this.frontier.size() == 1) {
-                return this.popFrontierAt(0);
-            }
+        @Nullable
+        private Vector3i findNearbyBootstrapTarget(@Nonnull World world, @Nonnull Vector3i center, int horizontalRange, int verticalRange) {
+            Vector3i best = null;
+            int bestDistanceSquared = Integer.MAX_VALUE;
+            int bestNeighborCount = -1;
 
-            int preferredPick = -1;
-            int preferredNeighborCount = 3;
-            for (int i = 0; i < this.frontier.size(); i++) {
-                int index = this.frontier.get(i);
-                int neighborCount = this.countConvertedNeighbors(index);
-                if (neighborCount >= preferredNeighborCount) {
-                    preferredNeighborCount = neighborCount;
-                    preferredPick = i;
+            for (int dy = -verticalRange; dy <= verticalRange; dy++) {
+                for (int dx = -horizontalRange; dx <= horizontalRange; dx++) {
+                    for (int dz = -horizontalRange; dz <= horizontalRange; dz++) {
+                        Vector3i candidate = new Vector3i(center.x + dx, center.y + dy, center.z + dz);
+                        BlockType candidateBlock = world.getBlockType(candidate.x, candidate.y, candidate.z);
+                        if (!shouldConvertBlock(candidateBlock) || !isExposedToAirOrEdge(world, candidate)) {
+                            continue;
+                        }
+                        int neighborCount = this.countConvertibleNeighbors(world, candidate);
+                        if (neighborCount < RedWaveConfig.FINAL_SHAPE_BOOTSTRAP_MIN_NEIGHBORS) {
+                            continue;
+                        }
+                        int distanceSquared = (dx * dx) + (dy * dy) + (dz * dz);
+                        if (distanceSquared < bestDistanceSquared || (distanceSquared == bestDistanceSquared && neighborCount > bestNeighborCount)) {
+                            bestDistanceSquared = distanceSquared;
+                            bestNeighborCount = neighborCount;
+                            best = candidate;
+                            if (distanceSquared == 0) {
+                                return best;
+                            }
+                        }
+                    }
                 }
             }
+            return best;
+        }
 
-            if (preferredPick >= 0) {
-                return this.popFrontierAt(preferredPick);
+        private int seedFrontierFromExistingCrimson(@Nonnull World world) {
+            int seeded = 0;
+            int maxX = this.minX + this.width - 1;
+            int maxY = this.minY + this.width - 1;
+            int maxZ = this.minZ + this.width - 1;
+
+            for (int x = this.minX; x <= maxX; x++) {
+                for (int y = this.minY; y <= maxY; y++) {
+                    for (int z = this.minZ; z <= maxZ; z++) {
+                        BlockType existing = world.getBlockType(x, y, z);
+                        if (existing == null || !RedWaveConfig.CRIMSON_LAYER_BLOCK_ID.equals(existing.getId())) {
+                            continue;
+                        }
+
+                        Vector3i crimsonPos = new Vector3i(x, y, z);
+                        int crimsonIndex = this.toIndex(crimsonPos);
+                        if (crimsonIndex < 0 || !this.inRadius[crimsonIndex]) {
+                            continue;
+                        }
+                        this.markConverted(crimsonPos);
+
+                        for (Vector3i offset : ADJACENT_OFFSETS) {
+                            Vector3i candidate = new Vector3i(x + offset.x, y + offset.y, z + offset.z);
+                            int candidateIndex = this.toIndex(candidate);
+                            if (candidateIndex < 0 || !this.inRadius[candidateIndex]) {
+                                continue;
+                            }
+                            if (this.expanded[candidateIndex] || this.queued[candidateIndex]) {
+                                continue;
+                            }
+                            BlockType candidateType = world.getBlockType(candidate.x, candidate.y, candidate.z);
+                            if (!shouldConvertBlock(candidateType)) {
+                                continue;
+                            }
+                            if (!isExposedToAirOrEdge(world, candidate)) {
+                                continue;
+                            }
+                            if (!hasAdjacentWaveAnchor(world, candidate)) {
+                                continue;
+                            }
+                            int before = this.frontier.size();
+                            this.enqueue(candidateIndex);
+                            if (this.frontier.size() > before) {
+                                seeded++;
+                            }
+                        }
+                    }
+                }
             }
+            return seeded;
+        }
 
-            return this.popFrontierAt(this.random.nextInt(this.frontier.size()));
+        private int countConvertibleNeighbors(@Nonnull World world, @Nonnull Vector3i pos) {
+            int count = 0;
+            for (Vector3i offset : ADJACENT_OFFSETS) {
+                Vector3i neighbor = new Vector3i(pos.x + offset.x, pos.y + offset.y, pos.z + offset.z);
+                BlockType neighborType = world.getBlockType(neighbor.x, neighbor.y, neighbor.z);
+                if (shouldConvertBlock(neighborType)) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        private int popPriorityFrontierIndex() {
+            Integer value;
+            if (this.frontier.size() > 1 && this.random.nextFloat() < 0.35f) {
+                value = this.frontier.pollLast();
+            } else {
+                value = this.frontier.pollFirst();
+            }
+            if (value == null) {
+                return -1;
+            }
+            this.queued[value] = false;
+            return value;
         }
 
         private long prepareRadiusMask(int padding) {
             long count = 0L;
             int center = this.innerCenter;
+            int sidesCount = this.lobeLengthByIndex.length;
+            double sides = sidesCount;
+            double tau = Math.PI * 2.0d;
             for (int x = 0; x < this.width; x++) {
                 int dx = x - center;
                 for (int y = 0; y < this.width; y++) {
@@ -721,21 +894,28 @@ public final class RedWaveManager {
                         int index = this.indexOf(x, y, z);
 
                         float horizontalDistance = (float) Math.sqrt((dx * dx) + (dz * dz));
-                        float distance = (float) Math.sqrt((dx * dx) + (dy * dy) + (dz * dz));
-                        boolean inside = horizontalDistance <= this.innerUniformRadius && Math.abs(dy) <= this.innerUniformHeight;
-                        if (!inside) {
-                            float radialNoise = this.computeRadialNoise(dx, dy, dz);
-                            float lobeNoise = this.computeLobeNoise(dx, dz);
-                            float effectiveRadius = this.radiusBlocks + radialNoise + lobeNoise;
-                            inside = distance <= effectiveRadius;
-                            if (!inside && distance <= (this.radiusBlocks + 1.8f)) {
-                                inside = this.random.nextFloat() < this.fringeChance;
-                            }
-                        }
+                        double angle = Math.atan2(dz, dx);
+                        double normalizedAngle = angle < 0.0d ? angle + tau : angle;
+                        double sectorFloat = (normalizedAngle / tau) * sides;
+                        int sectorA = Math.floorMod((int) Math.floor(sectorFloat), sidesCount);
+                        int sectorB = (sectorA + 1) % sidesCount;
+                        double localT = sectorFloat - Math.floor(sectorFloat);
+                        double lerpT = localT * localT * (3.0d - (2.0d * localT));
+
+                        double lobeLength = lerp(this.lobeLengthByIndex[sectorA], this.lobeLengthByIndex[sectorB], lerpT);
+                        double lobeSharpness = lerp(this.lobeSharpnessByIndex[sectorA], this.lobeSharpnessByIndex[sectorB], lerpT);
+                        double wave = (Math.cos(angle * sides) + 1.0d) * 0.5d;
+                        double lobeStrength = Math.max(0.20d, Math.min(0.55d, (1.0d - RedWaveConfig.FINAL_SHAPE_TIP_SCALE) * 0.55d));
+                        double radiusScale = (1.0d - lobeStrength) + (lobeStrength * Math.pow(wave, lobeSharpness));
+                        double shapeRadius = this.innerUniformRadius * radiusScale * lobeLength;
+                        boolean inside = horizontalDistance <= shapeRadius && Math.abs(dy) <= this.innerUniformHeight;
 
                         this.inRadius[index] = inside;
                         if (inside) {
                             count++;
+                            if (dy == 0) {
+                                this.horizontalFootprintBlocks++;
+                            }
                         }
                     }
                 }
@@ -743,30 +923,25 @@ public final class RedWaveManager {
             return count;
         }
 
-        private float computeRadialNoise(int dx, int dy, int dz) {
-            long hash = 1469598103934665603L;
-            hash ^= (dx * 73856093L);
-            hash *= 1099511628211L;
-            hash ^= (dy * 19349663L);
-            hash *= 1099511628211L;
-            hash ^= (dz * 83492791L);
-            hash *= 1099511628211L;
-            hash ^= this.worldId.getLeastSignificantBits();
-            hash ^= this.noiseSalt;
-
-            float randomPart = ((hash & 0x3FFL) / 1023.0f) - 0.5f;
-            float waveA = (float) Math.sin((dx * 0.31f) + (dz * 0.17f) + this.phaseX);
-            float waveB = (float) Math.cos((dx * 0.11f) - (dz * 0.27f) + this.phaseZ);
-            float wavePart = (waveA + waveB) * this.waveScale;
-            return (randomPart * this.noiseScale) + wavePart;
+        private void prepareLobeJitter(long seed) {
+            Random lobeRandom = new Random(seed ^ 0xC2B2AE3D27D4EB4FL);
+            for (int i = 0; i < this.lobeLengthByIndex.length; i++) {
+                if (!RedWaveConfig.FINAL_SHAPE_RANDOM_TIPS_ENABLED) {
+                    this.lobeLengthByIndex[i] = 1.0d;
+                    this.lobeSharpnessByIndex[i] = 1.0d;
+                    continue;
+                }
+                double baseLength = RedWaveConfig.FINAL_SHAPE_LOBE_LENGTH_MIN
+                        + (lobeRandom.nextDouble() * (RedWaveConfig.FINAL_SHAPE_LOBE_LENGTH_MAX - RedWaveConfig.FINAL_SHAPE_LOBE_LENGTH_MIN));
+                double lengthJitter = (lobeRandom.nextDouble() * 2.0d) - 1.0d;
+                double sharpnessJitter = (lobeRandom.nextDouble() * 2.0d) - 1.0d;
+                this.lobeLengthByIndex[i] = Math.max(0.45d, baseLength + (lengthJitter * RedWaveConfig.FINAL_SHAPE_LOBE_LENGTH_JITTER));
+                this.lobeSharpnessByIndex[i] = Math.max(0.85d, 1.00d + (sharpnessJitter * RedWaveConfig.FINAL_SHAPE_LOBE_SHARPNESS_JITTER));
+            }
         }
 
-        private float computeLobeNoise(int dx, int dz) {
-            if (dx == 0 && dz == 0) {
-                return 0.0f;
-            }
-            float angle = (float) Math.atan2(dz, dx);
-            return (float) Math.sin((angle * this.lobeFrequency) + this.lobePhase) * this.lobeAmplitude;
+        private static double lerp(double a, double b, double t) {
+            return a + ((b - a) * t);
         }
 
         private void seedAtCore(int padding) {
@@ -780,12 +955,13 @@ public final class RedWaveManager {
             int localY = yz % this.width;
             int localZ = yz / this.width;
 
-            this.tryEnqueue(localX + 1, localY, localZ);
-            this.tryEnqueue(localX - 1, localY, localZ);
-            this.tryEnqueue(localX, localY + 1, localZ);
-            this.tryEnqueue(localX, localY - 1, localZ);
-            this.tryEnqueue(localX, localY, localZ + 1);
-            this.tryEnqueue(localX, localY, localZ - 1);
+            int start = this.random.nextInt(LOCAL_SPREAD_OFFSETS.length);
+            int direction = this.random.nextBoolean() ? 1 : -1;
+            for (int i = 0; i < LOCAL_SPREAD_OFFSETS.length; i++) {
+                int offsetIndex = Math.floorMod(start + (i * direction), LOCAL_SPREAD_OFFSETS.length);
+                int[] offset = LOCAL_SPREAD_OFFSETS[offsetIndex];
+                this.tryEnqueue(localX + offset[0], localY + offset[1], localZ + offset[2]);
+            }
         }
 
         private void tryEnqueue(int localX, int localY, int localZ) {
@@ -799,18 +975,11 @@ public final class RedWaveManager {
             if (!this.inRadius[index] || this.expanded[index] || this.queued[index]) {
                 return;
             }
+            if (this.frontier.size() >= this.frontierLimit) {
+                return;
+            }
             this.queued[index] = true;
-            this.frontier.add(index);
-        }
-
-        private int popFrontierAt(int pick) {
-            int lastIdx = this.frontier.size() - 1;
-            int value = this.frontier.get(pick);
-            int last = this.frontier.get(lastIdx);
-            this.frontier.set(pick, last);
-            this.frontier.remove(lastIdx);
-            this.queued[value] = false;
-            return value;
+            this.frontier.addLast(index);
         }
 
         private int indexOf(int localX, int localY, int localZ) {
@@ -827,27 +996,81 @@ public final class RedWaveManager {
             return this.indexOf(localX, localY, localZ);
         }
 
-        private int countConvertedNeighbors(int index) {
-            int localX = index % this.width;
-            int yz = index / this.width;
-            int localY = yz % this.width;
-            int localZ = yz / this.width;
-
-            int neighbors = 0;
-            neighbors += this.isConverted(localX + 1, localY, localZ) ? 1 : 0;
-            neighbors += this.isConverted(localX - 1, localY, localZ) ? 1 : 0;
-            neighbors += this.isConverted(localX, localY + 1, localZ) ? 1 : 0;
-            neighbors += this.isConverted(localX, localY - 1, localZ) ? 1 : 0;
-            neighbors += this.isConverted(localX, localY, localZ + 1) ? 1 : 0;
-            neighbors += this.isConverted(localX, localY, localZ - 1) ? 1 : 0;
-            return neighbors;
+        public void onConverted(@Nonnull Vector3i pos) {
+            int index = this.toIndex(pos);
+            if (index < 0) {
+                return;
+            }
+            this.enqueueNeighbors(index);
         }
 
-        private boolean isConverted(int localX, int localY, int localZ) {
-            if (localX < 0 || localY < 0 || localZ < 0 || localX >= this.width || localY >= this.width || localZ >= this.width) {
+        public boolean shouldConvertByNoise(@Nonnull Vector3i pos) {
+            long h = this.noiseSeed;
+            h ^= (long) pos.x * 341873128712L;
+            h ^= (long) pos.y * 132897987541L;
+            h ^= (long) pos.z * 42317861L;
+            h ^= (h >>> 33);
+            h *= 0xff51afd7ed558ccdL;
+            h ^= (h >>> 33);
+            double noise = ((h & 0x7fffffffffffffffL) / (double) Long.MAX_VALUE);
+
+            int dx = pos.x - this.corePos.x;
+            int dz = pos.z - this.corePos.z;
+            double distNorm = Math.min(1.0d, Math.sqrt((dx * dx) + (dz * dz)) / Math.max(1.0d, this.radiusBlocks));
+            double solidRadius = Math.max(0.20d, Math.min(0.90d, RedWaveConfig.FINAL_SHAPE_NOISE_SOLID_RADIUS));
+            if (distNorm <= solidRadius) {
+                return true;
+            }
+            if (this.isInInnerStarLine(distNorm, dx, dz, solidRadius)) {
+                return true;
+            }
+            double elapsedSeconds = this.tickCounter * 0.05d;
+            double progress = Math.min(1.0d, elapsedSeconds / Math.max(0.1d, this.targetSeconds));
+            double edgeSpan = Math.max(0.05d, 1.0d - solidRadius);
+            double edgeNorm = Math.max(0.0d, (distNorm - solidRadius) / edgeSpan);
+            double edgeNormCurve = edgeNorm * edgeNorm;
+            double rawThreshold = (0.44d + (edgeNormCurve * 0.44d)) - (progress * 0.06d);
+
+            double hardenStart = Math.max(solidRadius + 0.05d, RedWaveConfig.FINAL_SHAPE_NOISE_EDGE_HARDEN_START);
+            if (distNorm > hardenStart) {
+                rawThreshold += 0.08d;
+            }
+            double gradientEnd = Math.max(solidRadius + 0.02d, RedWaveConfig.FINAL_SHAPE_NOISE_GRADIENT_END);
+            double gradientSpan = Math.max(0.02d, gradientEnd - solidRadius);
+            double gradientRaw = Math.max(0.0d, Math.min(1.0d, (distNorm - solidRadius) / gradientSpan));
+            double strongPortion = Math.max(0.10d, Math.min(0.90d, RedWaveConfig.FINAL_SHAPE_NOISE_GRADIENT_STRONG_PORTION));
+            double strongDrop = Math.max(0.0d, RedWaveConfig.FINAL_SHAPE_NOISE_GRADIENT_STRONG_DROP);
+            double baseDrop = Math.max(0.0d, RedWaveConfig.FINAL_SHAPE_NOISE_GRADIENT_BASE_DROP);
+
+            double startDrop;
+            if (gradientRaw <= strongPortion) {
+                double local = gradientRaw / strongPortion;
+                double strongCurve = Math.pow(local, Math.max(0.25d, RedWaveConfig.FINAL_SHAPE_NOISE_GRADIENT_CHARGE));
+                startDrop = lerp(strongDrop, baseDrop, strongCurve);
+            } else {
+                double local = (gradientRaw - strongPortion) / Math.max(0.01d, 1.0d - strongPortion);
+                startDrop = lerp(baseDrop, 0.0d, local);
+            }
+
+            double threshold = rawThreshold - startDrop;
+
+            threshold = Math.max(0.10d, Math.min(0.95d, threshold));
+            return noise >= threshold;
+        }
+
+        private boolean isInInnerStarLine(double distNorm, int dx, int dz, double solidRadius) {
+            if (!RedWaveConfig.FINAL_SHAPE_INNER_STAR_ENABLED) {
                 return false;
             }
-            return this.converted[this.indexOf(localX, localY, localZ)];
+            double innerStarRadius = Math.max(solidRadius + 0.05d, RedWaveConfig.FINAL_SHAPE_INNER_STAR_RADIUS);
+            if (distNorm > innerStarRadius) {
+                return false;
+            }
+            double angle = Math.atan2(dz, dx);
+            double tipWave = (Math.cos(angle * this.lobeLengthByIndex.length) + 1.0d) * 0.5d;
+            double lineWidth = Math.max(0.01d, Math.min(0.30d, RedWaveConfig.FINAL_SHAPE_INNER_STAR_LINE_WIDTH));
+            double threshold = 1.0d - lineWidth;
+            return tipWave >= threshold;
         }
 
         @Nonnull

@@ -12,6 +12,8 @@ import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
+import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.modules.time.WorldTimeResource;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -33,6 +35,7 @@ import dev.hytalemodding.loot.QuestChestConfigManager;
 import dev.hytalemodding.loot.QuestChestPositionManager;
 import dev.hytalemodding.quest.QuestProgressManager;
 import dev.hytalemodding.state.transition.CrimsonCoreConfigManager;
+import dev.hytalemodding.state.transition.GameFlowConfigManager;
 import dev.hytalemodding.state.transition.PlayerSpawnSafety;
 import dev.hytalemodding.state.transition.SpawnPointZoneConfigManager;
 import it.unimi.dsi.fastutil.Pair;
@@ -73,13 +76,40 @@ public final class GameSessionManager {
 
     @Nullable
     private ActiveSession activeSession;
+    private volatile long configuredRunDurationMs = RUN_DURATION_MS;
+    @Nullable
+    private volatile Long configuredRunSeed;
 
     private GameSessionManager() {
+        this.configuredRunDurationMs = GameFlowConfigManager.get().getRunDurationSeconds() * 1000L;
+        this.configuredRunSeed = GameFlowConfigManager.get().getRunSeed();
     }
 
     @Nonnull
     public static GameSessionManager get() {
         return INSTANCE;
+    }
+
+    public synchronized void setRunDurationSeconds(int seconds) {
+        this.configuredRunDurationMs = Math.max(1, seconds) * 1000L;
+        GameFlowConfigManager.get().setRunDurationSeconds((int) (this.configuredRunDurationMs / 1000L));
+    }
+
+    public synchronized int getRunDurationSeconds() {
+        return (int) Math.max(1L, this.configuredRunDurationMs / 1000L);
+    }
+
+    public synchronized void setRunSeed(@Nullable Long seed) {
+        this.configuredRunSeed = seed;
+        GameFlowConfigManager.get().setRunSeed(seed);
+    }
+
+    @Nullable
+    public synchronized Long getRunSeed() {
+        if (this.configuredRunSeed == null) {
+            this.configuredRunSeed = GameFlowConfigManager.get().getRunSeed();
+        }
+        return this.configuredRunSeed;
     }
 
     public void cleanupOrphanRunWorldsOnStartup() {
@@ -175,7 +205,9 @@ public final class GameSessionManager {
                 );
             }
 
-            List<RedCoreProfileRegistry.RedCoreProfile> selectedProfiles = selectRunProfiles(validProfiles, configuredState.chooseCount());
+            Long configuredSeed = this.configuredRunSeed;
+            long effectiveRunSeed = configuredSeed != null ? configuredSeed.longValue() : ThreadLocalRandom.current().nextLong();
+            List<RedCoreProfileRegistry.RedCoreProfile> selectedProfiles = selectRunProfiles(validProfiles, configuredState.chooseCount(), effectiveRunSeed);
 
             this.activeSession = new ActiveSession(
                     templateWorldName,
@@ -220,6 +252,9 @@ public final class GameSessionManager {
         return transferFuture
                 .thenApply(runWorld -> {
                     RunStartMovementLockManager.get().lockPlayerForIntro(starter);
+                    if (GameFlowConfigManager.get().isStatusMessagesEnabled() && session.appliedRunHour >= 0) {
+                        starter.sendMessage(Message.raw("Run world time applied: " + session.appliedRunHour + ":00"));
+                    }
                     synchronized (this) {
                         if (this.activeSession == session) {
                             session.runWorldUuid = runWorld.getWorldConfig().getUuid();
@@ -362,7 +397,8 @@ public final class GameSessionManager {
             return;
         }
         UUID playerId = readyPlayerRef.getUuid();
-        RunStartData runStartData;
+        World runWorld;
+        ActiveSessionSnapshot snapshot;
 
         synchronized (this) {
             if (this.activeSession == null || this.activeSession.phase != RunPhase.WAITING_FOR_PLAYERS_READY) {
@@ -381,23 +417,38 @@ public final class GameSessionManager {
                 return;
             }
 
-            RunStartMovementLockManager.get().lockPlayerForIntro(playerRef);
             session.readyPlayerIds.add(playerId);
-            if (!isSessionReadyToStart(session)) {
+            if (!session.readyPlayerIds.containsAll(session.expectedPlayerIds)) {
                 return;
             }
 
-            runStartData = beginRunIfReady(session);
-            if (runStartData == null) {
+            RunStartMovementLockManager.get().lockPlayerForIntro(playerRef);
+            session.phase = RunPhase.EXPLORATION;
+            session.startedAtEpochMillis = System.currentTimeMillis();
+            session.runEndsAtEpochMillis = session.startedAtEpochMillis + this.configuredRunDurationMs;
+            session.crimsonStartAtEpochMillis = session.startedAtEpochMillis + CRIMSON_START_DELAY_MS;
+
+            runWorld = Universe.get().getWorld(session.runWorldUuid);
+            if (runWorld == null) {
                 return;
             }
+            snapshot = session.snapshot();
         }
 
-        applyRunStartPresentation(runStartData);
+        RescueObjectiveManager.get().spawnRescueOnRunStart(runWorld, snapshot);
+        PlayerRef readyPlayer = Universe.get().getPlayer(playerId);
+        if (readyPlayer != null) {
+            RunStartCameraManager.get().playSpawnIntro(readyPlayer);
+        }
     }
 
     public void onClientReadyPacket(@Nonnull UUID playerId, boolean readyForGameplay) {
-        RunStartData runStartData;
+        if (!readyForGameplay) {
+            return;
+        }
+        World runWorld;
+        ActiveSessionSnapshot snapshot;
+
         synchronized (this) {
             if (this.activeSession == null || this.activeSession.phase != RunPhase.WAITING_FOR_PLAYERS_READY) {
                 return;
@@ -406,56 +457,38 @@ public final class GameSessionManager {
             if (!session.expectedPlayerIds.contains(playerId)) {
                 return;
             }
-            if (readyForGameplay) {
-                session.gameplayReadyPlayerIds.add(playerId);
-            } else {
-                session.gameplayReadyPlayerIds.remove(playerId);
+
+            PlayerRef playerRef = Universe.get().getPlayer(playerId);
+            if (playerRef == null || playerRef.getWorldUuid() == null || session.runWorldUuid == null) {
                 return;
             }
-            runStartData = beginRunIfReady(session);
-            if (runStartData == null) {
+            if (!session.runWorldUuid.equals(playerRef.getWorldUuid())) {
                 return;
             }
+
+            session.readyPlayerIds.add(playerId);
+            if (!session.readyPlayerIds.containsAll(session.expectedPlayerIds)) {
+                return;
+            }
+
+            RunStartMovementLockManager.get().lockPlayerForIntro(playerRef);
+            session.phase = RunPhase.EXPLORATION;
+            session.startedAtEpochMillis = System.currentTimeMillis();
+            session.runEndsAtEpochMillis = session.startedAtEpochMillis + this.configuredRunDurationMs;
+            session.crimsonStartAtEpochMillis = session.startedAtEpochMillis + CRIMSON_START_DELAY_MS;
+
+            runWorld = Universe.get().getWorld(session.runWorldUuid);
+            if (runWorld == null) {
+                return;
+            }
+            snapshot = session.snapshot();
         }
 
-        applyRunStartPresentation(runStartData);
-    }
-
-    private void applyRunStartPresentation(@Nonnull RunStartData runStartData) {
-        RescueObjectiveManager.get().spawnRescueOnRunStart(runStartData.runWorld(), runStartData.snapshot());
-        for (UUID participantId : runStartData.startedPlayerIds()) {
-            PlayerRef readyPlayer = Universe.get().getPlayer(participantId);
-            if (readyPlayer == null || !readyPlayer.isValid() || readyPlayer.getWorldUuid() == null) {
-                continue;
-            }
-            UUID runWorldId = runStartData.snapshot().runWorldUuid();
-            if (runWorldId != null && !runWorldId.equals(readyPlayer.getWorldUuid())) {
-                continue;
-            }
+        RescueObjectiveManager.get().spawnRescueOnRunStart(runWorld, snapshot);
+        PlayerRef readyPlayer = Universe.get().getPlayer(playerId);
+        if (readyPlayer != null) {
             RunStartCameraManager.get().playSpawnIntro(readyPlayer);
         }
-    }
-
-    private static boolean isSessionReadyToStart(@Nonnull ActiveSession session) {
-        return session.readyPlayerIds.containsAll(session.expectedPlayerIds)
-                && session.gameplayReadyPlayerIds.containsAll(session.expectedPlayerIds);
-    }
-
-    @Nullable
-    private RunStartData beginRunIfReady(@Nonnull ActiveSession session) {
-        if (!isSessionReadyToStart(session)) {
-            return null;
-        }
-        session.phase = RunPhase.EXPLORATION;
-        session.startedAtEpochMillis = System.currentTimeMillis();
-        session.runEndsAtEpochMillis = session.startedAtEpochMillis + RUN_DURATION_MS;
-        session.crimsonStartAtEpochMillis = session.startedAtEpochMillis + CRIMSON_START_DELAY_MS;
-
-        World runWorld = Universe.get().getWorld(session.runWorldUuid);
-        if (runWorld == null) {
-            return null;
-        }
-        return new RunStartData(runWorld, session.snapshot(), new ArrayList<>(session.expectedPlayerIds));
     }
 
     public synchronized boolean isRunWorld(@Nonnull UUID worldUuid) {
@@ -475,7 +508,11 @@ public final class GameSessionManager {
         return WorldConfig.load(finalConfigPath)
                 .thenCompose(config -> {
                     config.setUuid(UUID.randomUUID());
-                    config.setDisplayName("Run " + session.runWorldName);
+                    if (GameFlowConfigManager.get().isStatusMessagesEnabled()) {
+                        config.setDisplayName("Run " + session.runWorldName);
+                    } else {
+                        config.setDisplayName("");
+                    }
                     config.setDeleteOnRemove(true);
                     config.markChanged();
                     return universe.makeWorld(session.runWorldName, session.runWorldPath, config);
@@ -744,6 +781,9 @@ public final class GameSessionManager {
     private static void customizeRunWorld(@Nonnull World runWorld, @Nonnull ActiveSession session) {
         runWorld.getWorldConfig().setIsAllNPCFrozen(false);
         runWorld.getWorldConfig().markChanged();
+        int selectedHour = chooseRunHour();
+        session.appliedRunHour = selectedHour;
+        applyRunWorldTimeSet(runWorld, selectedHour);
         configureQuestChest(runWorld, session.templateWorldName);
         replaceRandomBlightBeastWithRooter(runWorld);
     }
@@ -791,6 +831,32 @@ public final class GameSessionManager {
             return Math.max(1, min);
         }
         return ThreadLocalRandom.current().nextInt(min, max + 1);
+    }
+
+    private static int chooseRunHour() {
+        GameFlowConfigManager config = GameFlowConfigManager.get();
+        int minHour = Math.max(0, Math.min(23, config.getRunTimeHourMin()));
+        int maxHour = Math.max(0, Math.min(23, config.getRunTimeHourMax()));
+        if (maxHour < minHour) {
+            int tmp = minHour;
+            minHour = maxHour;
+            maxHour = tmp;
+        }
+        if (maxHour == minHour) {
+            return minHour;
+        }
+        return ThreadLocalRandom.current().nextInt(minHour, maxHour + 1);
+    }
+
+    private static void applyRunWorldTimeSet(@Nonnull World runWorld, int selectedHour) {
+        int clampedHour = Math.max(0, Math.min(23, selectedHour));
+        Store<EntityStore> store = runWorld.getEntityStore().getStore();
+        WorldTimeResource worldTime = store.getResource(WorldTimeResource.getResourceType());
+        if (worldTime == null) {
+            return;
+        }
+        double dayFraction = clampedHour / (double) WorldTimeResource.HOURS_PER_DAY;
+        worldTime.setDayTime(dayFraction, runWorld, store);
     }
 
     private static void replaceRandomBlightBeastWithRooter(@Nonnull World runWorld) {
@@ -896,7 +962,8 @@ public final class GameSessionManager {
     @Nonnull
     private static List<RedCoreProfileRegistry.RedCoreProfile> selectRunProfiles(
             @Nonnull List<RedCoreProfileRegistry.RedCoreProfile> validProfiles,
-            int configuredChooseCount
+            int configuredChooseCount,
+            long runSeed
     ) {
         if (validProfiles.isEmpty()) {
             return List.of();
@@ -915,7 +982,7 @@ public final class GameSessionManager {
         for (RedCoreProfileRegistry.RedCoreProfile profile : validProfiles) {
             shuffled.add(new RedCoreProfileRegistry.RedCoreProfile(new Vector3i(profile.corePos()), profile.radiusBlocks(), profile.startSeconds()));
         }
-        Collections.shuffle(shuffled, ThreadLocalRandom.current());
+        Collections.shuffle(shuffled, new java.util.Random(runSeed));
 
         ArrayList<RedCoreProfileRegistry.RedCoreProfile> selected = new ArrayList<>(shuffled.subList(0, chooseCount));
         selected.sort(Comparator
@@ -956,12 +1023,11 @@ public final class GameSessionManager {
         @Nonnull
         private final Set<UUID> readyPlayerIds = new LinkedHashSet<>();
         @Nonnull
-        private final Set<UUID> gameplayReadyPlayerIds = new LinkedHashSet<>();
-        @Nonnull
         private RunPhase phase = RunPhase.IDLE;
         private long startedAtEpochMillis;
         private long runEndsAtEpochMillis;
         private long crimsonStartAtEpochMillis;
+        private int appliedRunHour = -1;
 
         private ActiveSession(
                 @Nonnull String templateWorldName,
@@ -1029,13 +1095,6 @@ public final class GameSessionManager {
         public boolean crimsonEnabled() {
             return !this.crimsonProfiles.isEmpty();
         }
-    }
-
-    private record RunStartData(
-            @Nonnull World runWorld,
-            @Nonnull ActiveSessionSnapshot snapshot,
-            @Nonnull List<UUID> startedPlayerIds
-    ) {
     }
 
     @Nonnull

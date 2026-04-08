@@ -25,14 +25,18 @@ import dev.hytalemodding.commands.quest.QuestDevCommand;
 import dev.hytalemodding.commands.quest.QuestLogCommand;
 import dev.hytalemodding.commands.quest.SetQuestChestCommand;
 import dev.hytalemodding.commands.redwave.RedCoreCommand;
+import dev.hytalemodding.commands.redwave.RedLimitCommand;
 import dev.hytalemodding.commands.redwave.RedRadiusCommand;
+import dev.hytalemodding.commands.redwave.RedSpeedCommand;
 import dev.hytalemodding.commands.redwave.RedStartCommand;
 import dev.hytalemodding.commands.redwave.RedUiCommand;
 import dev.hytalemodding.commands.redwave.RedUndoCommand;
 import dev.hytalemodding.commands.run.GameEndCommand;
 import dev.hytalemodding.commands.run.GameResetCommand;
 import dev.hytalemodding.commands.run.GameStartCommand;
+import dev.hytalemodding.commands.run.BlightfallCommand;
 import dev.hytalemodding.commands.run.SetRunSpawnCommand;
+import dev.hytalemodding.commands.run.RunChunkSelectionCommand;
 import dev.hytalemodding.commands.run.SpawnStartTriggerCommand;
 import dev.hytalemodding.commands.run.SpawnUiCommand;
 import dev.hytalemodding.domain.housing.BaseHousingManager;
@@ -47,6 +51,7 @@ import dev.hytalemodding.map.MapReplacementPacketController;
 import dev.hytalemodding.map.BlacksmithSharedMarkerManager;
 import dev.hytalemodding.map.QuestChestMarkerPacketController;
 import dev.hytalemodding.map.SpawnMarkerPacketController;
+import dev.hytalemodding.map.RunChunkSelectionMapController;
 import dev.hytalemodding.npc.NpcDefinitionRegistry;
 import dev.hytalemodding.npc.NpcProgressManager;
 import dev.hytalemodding.npc.RunRescueRegistry;
@@ -80,9 +85,11 @@ import dev.hytalemodding.state.run.RescueObjectiveManager;
 import dev.hytalemodding.state.run.RescueObjectiveSystem;
 import dev.hytalemodding.state.run.RunDeathHandler;
 import dev.hytalemodding.state.run.RunClientReadyPacketWatcher;
+import dev.hytalemodding.state.run.RunChunkMapRefreshTickingSystem;
 import dev.hytalemodding.state.run.RunStartCameraSystem;
 import dev.hytalemodding.state.run.RunStartMovementLockSystem;
 import dev.hytalemodding.state.run.RunStartPlayerAnimationPatcher;
+import dev.hytalemodding.state.run.InfectionCoreDetectionSystem;
 import dev.hytalemodding.state.run.SpawnPointDetectionSystem;
 import dev.hytalemodding.state.run.SpawnPointPlacementHandler;
 import dev.hytalemodding.state.transition.PlayerSpawnSafety;
@@ -96,6 +103,7 @@ public class ExamplePlugin extends JavaPlugin {
     private MapReplacementPacketController mapReplacementPacketController;
     private SpawnMarkerPacketController spawnMarkerPacketController;
     private QuestChestMarkerPacketController questChestMarkerPacketController;
+    private RunChunkSelectionMapController runChunkSelectionMapController;
 
     public ExamplePlugin(@Nonnull JavaPluginInit init) {
         super(init);
@@ -113,9 +121,11 @@ public class ExamplePlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new GameStartCommand());
         this.getCommandRegistry().registerCommand(new GameEndCommand());
         this.getCommandRegistry().registerCommand(new GameResetCommand());
+        this.getCommandRegistry().registerCommand(new BlightfallCommand());
         this.getCommandRegistry().registerCommand(new SetRunSpawnCommand());
         this.getCommandRegistry().registerCommand(new SpawnStartTriggerCommand());
         this.getCommandRegistry().registerCommand(new SpawnUiCommand());
+        this.getCommandRegistry().registerCommand(new RunChunkSelectionCommand());
         this.getCommandRegistry().registerCommand(new SetBaseSpawnCommand());
         this.getCommandRegistry().registerCommand(new SetRescueSpawnCommand());
         this.getCommandRegistry().registerCommand(new GameConfigCommand());
@@ -157,6 +167,8 @@ public class ExamplePlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new RedStartCommand());
         this.getCommandRegistry().registerCommand(new RedUndoCommand());
         this.getCommandRegistry().registerCommand(new RedUiCommand());
+        this.getCommandRegistry().registerCommand(new RedSpeedCommand());
+        this.getCommandRegistry().registerCommand(new RedLimitCommand());
 
         this.introAnimationPatched = patchRunIntroAnimationSet("setup");
     }
@@ -185,6 +197,8 @@ public class ExamplePlugin extends JavaPlugin {
         this.spawnMarkerPacketController.register();
         this.questChestMarkerPacketController = new QuestChestMarkerPacketController(this);
         this.questChestMarkerPacketController.register();
+        this.runChunkSelectionMapController = new RunChunkSelectionMapController(this);
+        this.runChunkSelectionMapController.register();
         this.rescueInteractionPacketWatcher = new RescueInteractionPacketWatcher();
         this.rescueInteractionPacketWatcher.register();
         this.runClientReadyPacketWatcher = new RunClientReadyPacketWatcher();
@@ -196,6 +210,7 @@ public class ExamplePlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new RescueObjectiveSystem());
         this.getEntityStoreRegistry().registerSystem(new RunStartCameraSystem());
         this.getEntityStoreRegistry().registerSystem(new RunStartMovementLockSystem());
+        this.getEntityStoreRegistry().registerSystem(new RunChunkMapRefreshTickingSystem());
         this.getEntityStoreRegistry().registerSystem(new RunDeathHandler());
         this.getEntityStoreRegistry().registerSystem(new BlightBeastKillTrackerSystem());
         this.getEntityStoreRegistry().registerSystem(new BaseHousingSystem());
@@ -207,6 +222,7 @@ public class ExamplePlugin extends JavaPlugin {
             this.getChunkStoreRegistry().registerSystem(new CrimsonCoreDetectionSystem());
             this.getChunkStoreRegistry().registerSystem(new GameDoorBlockDetectionSystem());
             this.getChunkStoreRegistry().registerSystem(new SpawnPointDetectionSystem());
+            this.getChunkStoreRegistry().registerSystem(new InfectionCoreDetectionSystem());
         } catch (Throwable ignored) {
             // Keep plugin startup and command registration alive even when chunk-store APIs/components are unavailable.
         }
@@ -240,6 +256,10 @@ public class ExamplePlugin extends JavaPlugin {
         if (this.questChestMarkerPacketController != null) {
             this.questChestMarkerPacketController.unregister();
             this.questChestMarkerPacketController = null;
+        }
+        if (this.runChunkSelectionMapController != null) {
+            this.runChunkSelectionMapController.unregister();
+            this.runChunkSelectionMapController = null;
         }
     }
 

@@ -26,7 +26,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public final class SpawnPointZoneManager {
     private static final double PREVIOUS_LOCATION_WEIGHT = 0.35d;
-    private static final List<String> EDITABLE_WORLD_NAMES = List.of("game");
+    private static final List<String> EDITABLE_WORLD_NAMES = List.of("game", "game2");
     private static volatile int activeZoneIndex = 0;
     private static volatile int activeLocationIndex = 0;
     private static volatile int zoneCount = SpawnPointZoneConfigManager.DEFAULT_ZONE_COUNT;

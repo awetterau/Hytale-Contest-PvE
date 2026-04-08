@@ -4,24 +4,18 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
-import com.hypixel.hytale.server.core.command.system.arguments.system.OptionalArg;
-import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
-import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import dev.hytalemodding.state.transition.GameFlowConfigManager;
+import dev.hytalemodding.state.run.GameDoorInteractionHandler;
 import dev.hytalemodding.state.run.GameSessionManager;
 
 import javax.annotation.Nonnull;
 
 public class GameResetCommand extends AbstractPlayerCommand {
-    @Nonnull
-    private final OptionalArg<String> templateWorldArg = this.withOptionalArg("template", "Template world name", ArgTypes.STRING);
-
     public GameResetCommand() {
-        super("gamereset", "End current run (if any) and start a new run from template world.");
+        super("gamereset", "Reset run using the player's selected door zone.");
         this.setPermissionGroup(null);
     }
 
@@ -33,29 +27,22 @@ public class GameResetCommand extends AbstractPlayerCommand {
             @Nonnull PlayerRef playerRef,
             @Nonnull World world
     ) {
-        String templateWorldName = this.templateWorldArg.provided(context)
-                ? this.templateWorldArg.get(context)
-                : GameFlowConfigManager.get().getTemplateWorldName();
-        World templateWorld = Universe.get().getWorld(templateWorldName);
-        if (templateWorld == null) {
-            context.sendMessage(Message.raw("Template world not loaded: " + templateWorldName));
+        if (!GameSessionManager.get().hasActiveSession()) {
+            context.sendMessage(Message.raw("No active run to reset. Use /gamestart to begin one."));
             return;
         }
-
-        GameSessionManager.get().resetSession(playerRef, templateWorld).whenComplete((result, throwable) -> {
+        GameSessionManager.get().endSession().whenComplete((result, throwable) -> {
             if (throwable != null) {
                 String reason = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
                 context.sendMessage(Message.raw("Failed to reset run: " + reason));
                 return;
             }
-
-            context.sendMessage(
-                    Message.raw(
-                            "Run reset complete. Active world prepared: '"
-                                    + result.runWorldName()
-                                    + "'. Waiting for client gameplay ready before the timer starts."
-                    )
-            );
+            if (!result.success()) {
+                context.sendMessage(Message.raw("Reset cancelled: " + result.message()));
+                return;
+            }
+            context.sendMessage(Message.raw("Run ended. Starting a new run using your selected door zone..."));
+            GameDoorInteractionHandler.tryStartFromDoorSelection(playerRef);
         });
     }
 }

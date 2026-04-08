@@ -11,13 +11,14 @@ import com.hypixel.hytale.server.core.entity.entities.player.pages.CustomUIPage;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import dev.hytalemodding.ui.dev.BlightfallMainPage;
 import dev.hytalemodding.ui.dev.RedControlPage;
 
 import javax.annotation.Nonnull;
 
 public class RedUiCommand extends AbstractPlayerCommand {
     public RedUiCommand() {
-        super("redui", "Open or close the red control panel.");
+        super("redui", "[Deprecated] Use /blightfall.");
         this.setPermissionGroup(null);
     }
 
@@ -35,17 +36,16 @@ public class RedUiCommand extends AbstractPlayerCommand {
             return;
         }
 
+        context.sendMessage(Message.raw("[Deprecated] /redui is deprecated. Use /blightfall."));
+
         CustomUIPage current = player.getPageManager().getCustomPage();
-        if (current instanceof RedControlPage) {
+        if (current instanceof RedControlPage || current instanceof BlightfallMainPage) {
             player.getPageManager().setPage(ref, store, Page.None);
-            context.sendMessage(Message.raw("Red control panel closed."));
+            context.sendMessage(Message.raw("Blightfall panel closed."));
             return;
         }
 
-        player.getPageManager().openCustomPage(ref, store, new RedControlPage(playerRef));
-        context.sendMessage(Message.raw("Red control panel opened."));
+        player.getPageManager().openCustomPage(ref, store, new BlightfallMainPage(playerRef));
+        context.sendMessage(Message.raw("Blightfall panel opened. Use the Infection manager section for infection telemetry."));
     }
 }
-
-
-

@@ -283,9 +283,12 @@ public class RedControlPage extends InteractiveCustomUIPage<RedControlPage.PageE
 
             RedWaveManager.beginUndoSession(worldId, corePos);
             RedWaveManager.ActiveWave wave = RedWaveManager.startWave(worldId, corePos, state.globalRadius, state.globalSpreadSeconds);
+            double speed = wave.spreadSpeedPerTick();
+            int limit = RedWaveManager.getWorldFrontierLimit(worldId);
             this.playerRef.sendMessage(Message.raw(
                     "Red wave started for candidate #" + (state.selectedIndex + 1)
-                            + ": " + wave.totalBlocks() + " positions in " + this.formatSeconds(state.globalSpreadSeconds) + "s."
+                            + ": speed=" + String.format("%.3f", speed) + " blocks/tick, limit=" + limit
+                            + ", mask=" + wave.totalBlocks() + "."
             ));
         }
     }

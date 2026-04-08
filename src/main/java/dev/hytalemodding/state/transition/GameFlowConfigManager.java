@@ -27,6 +27,8 @@ import java.util.Set;
 public final class GameFlowConfigManager {
     private static final String DEFAULT_TEMPLATE_WORLD = "game";
     private static final String DEFAULT_HUB_WORLD = "hub";
+    private static final int DEFAULT_RUN_DURATION_SECONDS = 1200;
+    private static final int DEFAULT_RUN_TIME_HOUR = 8;
     private static final String PLUGIN_CONFIG_DIR = "HytaleModding-ExamplePlugin";
     private static final String CONFIG_FILE_NAME = "game-flow.properties";
     private static final GameFlowConfigManager INSTANCE = new GameFlowConfigManager();
@@ -37,6 +39,12 @@ public final class GameFlowConfigManager {
     private String hubWorldName = DEFAULT_HUB_WORLD;
     @Nullable
     private Vector3i doorBlock;
+    private int runDurationSeconds = DEFAULT_RUN_DURATION_SECONDS;
+    private int runTimeHourMin = DEFAULT_RUN_TIME_HOUR;
+    private int runTimeHourMax = DEFAULT_RUN_TIME_HOUR;
+    @Nullable
+    private Long runSeed;
+    private boolean statusMessagesEnabled = true;
     @Nullable
     private Transform runSpawn;
     @Nullable
@@ -73,6 +81,66 @@ public final class GameFlowConfigManager {
     public synchronized String getHubWorldName() {
         ensureLoaded();
         return this.hubWorldName;
+    }
+
+
+    public synchronized int getRunDurationSeconds() {
+        ensureLoaded();
+        return Math.max(1, this.runDurationSeconds);
+    }
+
+    public synchronized void setRunDurationSeconds(int runDurationSeconds) {
+        ensureLoaded();
+        this.runDurationSeconds = Math.max(1, runDurationSeconds);
+        saveQuietly();
+    }
+
+
+    @Nullable
+    public synchronized Long getRunSeed() {
+        ensureLoaded();
+        return this.runSeed;
+    }
+
+    public synchronized void setRunSeed(@Nullable Long runSeed) {
+        ensureLoaded();
+        this.runSeed = runSeed;
+        saveQuietly();
+    }
+
+    public synchronized int getRunTimeHourMin() {
+        ensureLoaded();
+        return Math.max(0, Math.min(23, this.runTimeHourMin));
+    }
+
+    public synchronized int getRunTimeHourMax() {
+        ensureLoaded();
+        return Math.max(0, Math.min(23, this.runTimeHourMax));
+    }
+
+    public synchronized void setRunTimeHourRange(int minHour, int maxHour) {
+        ensureLoaded();
+        int safeMin = Math.max(0, Math.min(23, minHour));
+        int safeMax = Math.max(0, Math.min(23, maxHour));
+        if (safeMax < safeMin) {
+            int tmp = safeMin;
+            safeMin = safeMax;
+            safeMax = tmp;
+        }
+        this.runTimeHourMin = safeMin;
+        this.runTimeHourMax = safeMax;
+        saveQuietly();
+    }
+
+    public synchronized boolean isStatusMessagesEnabled() {
+        ensureLoaded();
+        return this.statusMessagesEnabled;
+    }
+
+    public synchronized void setStatusMessagesEnabled(boolean enabled) {
+        ensureLoaded();
+        this.statusMessagesEnabled = enabled;
+        saveQuietly();
     }
 
     public synchronized void setHubWorldName(@Nonnull String hubWorldName) {
@@ -227,6 +295,10 @@ public final class GameFlowConfigManager {
         lines.add("Base spawn: " + formatTransform(this.baseSpawn));
         lines.add("Rescue run spawn: " + formatTransform(this.rescueRunSpawn));
         lines.add("Door block: " + formatVector(this.doorBlock));
+        lines.add("Run duration seconds: " + this.runDurationSeconds);
+        lines.add("Run time hour range: " + this.runTimeHourMin + "-" + this.runTimeHourMax);
+        lines.add("Run seed: " + (this.runSeed == null ? "<random>" : this.runSeed));
+        lines.add("Status chat messages: " + this.statusMessagesEnabled);
         lines.add("Rescued NPC keys: " + String.join(",", this.rescuedNpcKeys));
         return lines;
     }
@@ -252,6 +324,19 @@ public final class GameFlowConfigManager {
         this.templateWorldName = normalizeWorldName(properties.getProperty("templateWorld"), DEFAULT_TEMPLATE_WORLD);
         this.hubWorldName = normalizeWorldName(properties.getProperty("hubWorld"), DEFAULT_HUB_WORLD);
         this.doorBlock = readVector3i(properties, "doorBlock");
+        Integer loadedRunDuration = readInt(properties.getProperty("runDurationSeconds"));
+        this.runDurationSeconds = loadedRunDuration == null ? DEFAULT_RUN_DURATION_SECONDS : Math.max(1, loadedRunDuration);
+        Integer loadedMinHour = readInt(properties.getProperty("runTimeHourMin"));
+        Integer loadedMaxHour = readInt(properties.getProperty("runTimeHourMax"));
+        this.runTimeHourMin = loadedMinHour == null ? DEFAULT_RUN_TIME_HOUR : Math.max(0, Math.min(23, loadedMinHour));
+        this.runTimeHourMax = loadedMaxHour == null ? this.runTimeHourMin : Math.max(0, Math.min(23, loadedMaxHour));
+        if (this.runTimeHourMax < this.runTimeHourMin) {
+            int tmp = this.runTimeHourMin;
+            this.runTimeHourMin = this.runTimeHourMax;
+            this.runTimeHourMax = tmp;
+        }
+        this.runSeed = readLong(properties.getProperty("runSeed"));
+        this.statusMessagesEnabled = parseBoolean(properties.getProperty("statusMessagesEnabled"), true);
         this.runSpawn = readTransform(properties, "runSpawn");
         this.baseSpawn = readTransform(properties, "baseSpawn");
         this.rescueRunSpawn = readTransform(properties, "rescueRunSpawn");
@@ -268,6 +353,15 @@ public final class GameFlowConfigManager {
         Properties properties = new Properties();
         properties.setProperty("templateWorld", this.templateWorldName);
         properties.setProperty("hubWorld", this.hubWorldName);
+        properties.setProperty("runDurationSeconds", Integer.toString(Math.max(1, this.runDurationSeconds)));
+        properties.setProperty("runTimeHourMin", Integer.toString(Math.max(0, Math.min(23, this.runTimeHourMin))));
+        properties.setProperty("runTimeHourMax", Integer.toString(Math.max(0, Math.min(23, this.runTimeHourMax))));
+        if (this.runSeed == null) {
+            properties.remove("runSeed");
+        } else {
+            properties.setProperty("runSeed", Long.toString(this.runSeed));
+        }
+        properties.setProperty("statusMessagesEnabled", Boolean.toString(this.statusMessagesEnabled));
         writeVector3i(properties, "doorBlock", this.doorBlock);
         writeTransform(properties, "runSpawn", this.runSpawn);
         writeTransform(properties, "baseSpawn", this.baseSpawn);
@@ -366,6 +460,25 @@ public final class GameFlowConfigManager {
         } catch (NumberFormatException ignored) {
             return null;
         }
+    }
+
+    @Nullable
+    private static Long readLong(@Nullable String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private static boolean parseBoolean(@Nullable String value, boolean fallback) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        return Boolean.parseBoolean(value.trim());
     }
 
     @Nullable

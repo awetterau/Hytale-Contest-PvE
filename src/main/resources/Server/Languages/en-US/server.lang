@@ -21,4 +21,14 @@ server.items.Base_Plot_Marker.description=Use this marker to assign a rescued NP
 items.Crimson_Core.name=Crimson Core
 items.Crimson_Core.description=A fleshy, viscous mass of unknown origin.
 
+items.Crimson_Core_Weak.name=Crimson Core Weak
+
+items.Spawn_Crimson_Core_Block.name=Spawn Crimson Core Block
+items.Spawn_Crimson_Core_Weak_Block.name=Spawn Crimson Core Weak Block
+
+items.SpawnPoint_Block.name=Spawn-Point Block
+
+items.Crimson_Layer.name=Crimson Layer
+items.Crimson_Plate.name=Crimson Plate
+
 items.Large_Rope.name=Large Rope

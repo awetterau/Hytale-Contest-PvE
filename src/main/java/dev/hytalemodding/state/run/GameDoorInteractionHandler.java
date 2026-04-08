@@ -76,6 +76,10 @@ public final class GameDoorInteractionHandler {
     }
 
     public static boolean handleDoorEntityTrigger(@Nullable PlayerRef playerRef) {
+        return executeDoorRunFlow(playerRef);
+    }
+
+    public static boolean executeDoorRunFlow(@Nullable PlayerRef playerRef) {
         return handleDoorTriggerInternal(playerRef, null, true);
     }
 
@@ -114,7 +118,7 @@ public final class GameDoorInteractionHandler {
             tryExtractFromDoor(playerRef, session);
             return true;
         }
-        playerRef.sendMessage(Message.raw("[DoorDebug] Active run exists but you are not in run world."));
+        sendStatusMessage(playerRef, "[DoorDebug] Active run exists but you are not in run world.");
         return false;
     }
 
@@ -152,34 +156,34 @@ public final class GameDoorInteractionHandler {
         GameFlowConfigManager config = GameFlowConfigManager.get();
         String hubWorldName = config.getHubWorldName();
         if (!isHubWorld(templateWorld)) {
-            playerRef.sendMessage(Message.raw("Use the game door from hub world '" + hubWorldName + "'."));
+            sendStatusMessage(playerRef, "Use the game door from hub world '" + hubWorldName + "'.");
             return;
         }
 
         String templateWorldName = config.getTemplateWorldName();
         World runTemplateWorld = Universe.get().getWorld(templateWorldName);
         if (runTemplateWorld == null) {
-            playerRef.sendMessage(Message.raw("Run template world not loaded: " + templateWorldName));
+            sendStatusMessage(playerRef, "Run template world not loaded: " + templateWorldName);
             return;
         }
 
         boolean hasBaseSpawn = config.hasBaseSpawn();
         if (!hasBaseSpawn) {
-            playerRef.sendMessage(Message.raw("Setup missing: /setbasespawn"));
+            sendStatusMessage(playerRef, "Setup missing: /setbasespawn");
             return;
         }
 
         SpawnPointZoneManager.refreshForPlayer(playerRef);
         Integer selectedZone = DoorRunZoneSelectionManager.ensureSelectedZoneOrDefault(playerRef.getUuid());
         if (selectedZone == null) {
-            playerRef.sendMessage(Message.raw("No spawn zones with registered SpawnPoint_Block entries are available."));
+            sendStatusMessage(playerRef, "No spawn zones with registered SpawnPoint_Block entries are available.");
             return;
         }
 
         SpawnPointZoneManager.SpawnSelectionResult spawnSelection =
                 SpawnPointZoneManager.reserveRandomSpawnForPlayer(runTemplateWorld, selectedZone.intValue(), playerRef.getUuid(), playerRef.getTransform());
         if (spawnSelection == null) {
-            playerRef.sendMessage(Message.raw("Selected door zone " + SpawnPointZoneManager.getFormattedZoneLabel(selectedZone.intValue()) + " has no registered SpawnPoint_Block entries."));
+            sendStatusMessage(playerRef, "Selected door zone " + SpawnPointZoneManager.getFormattedZoneLabel(selectedZone.intValue()) + " has no registered SpawnPoint_Block entries.");
             return;
         }
 
@@ -193,10 +197,10 @@ public final class GameDoorInteractionHandler {
                 String reason = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
                 SpawnPointZoneManager.releaseReservedSpawn(playerRef.getUuid());
                 RunStartMovementLockManager.get().unlockPlayers(lockedPlayerIds);
-                playerRef.sendMessage(Message.raw("Failed to start run: " + reason));
+                sendStatusMessage(playerRef, "Failed to start run: " + reason);
                 return;
             }
-            playerRef.sendMessage(Message.raw("Loading run from " + SpawnPointZoneManager.getFormattedLocationLabel(selectedZone.intValue(), spawnSelection.locationIndex()) + ". The timer will start when gameplay is ready."));
+            sendStatusMessage(playerRef, "Loading run from " + SpawnPointZoneManager.getFormattedLocationLabel(selectedZone.intValue(), spawnSelection.locationIndex()) + ". The timer will start when gameplay is ready.");
         });
     }
 
@@ -208,25 +212,25 @@ public final class GameDoorInteractionHandler {
         String hubWorldName = config.getHubWorldName();
         World hubWorld = Universe.get().getWorld(hubWorldName);
         if (hubWorld == null) {
-            playerRef.sendMessage(Message.raw("Hub world is unavailable: " + hubWorldName));
+            sendStatusMessage(playerRef, "Hub world is unavailable: " + hubWorldName);
             return;
         }
 
         Transform baseSpawn = nullableOrDefault(config.getBaseSpawn(), playerRef.getTransform());
         boolean queuedRescue = RunHubTransferService.get().queueRescueForExtraction(session.runWorldUuid(), playerRef.getUuid());
         if (!queuedRescue) {
-            playerRef.sendMessage(Message.raw("Rescue transfer not queued (already rescued or objective not ready)."));
+            sendStatusMessage(playerRef, "Rescue transfer not queued (already rescued or objective not ready).");
         }
 
         GameSessionManager.get().endSession(baseSpawn, hubWorld).whenComplete((result, throwable) -> {
             if (throwable != null) {
                 String reason = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
-                playerRef.sendMessage(Message.raw("Failed to extract: " + reason));
+                sendStatusMessage(playerRef, "Failed to extract: " + reason);
                 return;
             }
             SpawnPointZoneManager.releaseReservedSpawn(playerRef.getUuid());
             healIfAdventurePlayer(playerRef);
-            playerRef.sendMessage(Message.raw("Extraction complete."));
+            sendStatusMessage(playerRef, "Extraction complete.");
             QuestProgressManager.get().incrementSuccessfulExtraction(playerRef);
             if (queuedRescue) {
                 RunHubTransferService.get().spawnQueuedRescueInBase(playerRef, hubWorld, baseSpawn);
@@ -236,6 +240,13 @@ public final class GameDoorInteractionHandler {
 
     public static boolean isHubWorld(@Nullable World world) {
         return world != null && isHubWorld(world.getName());
+    }
+
+    private static void sendStatusMessage(@Nonnull PlayerRef playerRef, @Nonnull String text) {
+        if (!GameFlowConfigManager.get().isStatusMessagesEnabled()) {
+            return;
+        }
+        playerRef.sendMessage(Message.raw(text));
     }
 
     public static boolean isHubWorld(@Nullable String worldName) {

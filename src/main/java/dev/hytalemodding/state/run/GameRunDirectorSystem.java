@@ -12,26 +12,40 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.hud.GameTimerHud;
 import dev.hytalemodding.redwave.RedWaveManager;
 import dev.hytalemodding.redwave.RedCoreProfileRegistry;
+import dev.hytalemodding.redwave.RedCoreRegistry;
 import dev.hytalemodding.redwave.RedWaveConfig;
+import dev.hytalemodding.ui.dev.BlightfallMainPage;
+import dev.hytalemodding.state.transition.GameFlowConfigManager;
+import com.hypixel.hytale.math.vector.Vector3i;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.UUID;
 
 public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
+    private static final String WEAK_RUNTIME_CORE_BLOCK_ID = "Crimson_Core_Weak";
     private final ConcurrentHashMap<UUID, GameTimerHud> timerHuds = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Long> lastShownSecond = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Set<Integer>> executedAutomationByWorld = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Integer>> failedAutomationByWorld = new ConcurrentHashMap<>();
 
     @Override
     public void tick(float dt, int systemIndex, @Nonnull Store<EntityStore> store) {
         GameSessionManager.ActiveSessionSnapshot snapshot = GameSessionManager.get().getActiveSession();
         if (snapshot == null || snapshot.runWorldUuid() == null) {
             hideAllTimerHuds();
+            this.executedAutomationByWorld.clear();
+            this.failedAutomationByWorld.clear();
             return;
         }
         if (snapshot.phase() != GameSessionManager.RunPhase.EXPLORATION
                 && snapshot.phase() != GameSessionManager.RunPhase.CRIMSON_ACTIVE) {
             hideAllTimerHuds();
+            this.executedAutomationByWorld.clear();
+            this.failedAutomationByWorld.clear();
             return;
         }
 
@@ -43,6 +57,7 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
 
         long remainingMs = Math.max(0L, snapshot.runEndsAtEpochMillis() - System.currentTimeMillis());
         updateRunWorldTimerHud(worldId, remainingMs);
+        processAutomatedActions(world, snapshot);
 
         if (snapshot.crimsonEnabled() && snapshot.phase() == GameSessionManager.RunPhase.EXPLORATION && GameSessionManager.get().shouldActivateCrimson()) {
             if (RedWaveManager.getActiveWave(worldId) == null) {
@@ -64,6 +79,168 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
             }
             GameSessionManager.get().markCrimsonActive();
         }
+    }
+
+
+    private void processAutomatedActions(@Nonnull World world, @Nonnull GameSessionManager.ActiveSessionSnapshot snapshot) {
+        long elapsedSeconds = Math.max(0L, (System.currentTimeMillis() - snapshot.startedAtEpochMillis()) / 1000L);
+        List<BlightfallMainPage.RuntimeAction> actions = resolveRuntimeActions(world, snapshot);
+        if (actions.isEmpty()) {
+            return;
+        }
+
+        UUID worldId = world.getWorldConfig().getUuid();
+        Set<Integer> executed = this.executedAutomationByWorld.computeIfAbsent(worldId, ignored -> java.util.concurrent.ConcurrentHashMap.newKeySet());
+        ConcurrentHashMap<Integer, Integer> failedCounts = this.failedAutomationByWorld.computeIfAbsent(worldId, ignored -> new ConcurrentHashMap<>());
+
+        for (int i = 0; i < actions.size(); i++) {
+            BlightfallMainPage.RuntimeAction action = actions.get(i);
+            if (!action.enabled() || action.triggerSecond() > elapsedSeconds || executed.contains(i)) {
+                continue;
+            }
+            int roll = ThreadLocalRandom.current().nextInt(100);
+            if (roll >= Math.max(0, Math.min(100, action.probabilityPercent()))) {
+                sendStatusIfEnabled(worldId, "[InfectionAction] Skipped by probability for action #" + i + ".");
+                executed.add(i);
+                continue;
+            }
+
+            boolean performed = switch (action.actionType().toLowerCase()) {
+                case "spawn" -> executeSpawnAction(worldId, world, action);
+                case "grow" -> executeGrowAction(worldId, world, action);
+                default -> false;
+            };
+            if (performed) {
+                sendStatusIfEnabled(worldId, "[InfectionAction] Executed " + action.actionType() + " (" + action.coreTier() + ") at t=" + elapsedSeconds + "s");
+                executed.add(i);
+                failedCounts.remove(i);
+            } else {
+                int failures = failedCounts.merge(i, 1, Integer::sum);
+                if (failures >= 5) {
+                    sendStatusIfEnabled(worldId, "[InfectionAction] Failed " + action.actionType() + " (" + action.coreTier() + ") 5 times. Disabling this action for current run.");
+                    executed.add(i);
+                } else {
+                    sendStatusIfEnabled(worldId, "[InfectionAction] Failed " + action.actionType() + " (" + action.coreTier() + ") - no valid targets (" + failures + "/5).");
+                }
+            }
+        }
+    }
+
+    private boolean executeSpawnAction(@Nonnull UUID worldId, @Nonnull World world, @Nonnull BlightfallMainPage.RuntimeAction action) {
+        List<Vector3i> anchors = "weak".equalsIgnoreCase(action.coreTier())
+                ? InfectionCoreRegistry.snapshotWeakPositions(worldId)
+                : InfectionCoreRegistry.snapshotCorePositions(worldId);
+        if (anchors.isEmpty()) {
+            return false;
+        }
+        Vector3i target = anchors.get(ThreadLocalRandom.current().nextInt(anchors.size()));
+        String blockId = "weak".equalsIgnoreCase(action.coreTier()) ? WEAK_RUNTIME_CORE_BLOCK_ID : RedWaveConfig.CORE_BLOCK_ID;
+        world.setBlock(target.x, target.y, target.z, blockId);
+        RedCoreRegistry.register(worldId, target);
+        RedWaveManager.beginUndoSession(worldId, target);
+        RedWaveManager.startWave(worldId, target, Math.max(1, action.radius()), Math.max(0.1f, action.ticksPerBlock() / 20.0f));
+        return true;
+    }
+
+    private boolean executeGrowAction(@Nonnull UUID worldId, @Nonnull World world, @Nonnull BlightfallMainPage.RuntimeAction action) {
+        List<Vector3i> cores = RedCoreRegistry.snapshot(worldId).stream()
+                .filter(pos -> {
+                    var bt = world.getBlockType(pos.x, pos.y, pos.z);
+                    if (bt == null) {
+                        return false;
+                    }
+                    if ("weak".equalsIgnoreCase(action.coreTier())) {
+                        return WEAK_RUNTIME_CORE_BLOCK_ID.equals(bt.getId());
+                    }
+                    return RedWaveConfig.CORE_BLOCK_ID.equals(bt.getId());
+                })
+                .toList();
+        Vector3i target;
+        if (cores.isEmpty()) {
+            List<Vector3i> anchors = "weak".equalsIgnoreCase(action.coreTier())
+                    ? InfectionCoreRegistry.snapshotWeakPositions(worldId)
+                    : InfectionCoreRegistry.snapshotCorePositions(worldId);
+            if (anchors.isEmpty()) {
+                return false;
+            }
+            target = anchors.get(ThreadLocalRandom.current().nextInt(anchors.size()));
+            String coreBlockId = "weak".equalsIgnoreCase(action.coreTier()) ? WEAK_RUNTIME_CORE_BLOCK_ID : RedWaveConfig.CORE_BLOCK_ID;
+            world.setBlock(target.x, target.y, target.z, coreBlockId);
+            RedCoreRegistry.register(worldId, target);
+        } else {
+            target = cores.get(ThreadLocalRandom.current().nextInt(cores.size()));
+        }
+        RedWaveManager.ActiveWave currentWave = RedWaveManager.getActiveWave(worldId, target);
+        int growthRadius = Math.max(1, action.radius());
+        if (currentWave != null) {
+            growthRadius = Math.max(growthRadius, currentWave.radiusBlocks() + Math.max(1, action.radius()));
+        } else {
+            int existingRadius = estimateExistingCrimsonRadius(world, target, 64);
+            if (existingRadius > 0) {
+                growthRadius = Math.max(growthRadius, existingRadius + Math.max(1, action.radius()));
+            }
+        }
+        sendStatusIfEnabled(worldId, "[InfectionAction] Grow target core at " + target.x + "," + target.y + "," + target.z + " radius=" + growthRadius + ".");
+        RedWaveManager.beginUndoSession(worldId, target);
+        RedWaveManager.startWave(worldId, target, growthRadius, Math.max(0.1f, action.ticksPerBlock() / 20.0f));
+        return true;
+    }
+
+    @Nonnull
+    private List<BlightfallMainPage.RuntimeAction> resolveRuntimeActions(
+            @Nonnull World world,
+            @Nonnull GameSessionManager.ActiveSessionSnapshot snapshot
+    ) {
+        List<BlightfallMainPage.RuntimeAction> uiActions = BlightfallMainPage.snapshotRuntimeActions(snapshot.starterPlayerId());
+        if (!uiActions.isEmpty()) {
+            return uiActions;
+        }
+
+        List<InfectionActionConfigManager.ActionEntry> actions = InfectionActionConfigManager.loadActions(world.getName());
+        if (actions.isEmpty()) {
+            actions = InfectionActionConfigManager.loadActions(snapshot.templateWorldName());
+        }
+        if (actions.isEmpty()) {
+            return List.of();
+        }
+
+        List<BlightfallMainPage.RuntimeAction> mapped = new java.util.ArrayList<>(actions.size());
+        for (InfectionActionConfigManager.ActionEntry action : actions) {
+            mapped.add(new BlightfallMainPage.RuntimeAction(
+                    action.actionType(),
+                    action.coreTier(),
+                    action.triggerSecond(),
+                    action.radius(),
+                    action.ticksPerBlock(),
+                    action.probabilityPercent(),
+                    action.enabled()
+            ));
+        }
+        return mapped;
+    }
+
+    private static int estimateExistingCrimsonRadius(@Nonnull World world, @Nonnull Vector3i origin, int maxRadius) {
+        int farthest = 0;
+        for (int dx = -maxRadius; dx <= maxRadius; dx++) {
+            for (int dz = -maxRadius; dz <= maxRadius; dz++) {
+                var block = world.getBlockType(origin.x + dx, origin.y, origin.z + dz);
+                if (block == null || !RedWaveConfig.CRIMSON_LAYER_BLOCK_ID.equals(block.getId())) {
+                    continue;
+                }
+                int distance = (int) Math.round(Math.sqrt((dx * dx) + (dz * dz)));
+                if (distance > farthest) {
+                    farthest = distance;
+                }
+            }
+        }
+        return farthest;
+    }
+
+    private void sendStatusIfEnabled(@Nonnull UUID worldId, @Nonnull String text) {
+        if (!GameFlowConfigManager.get().isStatusMessagesEnabled()) {
+            return;
+        }
+        sendRunWorldMessage(worldId, text);
     }
 
     private void updateRunWorldTimerHud(@Nonnull UUID runWorldId, long remainingMs) {

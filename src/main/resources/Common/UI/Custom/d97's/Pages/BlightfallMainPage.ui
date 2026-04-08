@@ -1,0 +1,293 @@
+Group {
+  Anchor: (Left: 36, Top: 36, Right: 36, Bottom: 36);
+
+  Group {
+    Anchor: (Left: 0, Top: 0, Width: 230, Bottom: 0);
+    Background: (Color: #7a2020(0.40));
+
+    Label {
+      Anchor: (Left: 10, Top: 10, Right: 10, Height: 24);
+      Text: "BLIGHTFALL";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 20);
+    }
+
+    Label #WorldLabel {
+      Anchor: (Left: 10, Top: 36, Right: 10, Height: 18);
+      Text: "World:";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center);
+    }
+
+    TextButton #NavRunButton {
+      Anchor: (Left: 10, Top: 72, Right: 10, Height: 36);
+      Text: "Run Control";
+      Background: (Color: #441010(0.92));
+    }
+
+    TextButton #NavRedButton {
+      Anchor: (Left: 10, Top: 114, Right: 10, Height: 36);
+      Text: "Infection manager";
+      Background: (Color: #441010(0.92));
+    }
+  }
+
+  Group {
+    Anchor: (Left: 246, Top: 0, Right: 396, Bottom: 0);
+    Background: (Color: #7a2020(0.30));
+
+    Label #SectionLabel {
+      Anchor: (Left: 8, Top: 10, Right: 8, Height: 24);
+      Text: "Section:";
+      Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
+    }
+
+    Label #TemplateWorldLabel {
+      Anchor: (Left: 8, Top: 44, Width: 120, Height: 18);
+      Text: "Template world:";
+      Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
+    }
+
+    TextField #TemplateInput {
+      Anchor: (Left: 126, Top: 40, Width: 180, Height: 26);
+      Value: "game";
+    }
+
+    Label #RunDurationLabel {
+      Anchor: (Left: 314, Top: 44, Width: 92, Height: 18);
+      Text: "Duration(s):";
+      Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
+    }
+
+    NumberField #RunDurationInput {
+      Anchor: (Left: 404, Top: 40, Width: 120, Height: 26);
+      Value: 1200;
+    }
+
+    Label #RunSeedLabel {
+      Anchor: (Left: 532, Top: 44, Width: 38, Height: 18);
+      Text: "Seed:";
+      Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
+    }
+
+    TextField #RunSeedInput {
+      Anchor: (Left: 572, Top: 40, Width: 86, Height: 26);
+      Value: "";
+    }
+
+    Label #RunTimeHourLabel {
+      Anchor: (Left: 662, Top: 44, Width: 42, Height: 18);
+      Text: "Time:";
+      Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
+    }
+
+    NumberField #RunTimeHourMinInput {
+      Anchor: (Left: 706, Top: 40, Width: 34, Height: 26);
+      Value: 8;
+    }
+
+    NumberField #RunTimeHourMaxInput {
+      Anchor: (Left: 744, Top: 40, Width: 34, Height: 26);
+      Value: 8;
+    }
+
+    TextButton #ApplyGameControlButton {
+      Anchor: (Left: 782, Top: 40, Right: 8, Height: 26);
+      Text: "Apply";
+      Background: (Color: #441010(0.92));
+    }
+
+    Label #CenterContent {
+      Anchor: (Left: 8, Top: 74, Right: 8, Height: 94);
+      Text: "";
+      Style: (HorizontalAlignment: Start, VerticalAlignment: Start);
+    }
+
+    Label #WeakListTitle {
+      Anchor: (Right: 258, Top: 176, Width: 220, Height: 20);
+      Text: "Weak (0)";
+      Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
+      Visible: false;
+    }
+
+    Label #CoreListTitle {
+      Anchor: (Right: 24, Top: 176, Width: 220, Height: 20);
+      Text: "Core (0)";
+      Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
+      Visible: false;
+    }
+
+
+    Group #WeakDropdownRow {
+      Anchor: (Right: 258, Top: 200, Width: 220, Height: 82);
+      Background: (Color: #2f0b0b(0.72));
+      Visible: false;
+
+      TextButton #WeakPrevButton { Anchor: (Left: 6, Top: 8, Width: 28, Height: 22); Text: "<"; Background: (Color: #441010(0.92)); }
+      Label #WeakDropdownValue { Anchor: (Left: 38, Top: 8, Right: 38, Height: 22); Text: "(empty)"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+      TextButton #WeakNextButton { Anchor: (Right: 6, Top: 8, Width: 28, Height: 22); Text: ">"; Background: (Color: #441010(0.92)); }
+      TextButton #WeakTpButton { Anchor: (Left: 6, Top: 42, Right: 6, Height: 28); Text: "TP weak"; Background: (Color: #441010(0.92)); }
+    }
+
+    Group #CoreDropdownRow {
+      Anchor: (Right: 24, Top: 200, Width: 220, Height: 82);
+      Background: (Color: #2f0b0b(0.72));
+      Visible: false;
+
+      TextButton #CorePrevButton { Anchor: (Left: 6, Top: 8, Width: 28, Height: 22); Text: "<"; Background: (Color: #441010(0.92)); }
+      Label #CoreDropdownValue { Anchor: (Left: 38, Top: 8, Right: 38, Height: 22); Text: "(empty)"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+      TextButton #CoreNextButton { Anchor: (Right: 6, Top: 8, Width: 28, Height: 22); Text: ">"; Background: (Color: #441010(0.92)); }
+      TextButton #CoreTpButton { Anchor: (Left: 6, Top: 42, Right: 6, Height: 28); Text: "TP core"; Background: (Color: #441010(0.92)); }
+    }
+    Group #TimelineSection {
+      Anchor: (Left: 44, Top: 430, Right: 44, Bottom: 108);
+      Background: (Color: #8d2d45(0.82));
+      Visible: false;
+
+      Label #TimelineHeader {
+        Anchor: (Left: 12, Top: 8, Right: 12, Height: 20);
+        Text: "Timeline Events (0)";
+        Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
+      }
+
+      TextButton #TimelineEventButton1 { Anchor: (Left: 12, Top: 34, Right: 12, Height: 22); Text: "Event 1"; Visible: false; Background: (Color: #2f0b0b(0.94)); }
+      TextButton #TimelineEventButton2 { Anchor: (Left: 12, Top: 58, Right: 12, Height: 22); Text: "Event 2"; Visible: false; Background: (Color: #2f0b0b(0.94)); }
+      TextButton #TimelineEventButton3 { Anchor: (Left: 12, Top: 82, Right: 12, Height: 22); Text: "Event 3"; Visible: false; Background: (Color: #2f0b0b(0.94)); }
+      TextButton #TimelineEventButton4 { Anchor: (Left: 12, Top: 106, Right: 12, Height: 22); Text: "Event 4"; Visible: false; Background: (Color: #2f0b0b(0.94)); }
+      TextButton #TimelineEventButton5 { Anchor: (Left: 12, Top: 130, Right: 12, Height: 22); Text: "Event 5"; Visible: false; Background: (Color: #2f0b0b(0.94)); }
+      TextButton #TimelineEventButton6 { Anchor: (Left: 12, Top: 154, Right: 12, Height: 22); Text: "Event 6"; Visible: false; Background: (Color: #2f0b0b(0.94)); }
+      TextButton #TimelineEventButton7 { Anchor: (Left: 12, Top: 178, Right: 12, Height: 22); Text: "Event 7"; Visible: false; Background: (Color: #2f0b0b(0.94)); }
+      TextButton #TimelineEventButton8 { Anchor: (Left: 12, Top: 202, Right: 12, Height: 22); Text: "Event 8"; Visible: false; Background: (Color: #2f0b0b(0.94)); }
+
+      TextButton #AddEventButton {
+        Anchor: (Left: 12, Bottom: 8, Width: 140, Height: 24);
+        Text: "Add Selected Event";
+        Background: (Color: #441010(0.92));
+      }
+
+      TextButton #RemoveEventButton {
+        Anchor: (Left: 158, Bottom: 8, Width: 140, Height: 24);
+        Text: "Delete Selected Event";
+        Background: (Color: #441010(0.92));
+      }
+    }
+
+    Group #BottomActionSection {
+      Anchor: (Left: 0, Right: 0, Bottom: 0, Height: 86);
+      Background: (Color: #5f1a31(0.64));
+
+      Group {
+        Anchor: (Left: 0, Top: 0, Right: 0, Height: 4);
+        Background: (Color: #8d2d45(0.95));
+      }
+
+      TextButton #RunStartButton {
+        Anchor: (Left: 12, Top: 18, Width: 170, Height: 34);
+        Text: "Run Start";
+        Background: (Color: #441010(0.92));
+      }
+
+      TextButton #RunResetButton {
+        Anchor: (Left: 188, Top: 18, Width: 170, Height: 34);
+        Text: "Run Reset";
+        Background: (Color: #441010(0.92));
+      }
+
+      TextButton #RunStopButton {
+        Anchor: (Left: 364, Top: 18, Width: 170, Height: 34);
+        Text: "Stop Run";
+        Background: (Color: #441010(0.92));
+      }
+
+
+      TextButton #ToggleStatusChatButton {
+        Anchor: (Left: 540, Top: 18, Width: 190, Height: 34);
+        Text: "Status Chat: ON";
+        Background: (Color: #441010(0.92));
+      }
+
+      TextButton #RefreshButton {
+        Anchor: (Right: 128, Top: 18, Width: 110, Height: 32);
+        Text: "Refresh";
+        Background: (Color: #441010(0.92));
+      }
+
+      TextButton #CloseButton {
+        Anchor: (Right: 8, Top: 18, Width: 110, Height: 32);
+        Text: "Close";
+        Background: (Color: #441010(0.92));
+      }
+    }
+  }
+
+  Group {
+    Anchor: (Right: 0, Top: 0, Width: 380, Bottom: 0);
+    Background: (Color: #7a2020(0.40));
+
+    Label {
+      Anchor: (Left: 10, Top: 10, Right: 10, Height: 24);
+      Text: "Extras";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true);
+    }
+
+    Label #RightContent {
+      Anchor: (Left: 10, Top: 40, Right: 10, Height: 96);
+      Text: "";
+      Style: (HorizontalAlignment: Start, VerticalAlignment: Start);
+    }
+
+    Group #EventEditorSection {
+      Anchor: (Left: 10, Top: 142, Right: 10, Bottom: 10);
+      Background: (Color: #5f1a31(0.64));
+      Visible: false;
+
+      Label #ActionSelectorLabel {
+        Anchor: (Left: 8, Top: 8, Right: 8, Height: 20);
+        Text: "Action 1/1 - SPAWN";
+        Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
+      }
+
+      TextButton #PrevActionButton { Anchor: (Left: 8, Top: 32, Width: 28, Height: 22); Text: "<"; Background: (Color: #441010(0.92)); }
+      TextButton #NextActionButton { Anchor: (Left: 40, Top: 32, Width: 28, Height: 22); Text: ">"; Background: (Color: #441010(0.92)); }
+
+      Label { Anchor: (Left: 74, Top: 34, Width: 64, Height: 18); Text: "actionType"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+      TextButton #ActionTypePrevButton { Anchor: (Left: 206, Top: 32, Width: 24, Height: 22); Text: "<"; Background: (Color: #441010(0.92)); }
+      Label #ActionTypeSelectorValue { Anchor: (Left: 234, Top: 32, Width: 78, Height: 22); Text: "SPAWN"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+      TextButton #ActionTypeNextButton { Anchor: (Left: 316, Top: 32, Width: 24, Height: 22); Text: ">"; Background: (Color: #441010(0.92)); }
+
+      Label #EventEditorTitle {
+        Anchor: (Left: 8, Top: 60, Right: 8, Height: 20);
+        Text: "Configure action #1";
+        Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
+      }
+
+      Label { Anchor: (Left: 8, Top: 88, Width: 120, Height: 18); Text: "runSecond"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+      NumberField #EventTriggerSecondInput { Anchor: (Left: 132, Top: 84, Right: 8, Height: 24); Value: 30; }
+
+      Label { Anchor: (Left: 8, Top: 118, Width: 120, Height: 18); Text: "targetRadius"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+      NumberField #EventCoreCountInput { Anchor: (Left: 132, Top: 114, Right: 8, Height: 24); Value: 6; }
+
+      Label { Anchor: (Left: 8, Top: 148, Width: 120, Height: 18); Text: "ticksPerBlock"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+      TextField #EventCoreTypeInput { Anchor: (Left: 132, Top: 144, Right: 8, Height: 24); Value: "2"; }
+
+      Label { Anchor: (Left: 8, Top: 178, Width: 120, Height: 18); Text: "enabled"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+      TextField #EventEnabledInput { Anchor: (Left: 132, Top: 174, Right: 8, Height: 24); Value: "true"; }
+
+
+      TextField #ActionTypeInput { Anchor: (Left: 132, Top: 204, Right: 8, Height: 24); Value: "spawn"; Visible: false; }
+
+      Label { Anchor: (Left: 8, Top: 208, Width: 120, Height: 18); Text: "coreType"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+      TextButton #CoreTierPrevButton { Anchor: (Left: 132, Top: 204, Width: 24, Height: 24); Text: "<"; Background: (Color: #441010(0.92)); }
+      Label #CoreTierSelectorValue { Anchor: (Left: 160, Top: 204, Width: 90, Height: 24); Text: "CORE"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+      TextButton #CoreTierNextButton { Anchor: (Left: 254, Top: 204, Width: 24, Height: 24); Text: ">"; Background: (Color: #441010(0.92)); }
+      TextField #CoreTierInput { Anchor: (Left: 282, Top: 204, Right: 8, Height: 24); Value: "core"; Visible: false; }
+
+      Label { Anchor: (Left: 8, Top: 238, Width: 120, Height: 18); Text: "probability %"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+      NumberField #ProbabilityInput { Anchor: (Left: 132, Top: 234, Right: 8, Height: 24); Value: 100; }
+
+      TextButton #ApplyEventButton {
+        Anchor: (Left: 8, Top: 268, Right: 8, Height: 28);
+        Text: "Apply Action";
+        Background: (Color: #441010(0.92));
+      }
+    }
+  }
+}

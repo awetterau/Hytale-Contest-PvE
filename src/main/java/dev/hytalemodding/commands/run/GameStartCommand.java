@@ -4,24 +4,17 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
-import com.hypixel.hytale.server.core.command.system.arguments.system.OptionalArg;
-import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
-import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import dev.hytalemodding.state.transition.GameFlowConfigManager;
-import dev.hytalemodding.state.run.GameSessionManager;
+import dev.hytalemodding.state.run.GameDoorInteractionHandler;
 
 import javax.annotation.Nonnull;
 
 public class GameStartCommand extends AbstractPlayerCommand {
-    @Nonnull
-    private final OptionalArg<String> templateWorldArg = this.withOptionalArg("template", "Template world name", ArgTypes.STRING);
-
     public GameStartCommand() {
-        super("gamestart", "Copy template world and start a run session.");
+        super("gamestart", "Open door-style zone selection and start a run.");
         this.setPermissionGroup(null);
     }
 
@@ -33,31 +26,11 @@ public class GameStartCommand extends AbstractPlayerCommand {
             @Nonnull PlayerRef playerRef,
             @Nonnull World world
     ) {
-        String templateWorldName = this.templateWorldArg.provided(context)
-                ? this.templateWorldArg.get(context)
-                : GameFlowConfigManager.get().getTemplateWorldName();
-        World templateWorld = Universe.get().getWorld(templateWorldName);
-        if (templateWorld == null) {
-            context.sendMessage(Message.raw("Template world not loaded: " + templateWorldName));
+        if (dev.hytalemodding.state.run.GameSessionManager.get().hasActiveSession()) {
+            context.sendMessage(Message.raw("A run is already active. Use /gameend before starting another run."));
             return;
         }
-
-        GameSessionManager.get()
-                .startSession(playerRef, templateWorld)
-                .whenComplete((result, throwable) -> {
-                    if (throwable != null) {
-                        String reason = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
-                        context.sendMessage(Message.raw("Failed to start run: " + reason));
-                        return;
-                    }
-
-                    context.sendMessage(
-                            Message.raw(
-                                    "Run world prepared in '"
-                                            + result.runWorldName()
-                                            + "'. Waiting for client gameplay ready before the timer starts."
-                            )
-                    );
-                });
+        GameDoorInteractionHandler.openDoorZoneSelection(playerRef);
+        context.sendMessage(Message.raw("Select a door zone to start the run."));
     }
 }

@@ -81,15 +81,18 @@ public class RedStartCommand extends AbstractPlayerCommand {
             return;
         }
 
-        RedWaveManager.beginUndoSession(worldId);
+        RedWaveManager.beginUndoSession(worldId, corePos);
         RedWaveManager.ActiveWave wave = RedWaveManager.startWave(worldId, corePos, radius, seconds);
+        double speed = wave.spreadSpeedPerTick();
+        int limit = RedWaveManager.getWorldFrontierLimit(worldId);
         context.sendMessage(
                 Message.raw(
                         "Red wave started from core "
                                 + corePos.x + "," + corePos.y + "," + corePos.z
                                 + " radius=" + radius
-                                + " blocks over ~" + String.format("%.2f", seconds) + "s"
-                                + " (" + wave.totalBlocks() + " positions)."
+                                + " speed=" + String.format("%.3f", speed) + " blocks/tick"
+                                + " limit=" + limit
+                                + " (" + wave.totalBlocks() + " mask positions)."
                 )
         );
     }
