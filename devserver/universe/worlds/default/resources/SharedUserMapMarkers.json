@@ -1,3 +1,30 @@
 {
-  "UserMarkers": []
+  "UserMarkers": [
+    {
+      "Id": "user_shared_6112e7f4-83b5-43a0-8af4-a6acdebfa4b0",
+      "X": 569.0,
+      "Z": 120.0,
+      "Name": "Start Run",
+      "Icon": "UserB.png",
+      "ColorTint": "#00f482",
+      "CreatedByUuid": {
+        "$binary": "KOVaxfjkQ0KARYZRuCHO+w==",
+        "$type": "04"
+      },
+      "CreatedByName": "Trident__"
+    },
+    {
+      "Id": "user_shared_caa06c22-1a3f-4013-99c5-64dc2e367dd6",
+      "X": 557.0,
+      "Z": 73.0,
+      "Name": "Darius",
+      "Icon": "UserC.png",
+      "ColorTint": "#ff7512",
+      "CreatedByUuid": {
+        "$binary": "KOVaxfjkQ0KARYZRuCHO+w==",
+        "$type": "04"
+      },
+      "CreatedByName": "Trident__"
+    }
+  ]
 }
