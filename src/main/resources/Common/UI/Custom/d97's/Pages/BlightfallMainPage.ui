@@ -28,6 +28,12 @@ Group {
       Text: "Infection manager";
       Background: (Color: #441010(0.92));
     }
+
+    TextButton #NavChunksButton {
+      Anchor: (Left: 10, Top: 156, Right: 10, Height: 36);
+      Text: "Chunk Tools";
+      Background: (Color: #441010(0.92));
+    }
   }
 
   Group {
@@ -49,6 +55,7 @@ Group {
     TextField #TemplateInput {
       Anchor: (Left: 126, Top: 40, Width: 180, Height: 26);
       Value: "game";
+      Background: (Color: #6a2b8e(0.35));
     }
 
     Label #RunDurationLabel {
@@ -60,6 +67,7 @@ Group {
     NumberField #RunDurationInput {
       Anchor: (Left: 404, Top: 40, Width: 120, Height: 26);
       Value: 1200;
+      Background: (Color: #6a2b8e(0.35));
     }
 
     Label #RunSeedLabel {
@@ -71,26 +79,29 @@ Group {
     TextField #RunSeedInput {
       Anchor: (Left: 572, Top: 40, Width: 86, Height: 26);
       Value: "";
+      Background: (Color: #6a2b8e(0.35));
     }
 
     Label #RunTimeHourLabel {
-      Anchor: (Left: 662, Top: 44, Width: 42, Height: 18);
+      Anchor: (Left: 662, Top: 74, Width: 42, Height: 18);
       Text: "Time:";
       Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
     }
 
     NumberField #RunTimeHourMinInput {
-      Anchor: (Left: 706, Top: 40, Width: 34, Height: 26);
+      Anchor: (Left: 706, Top: 70, Width: 34, Height: 26);
       Value: 8;
+      Background: (Color: #6a2b8e(0.35));
     }
 
     NumberField #RunTimeHourMaxInput {
-      Anchor: (Left: 744, Top: 40, Width: 34, Height: 26);
+      Anchor: (Left: 744, Top: 70, Width: 34, Height: 26);
       Value: 8;
+      Background: (Color: #6a2b8e(0.35));
     }
 
     TextButton #ApplyGameControlButton {
-      Anchor: (Left: 782, Top: 40, Right: 8, Height: 26);
+      Anchor: (Right: 16, Top: 40, Width: 126, Height: 26);
       Text: "Apply";
       Background: (Color: #441010(0.92));
     }
@@ -99,6 +110,36 @@ Group {
       Anchor: (Left: 8, Top: 74, Right: 8, Height: 94);
       Text: "";
       Style: (HorizontalAlignment: Start, VerticalAlignment: Start);
+    }
+
+    Group #ChunkToolsSection {
+      Anchor: (Left: 8, Top: 176, Width: 470, Height: 140);
+      Background: (Color: #2f0b0b(0.72));
+      Visible: false;
+
+      Label {
+        Anchor: (Left: 8, Top: 8, Width: 220, Height: 18);
+        Text: "Runchunk mode";
+        Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
+      }
+
+      TextButton #ChunkVisualToggleButton { Anchor: (Left: 312, Top: 6, Width: 145, Height: 22); Text: "Map Visual: ON"; Background: (Color: #441010(0.92)); }
+
+      TextButton #ChunkSetPinnedButton { Anchor: (Left: 8, Top: 32, Width: 145, Height: 28); Text: "Set PIN"; Background: (Color: #441010(0.92)); }
+      TextButton #ChunkSetMarkerButton { Anchor: (Left: 160, Top: 32, Width: 145, Height: 28); Text: "Set MARKER"; Background: (Color: #441010(0.92)); }
+      TextButton #ChunkSetClearButton { Anchor: (Left: 312, Top: 32, Width: 145, Height: 28); Text: "Deselect"; Background: (Color: #441010(0.92)); }
+
+      Label {
+        Anchor: (Left: 8, Top: 74, Width: 120, Height: 18);
+        Text: "Brush range:";
+        Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
+      }
+      TextButton #ChunkBrushRangeDownButton { Anchor: (Left: 132, Top: 70, Width: 28, Height: 24); Text: "-"; Background: (Color: #441010(0.92)); }
+      Label #ChunkBrushRangeValue { Anchor: (Left: 164, Top: 70, Width: 40, Height: 24); Text: "0"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+      TextButton #ChunkBrushRangeUpButton { Anchor: (Left: 208, Top: 70, Width: 28, Height: 24); Text: "+"; Background: (Color: #441010(0.92)); }
+      Label #ChunkBrushSizeLabel { Anchor: (Left: 244, Top: 72, Width: 180, Height: 20); Text: "Brush: 1x1"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+      TextButton #ChunkReloadFileButton { Anchor: (Left: 312, Top: 98, Width: 145, Height: 28); Text: "Reload file"; Background: (Color: #441010(0.92)); Visible: false; }
+      Label { Anchor: (Left: 8, Top: 106, Right: 8, Height: 24); Text: "Range max: 5 (0 = current chunk only)"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
     }
 
     Label #WeakListTitle {
@@ -137,6 +178,13 @@ Group {
       TextButton #CoreNextButton { Anchor: (Right: 6, Top: 8, Width: 28, Height: 22); Text: ">"; Background: (Color: #441010(0.92)); }
       TextButton #CoreTpButton { Anchor: (Left: 6, Top: 42, Right: 6, Height: 28); Text: "TP core"; Background: (Color: #441010(0.92)); }
     }
+
+    TextButton #ToggleFogWeatherCenterButton {
+      Anchor: (Right: 24, Top: 292, Width: 220, Height: 28);
+      Text: "Hazard fog: ON";
+      Background: (Color: #441010(0.92));
+      Visible: false;
+    }
     Group #TimelineSection {
       Anchor: (Left: 44, Top: 430, Right: 44, Bottom: 108);
       Background: (Color: #8d2d45(0.82));
@@ -147,6 +195,9 @@ Group {
         Text: "Timeline Events (0)";
         Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
       }
+      TextButton #TimeLinePagePrevButton { Anchor: (Right: 84, Top: 6, Width: 24, Height: 22); Text: "<"; Visible: false; Background: (Color: #441010(0.92)); }
+      Label #TimelinePageLabel { Anchor: (Right: 30, Top: 8, Width: 50, Height: 20); Text: "1/1"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
+      TextButton #TimeLinePageNextButton { Anchor: (Right: 4, Top: 6, Width: 24, Height: 22); Text: ">"; Visible: false; Background: (Color: #441010(0.92)); }
 
       TextButton #TimelineEventButton1 { Anchor: (Left: 12, Top: 34, Right: 12, Height: 22); Text: "Event 1"; Visible: false; Background: (Color: #2f0b0b(0.94)); }
       TextButton #TimelineEventButton2 { Anchor: (Left: 12, Top: 58, Right: 12, Height: 22); Text: "Event 2"; Visible: false; Background: (Color: #2f0b0b(0.94)); }
@@ -198,9 +249,9 @@ Group {
       }
 
 
-      TextButton #ToggleStatusChatButton {
-        Anchor: (Left: 540, Top: 18, Width: 190, Height: 34);
-        Text: "Status Chat: ON";
+      TextButton #ToggleAlertsButton {
+        Anchor: (Left: 540, Top: 18, Width: 386, Height: 34);
+        Text: "Alerts: ON";
         Background: (Color: #441010(0.92));
       }
 
@@ -234,6 +285,20 @@ Group {
       Style: (HorizontalAlignment: Start, VerticalAlignment: Start);
     }
 
+    TextButton #ToggleDynamicMapButton {
+      Anchor: (Left: 10, Top: 140, Right: 10, Height: 28);
+      Text: "Dinamic map: ON";
+      Background: (Color: #441010(0.92));
+      Visible: false;
+    }
+
+    TextButton #ToggleFogWeatherButtonLegacy {
+      Anchor: (Left: 10, Top: 172, Right: 10, Height: 28);
+      Text: "Hazard fog: ON";
+      Background: (Color: #441010(0.92));
+      Visible: false;
+    }
+
     Group #EventEditorSection {
       Anchor: (Left: 10, Top: 142, Right: 10, Bottom: 10);
       Background: (Color: #5f1a31(0.64));
@@ -260,28 +325,28 @@ Group {
       }
 
       Label { Anchor: (Left: 8, Top: 88, Width: 120, Height: 18); Text: "runSecond"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
-      NumberField #EventTriggerSecondInput { Anchor: (Left: 132, Top: 84, Right: 8, Height: 24); Value: 30; }
+      NumberField #EventTriggerSecondInput { Anchor: (Left: 132, Top: 84, Right: 8, Height: 24); Value: 30; Background: (Color: #6a2b8e(0.35)); }
 
       Label { Anchor: (Left: 8, Top: 118, Width: 120, Height: 18); Text: "targetRadius"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
-      NumberField #EventCoreCountInput { Anchor: (Left: 132, Top: 114, Right: 8, Height: 24); Value: 6; }
+      NumberField #EventCoreCountInput { Anchor: (Left: 132, Top: 114, Right: 8, Height: 24); Value: 6; Background: (Color: #6a2b8e(0.35)); }
 
       Label { Anchor: (Left: 8, Top: 148, Width: 120, Height: 18); Text: "ticksPerBlock"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
-      TextField #EventCoreTypeInput { Anchor: (Left: 132, Top: 144, Right: 8, Height: 24); Value: "2"; }
+      TextField #EventCoreTypeInput { Anchor: (Left: 132, Top: 144, Right: 8, Height: 24); Value: "2"; Background: (Color: #6a2b8e(0.35)); }
 
       Label { Anchor: (Left: 8, Top: 178, Width: 120, Height: 18); Text: "enabled"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
-      TextField #EventEnabledInput { Anchor: (Left: 132, Top: 174, Right: 8, Height: 24); Value: "true"; }
+      TextField #EventEnabledInput { Anchor: (Left: 132, Top: 174, Right: 8, Height: 24); Value: "true"; Background: (Color: #6a2b8e(0.35)); }
 
 
-      TextField #ActionTypeInput { Anchor: (Left: 132, Top: 204, Right: 8, Height: 24); Value: "spawn"; Visible: false; }
+      TextField #ActionTypeInput { Anchor: (Left: 132, Top: 204, Right: 8, Height: 24); Value: "spawn"; Visible: false; Background: (Color: #6a2b8e(0.35)); }
 
       Label { Anchor: (Left: 8, Top: 208, Width: 120, Height: 18); Text: "coreType"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
       TextButton #CoreTierPrevButton { Anchor: (Left: 132, Top: 204, Width: 24, Height: 24); Text: "<"; Background: (Color: #441010(0.92)); }
       Label #CoreTierSelectorValue { Anchor: (Left: 160, Top: 204, Width: 90, Height: 24); Text: "CORE"; Style: (HorizontalAlignment: Center, VerticalAlignment: Center); }
       TextButton #CoreTierNextButton { Anchor: (Left: 254, Top: 204, Width: 24, Height: 24); Text: ">"; Background: (Color: #441010(0.92)); }
-      TextField #CoreTierInput { Anchor: (Left: 282, Top: 204, Right: 8, Height: 24); Value: "core"; Visible: false; }
+      TextField #CoreTierInput { Anchor: (Left: 282, Top: 204, Right: 8, Height: 24); Value: "core"; Visible: false; Background: (Color: #6a2b8e(0.35)); }
 
       Label { Anchor: (Left: 8, Top: 238, Width: 120, Height: 18); Text: "probability %"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
-      NumberField #ProbabilityInput { Anchor: (Left: 132, Top: 234, Right: 8, Height: 24); Value: 100; }
+      NumberField #ProbabilityInput { Anchor: (Left: 132, Top: 234, Right: 8, Height: 24); Value: 100; Background: (Color: #6a2b8e(0.35)); }
 
       TextButton #ApplyEventButton {
         Anchor: (Left: 8, Top: 268, Right: 8, Height: 28);

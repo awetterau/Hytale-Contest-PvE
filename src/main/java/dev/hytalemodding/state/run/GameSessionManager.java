@@ -11,14 +11,19 @@ import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.builtin.weather.resources.WeatherResource;
 import com.hypixel.hytale.server.core.modules.time.WorldTimeResource;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.WorldConfig;
+import com.hypixel.hytale.server.core.universe.world.chunk.ChunkFlag;
+import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
+import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.npc.NPCPlugin;
 import com.hypixel.hytale.server.npc.asset.builder.BuilderInfo;
@@ -40,6 +45,8 @@ import dev.hytalemodding.state.transition.GameFlowConfigManager;
 import dev.hytalemodding.state.transition.PlayerSpawnSafety;
 import dev.hytalemodding.state.transition.SpawnPointZoneConfigManager;
 import it.unimi.dsi.fastutil.Pair;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -58,15 +65,20 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class GameSessionManager {
     private static final String BLIGHT_BEAST_ROLE = "Blight_Beast";
     private static final String RUN_WORLD_PREFIX = "run-session-";
     private static final long CRIMSON_START_DELAY_MS = 10_000L;
+    private static final long RUN_START_PRE_TELEPORT_DELAY_MS = 1_000L;
     private static final int GAME_TIME_MINUTES = 20;
     private static final long RUN_DURATION_MS = GAME_TIME_MINUTES * 60L * 1000L;
+    private static final ConcurrentHashMap<UUID, List<Ref<ChunkStore>>> PINNED_CHUNK_REFS_BY_WORLD = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, LongSet> PINNED_CHUNK_INDICES_BY_RUN_WORLD = new ConcurrentHashMap<>();
     private static final float DEFAULT_CRIMSON_SPREAD_SECONDS = RUN_DURATION_MS / 1000.0f;
     private static final int MAX_RUN_CRIMSON_RADIUS_BLOCKS = 24;
     private static final long PLAYER_TRANSFER_TIMEOUT_SECONDS = 15L;
@@ -74,7 +86,12 @@ public final class GameSessionManager {
     private static final long WORLD_LOAD_TIMEOUT_SECONDS = 30L;
     private static final int WORLD_DELETE_MAX_ATTEMPTS = 20;
     private static final long WORLD_DELETE_RETRY_DELAY_MS = 100L;
+    private static final long EMPTY_RUN_AUTO_END_DELAY_MS = 20_000L;
     private static final GameSessionManager INSTANCE = new GameSessionManager();
+    private static volatile boolean dynamicMapRefreshEnabled = true;
+    private static final ConcurrentHashMap<UUID, Long> RUN_ELAPSED_MS_CACHE_BY_WORLD = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, List<UUID>> RUN_PARTICIPANTS_CACHE_BY_WORLD = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, PlayerRunCategory> PLAYER_RUN_CATEGORY_CACHE = new ConcurrentHashMap<>();
 
     @Nullable
     private ActiveSession activeSession;
@@ -172,6 +189,18 @@ public final class GameSessionManager {
             @Nullable Transform runSpawnTransform,
             @Nullable Transform returnSpawnTransform
     ) {
+        return startSession(starter, templateWorld, runSpawnTransform, returnSpawnTransform, List.of(starter.getUuid()), Map.of());
+    }
+
+    @Nonnull
+    public CompletableFuture<StartSessionResult> startSession(
+            @Nonnull PlayerRef starter,
+            @Nonnull World templateWorld,
+            @Nullable Transform runSpawnTransform,
+            @Nullable Transform returnSpawnTransform,
+            @Nonnull List<UUID> expectedPlayerIds,
+            @Nonnull Map<UUID, Transform> spawnTransformByPlayer
+    ) {
         final ActiveSession session;
         synchronized (this) {
             if (this.activeSession != null && this.activeSession.phase != RunPhase.IDLE) {
@@ -218,7 +247,9 @@ public final class GameSessionManager {
                     starter.getUuid(),
                     selectedProfiles,
                     copyTransformOrNull(runSpawnTransform),
-                    copyTransformOrNull(returnSpawnTransform)
+                    copyTransformOrNull(returnSpawnTransform),
+                    expectedPlayerIds,
+                    spawnTransformByPlayer
             );
             this.activeSession.phase = RunPhase.PREPARING;
             session = this.activeSession;
@@ -247,13 +278,17 @@ public final class GameSessionManager {
                         new IllegalStateException("Starter player is not currently in a loaded world.")
                 );
             }
-            return movePlayerToWorld(starter, playerWorld, runWorld, session.runSpawnTransform)
-                    .thenApply(x -> runWorld);
+            return movePlayersToRunWorld(starter, playerWorld, runWorld, session).thenApply(x -> runWorld);
         });
 
         return transferFuture
                 .thenApply(runWorld -> {
-                    RunStartMovementLockManager.get().lockPlayerForIntro(starter);
+                    for (UUID expectedPlayerId : session.expectedPlayerIds) {
+                        PlayerRef expectedPlayer = Universe.get().getPlayer(expectedPlayerId);
+                        if (expectedPlayer != null) {
+                            RunStartMovementLockManager.get().lockPlayerForIntro(expectedPlayer);
+                        }
+                    }
                     if (GameFlowConfigManager.get().isStatusMessagesEnabled() && session.appliedRunHour >= 0) {
                         starter.sendMessage(Message.raw("Run world time applied: " + session.appliedRunHour + ":00"));
                     }
@@ -332,6 +367,20 @@ public final class GameSessionManager {
         return transferFuture.handle((ignored, throwable) -> {
             synchronized (this) {
                 if (this.activeSession == session) {
+                    for (UUID playerId : session.expectedPlayerIds) {
+                        PlayerRunCategory category = session.participantCategoryByPlayer.getOrDefault(playerId, PlayerRunCategory.NONE);
+                        if (category == PlayerRunCategory.ACTIVE) {
+                            category = PlayerRunCategory.RETURNED_LOBBY;
+                        } else if (category == PlayerRunCategory.NONE) {
+                            category = PlayerRunCategory.DISCONNECTED;
+                        }
+                        PLAYER_RUN_CATEGORY_CACHE.put(playerId, category);
+                        applyRunPlayerTag(playerId, category);
+                    }
+                    if (session.runWorldUuid != null) {
+                        RUN_ELAPSED_MS_CACHE_BY_WORLD.remove(session.runWorldUuid);
+                        RUN_PARTICIPANTS_CACHE_BY_WORLD.remove(session.runWorldUuid);
+                    }
                     this.activeSession = null;
                 }
             }
@@ -349,9 +398,7 @@ public final class GameSessionManager {
 
             CompletableFuture.runAsync(() -> {
                 try {
-                    if (universe.getWorld(session.runWorldName) != null) {
-                        universe.removeWorld(session.runWorldName);
-                    }
+                    removeWorldOnOwningThread(universe, session.runWorldName);
                     deleteDirectoryIfPresent(session.runWorldPath);
                 } catch (Exception cleanupIgnored) {
                 }
@@ -382,12 +429,144 @@ public final class GameSessionManager {
         }
     }
 
+    public synchronized void markPlayerCategory(@Nonnull UUID playerId, @Nonnull PlayerRunCategory category) {
+        if (this.activeSession == null || !this.activeSession.expectedPlayerIds.contains(playerId)) {
+            return;
+        }
+        this.activeSession.participantCategoryByPlayer.put(playerId, category);
+        this.activeSession.participantsEverJoined.add(playerId);
+        PLAYER_RUN_CATEGORY_CACHE.put(playerId, category);
+        applyRunPlayerTag(playerId, category);
+    }
+
+    public synchronized void markPlayerDisconnected(@Nonnull UUID playerId) {
+        if (this.activeSession == null || !this.activeSession.expectedPlayerIds.contains(playerId)) {
+            return;
+        }
+        this.activeSession.participantCategoryByPlayer.put(playerId, PlayerRunCategory.DISCONNECTED);
+        PLAYER_RUN_CATEGORY_CACHE.put(playerId, PlayerRunCategory.DISCONNECTED);
+        applyRunPlayerTag(playerId, PlayerRunCategory.DISCONNECTED);
+    }
+
+    public synchronized boolean canRejoinActiveRun(@Nonnull UUID playerId) {
+        if (this.activeSession == null
+                || this.activeSession.runWorldUuid == null
+                || (this.activeSession.phase != RunPhase.WAITING_FOR_PLAYERS_READY
+                && this.activeSession.phase != RunPhase.EXPLORATION
+                && this.activeSession.phase != RunPhase.CRIMSON_ACTIVE)) {
+            return false;
+        }
+        return this.activeSession.expectedPlayerIds.contains(playerId);
+    }
+
+    public synchronized boolean shouldAutoEndForParticipants() {
+        if (this.activeSession == null || this.activeSession.runWorldUuid == null) {
+            return false;
+        }
+        if (this.activeSession.participantsEverJoined.isEmpty()) {
+            return false;
+        }
+        for (UUID playerId : this.activeSession.participantsEverJoined) {
+            PlayerRunCategory category = this.activeSession.participantCategoryByPlayer.getOrDefault(playerId, PlayerRunCategory.ACTIVE);
+            if (category != PlayerRunCategory.EXTRACTED && category != PlayerRunCategory.DEAD) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public synchronized boolean shouldAutoEndForEmptyRunWorld() {
+        if (this.activeSession == null || this.activeSession.runWorldUuid == null) {
+            return false;
+        }
+        List<PlayerRef> players = collectPlayersInWorld(this.activeSession.runWorldUuid);
+        if (!players.isEmpty()) {
+            this.activeSession.emptyWorldSinceEpochMs = 0L;
+            return false;
+        }
+        long now = System.currentTimeMillis();
+        if (this.activeSession.emptyWorldSinceEpochMs <= 0L) {
+            this.activeSession.emptyWorldSinceEpochMs = now;
+            return false;
+        }
+        return now - this.activeSession.emptyWorldSinceEpochMs >= EMPTY_RUN_AUTO_END_DELAY_MS;
+    }
+
+    public synchronized void refreshParticipantConnectionStates() {
+        if (this.activeSession == null || this.activeSession.runWorldUuid == null) {
+            return;
+        }
+        for (UUID playerId : this.activeSession.expectedPlayerIds) {
+            PlayerRef playerRef = Universe.get().getPlayer(playerId);
+            PlayerRunCategory current = this.activeSession.participantCategoryByPlayer.getOrDefault(playerId, PlayerRunCategory.NONE);
+            if (playerRef == null || !playerRef.isValid()) {
+                if (current == PlayerRunCategory.ACTIVE || current == PlayerRunCategory.NONE) {
+                    this.activeSession.participantCategoryByPlayer.put(playerId, PlayerRunCategory.DISCONNECTED);
+                    PLAYER_RUN_CATEGORY_CACHE.put(playerId, PlayerRunCategory.DISCONNECTED);
+                    applyRunPlayerTag(playerId, PlayerRunCategory.DISCONNECTED);
+                }
+                continue;
+            }
+            if (playerRef.getWorldUuid() != null && playerRef.getWorldUuid().equals(this.activeSession.runWorldUuid)) {
+                this.activeSession.participantsEverJoined.add(playerId);
+                if (current == PlayerRunCategory.DISCONNECTED || current == PlayerRunCategory.NONE) {
+                    this.activeSession.participantCategoryByPlayer.put(playerId, PlayerRunCategory.ACTIVE);
+                    PLAYER_RUN_CATEGORY_CACHE.put(playerId, PlayerRunCategory.ACTIVE);
+                    applyRunPlayerTag(playerId, PlayerRunCategory.ACTIVE);
+                }
+            }
+        }
+    }
+
+    public synchronized long getRunElapsedMillisCached(@Nullable UUID runWorldId) {
+        if (runWorldId == null) {
+            return 0L;
+        }
+        return RUN_ELAPSED_MS_CACHE_BY_WORLD.getOrDefault(runWorldId, 0L);
+    }
+
+    @Nonnull
+    public synchronized List<UUID> getRunParticipantsCached(@Nullable UUID runWorldId) {
+        if (runWorldId == null) {
+            return List.of();
+        }
+        return RUN_PARTICIPANTS_CACHE_BY_WORLD.getOrDefault(runWorldId, List.of());
+    }
+
+    @Nonnull
+    public synchronized PlayerRunCategory getCachedPlayerCategory(@Nonnull UUID playerId) {
+        return PLAYER_RUN_CATEGORY_CACHE.getOrDefault(playerId, PlayerRunCategory.NONE);
+    }
+
+    private static void applyRunPlayerTag(@Nonnull UUID playerId, @Nonnull PlayerRunCategory category) {
+        switch (category) {
+            case EXTRACTED -> RunPlayerTagManager.addTag(playerId, RunPlayerTagManager.EXTRACTED_TAG);
+            case DEAD -> RunPlayerTagManager.addTag(playerId, RunPlayerTagManager.DEAD_TAG);
+            case DISCONNECTED -> RunPlayerTagManager.addTag(playerId, RunPlayerTagManager.DISCONNECTED_TAG);
+            case SPECTATING -> RunPlayerTagManager.addTag(playerId, RunPlayerTagManager.SPECTATING_TAG);
+            case ACTIVE, RETURNED_LOBBY, NONE -> RunPlayerTagManager.removeTag(playerId, RunPlayerTagManager.EXTRACTED_TAG);
+        }
+        if (category == PlayerRunCategory.ACTIVE || category == PlayerRunCategory.RETURNED_LOBBY || category == PlayerRunCategory.NONE) {
+            RunPlayerTagManager.removeTag(playerId, RunPlayerTagManager.DEAD_TAG);
+            RunPlayerTagManager.removeTag(playerId, RunPlayerTagManager.DISCONNECTED_TAG);
+            RunPlayerTagManager.removeTag(playerId, RunPlayerTagManager.SPECTATING_TAG);
+        }
+    }
+
     public synchronized long getRemainingMillis() {
         if (this.activeSession == null
                 || (this.activeSession.phase != RunPhase.EXPLORATION && this.activeSession.phase != RunPhase.CRIMSON_ACTIVE)) {
             return 0L;
         }
-        return Math.max(0L, this.activeSession.runEndsAtEpochMillis - System.currentTimeMillis());
+        long remaining = Math.max(0L, this.activeSession.runEndsAtEpochMillis - System.currentTimeMillis());
+        if (this.activeSession.runWorldUuid != null && this.activeSession.startedAtEpochMillis > 0L) {
+            RUN_ELAPSED_MS_CACHE_BY_WORLD.put(
+                    this.activeSession.runWorldUuid,
+                    Math.max(0L, System.currentTimeMillis() - this.activeSession.startedAtEpochMillis)
+            );
+            RUN_PARTICIPANTS_CACHE_BY_WORLD.put(this.activeSession.runWorldUuid, List.copyOf(this.activeSession.expectedPlayerIds));
+        }
+        return remaining;
     }
 
     public void onPlayerReady(@Nonnull PlayerReadyEvent event) {
@@ -399,8 +578,12 @@ public final class GameSessionManager {
             return;
         }
         UUID playerId = readyPlayerRef.getUuid();
+        if (canRejoinActiveRun(playerId)) {
+            handlePlayerReconnect(readyPlayerRef);
+        }
         World runWorld;
         ActiveSessionSnapshot snapshot;
+        List<UUID> playersToPlayIntro;
 
         synchronized (this) {
             if (this.activeSession == null || this.activeSession.phase != RunPhase.WAITING_FOR_PLAYERS_READY) {
@@ -420,15 +603,20 @@ public final class GameSessionManager {
             }
 
             session.readyPlayerIds.add(playerId);
+            session.participantsEverJoined.add(playerId);
+            session.participantCategoryByPlayer.put(playerId, PlayerRunCategory.ACTIVE);
+            PLAYER_RUN_CATEGORY_CACHE.put(playerId, PlayerRunCategory.ACTIVE);
+            applyRunPlayerTag(playerId, PlayerRunCategory.ACTIVE);
             if (!session.readyPlayerIds.containsAll(session.expectedPlayerIds)) {
                 return;
             }
 
-            RunStartMovementLockManager.get().lockPlayerForIntro(playerRef);
             session.phase = RunPhase.EXPLORATION;
             session.startedAtEpochMillis = System.currentTimeMillis();
             session.runEndsAtEpochMillis = session.startedAtEpochMillis + this.configuredRunDurationMs;
             session.crimsonStartAtEpochMillis = session.startedAtEpochMillis + CRIMSON_START_DELAY_MS;
+            RUN_PARTICIPANTS_CACHE_BY_WORLD.put(session.runWorldUuid, List.copyOf(session.expectedPlayerIds));
+            playersToPlayIntro = List.copyOf(session.expectedPlayerIds);
 
             runWorld = Universe.get().getWorld(session.runWorldUuid);
             if (runWorld == null) {
@@ -438,9 +626,11 @@ public final class GameSessionManager {
         }
 
         RescueObjectiveManager.get().spawnRescueOnRunStart(runWorld, snapshot);
-        PlayerRef readyPlayer = Universe.get().getPlayer(playerId);
-        if (readyPlayer != null) {
-            RunStartCameraManager.get().playSpawnIntro(readyPlayer);
+        for (UUID introPlayerId : playersToPlayIntro) {
+            PlayerRef introPlayer = Universe.get().getPlayer(introPlayerId);
+            if (introPlayer != null) {
+                RunStartCameraManager.get().playSpawnIntro(introPlayer);
+            }
         }
     }
 
@@ -448,8 +638,15 @@ public final class GameSessionManager {
         if (!readyForGameplay) {
             return;
         }
+        if (canRejoinActiveRun(playerId)) {
+            PlayerRef reconnecting = Universe.get().getPlayer(playerId);
+            if (reconnecting != null) {
+                handlePlayerReconnect(reconnecting);
+            }
+        }
         World runWorld;
         ActiveSessionSnapshot snapshot;
+        List<UUID> playersToPlayIntro;
 
         synchronized (this) {
             if (this.activeSession == null || this.activeSession.phase != RunPhase.WAITING_FOR_PLAYERS_READY) {
@@ -469,15 +666,20 @@ public final class GameSessionManager {
             }
 
             session.readyPlayerIds.add(playerId);
+            session.participantsEverJoined.add(playerId);
+            session.participantCategoryByPlayer.put(playerId, PlayerRunCategory.ACTIVE);
+            PLAYER_RUN_CATEGORY_CACHE.put(playerId, PlayerRunCategory.ACTIVE);
+            applyRunPlayerTag(playerId, PlayerRunCategory.ACTIVE);
             if (!session.readyPlayerIds.containsAll(session.expectedPlayerIds)) {
                 return;
             }
 
-            RunStartMovementLockManager.get().lockPlayerForIntro(playerRef);
             session.phase = RunPhase.EXPLORATION;
             session.startedAtEpochMillis = System.currentTimeMillis();
             session.runEndsAtEpochMillis = session.startedAtEpochMillis + this.configuredRunDurationMs;
             session.crimsonStartAtEpochMillis = session.startedAtEpochMillis + CRIMSON_START_DELAY_MS;
+            RUN_PARTICIPANTS_CACHE_BY_WORLD.put(session.runWorldUuid, List.copyOf(session.expectedPlayerIds));
+            playersToPlayIntro = List.copyOf(session.expectedPlayerIds);
 
             runWorld = Universe.get().getWorld(session.runWorldUuid);
             if (runWorld == null) {
@@ -487,9 +689,11 @@ public final class GameSessionManager {
         }
 
         RescueObjectiveManager.get().spawnRescueOnRunStart(runWorld, snapshot);
-        PlayerRef readyPlayer = Universe.get().getPlayer(playerId);
-        if (readyPlayer != null) {
-            RunStartCameraManager.get().playSpawnIntro(readyPlayer);
+        for (UUID introPlayerId : playersToPlayIntro) {
+            PlayerRef introPlayer = Universe.get().getPlayer(introPlayerId);
+            if (introPlayer != null) {
+                RunStartCameraManager.get().playSpawnIntro(introPlayer);
+            }
         }
     }
 
@@ -497,6 +701,68 @@ public final class GameSessionManager {
         return this.activeSession != null
                 && this.activeSession.runWorldUuid != null
                 && this.activeSession.runWorldUuid.equals(worldUuid);
+    }
+
+    private void handlePlayerReconnect(@Nonnull PlayerRef playerRef) {
+        final ActiveSession session;
+        final UUID runWorldUuid;
+        synchronized (this) {
+            if (this.activeSession == null
+                    || this.activeSession.runWorldUuid == null
+                    || !this.activeSession.expectedPlayerIds.contains(playerRef.getUuid())) {
+                return;
+            }
+            session = this.activeSession;
+            runWorldUuid = session.runWorldUuid;
+        }
+
+        World runWorld = Universe.get().getWorld(runWorldUuid);
+        UUID currentWorldId = playerRef.getWorldUuid();
+        if (runWorld == null || currentWorldId == null) {
+            return;
+        }
+        if (runWorldUuid.equals(currentWorldId)) {
+            synchronized (this) {
+                if (this.activeSession == session) {
+                    session.participantCategoryByPlayer.put(playerRef.getUuid(), PlayerRunCategory.ACTIVE);
+                    session.participantsEverJoined.add(playerRef.getUuid());
+                    PLAYER_RUN_CATEGORY_CACHE.put(playerRef.getUuid(), PlayerRunCategory.ACTIVE);
+                    applyRunPlayerTag(playerRef.getUuid(), PlayerRunCategory.ACTIVE);
+                }
+            }
+            return;
+        }
+
+        World fromWorld = Universe.get().getWorld(currentWorldId);
+        if (fromWorld == null) {
+            return;
+        }
+        Transform personalSpawn;
+        synchronized (this) {
+            if (this.activeSession != session) {
+                return;
+            }
+            personalSpawn = session.runSpawnTransformByPlayer.getOrDefault(playerRef.getUuid(), session.runSpawnTransform);
+        }
+        movePlayerToWorld(playerRef, fromWorld, runWorld, personalSpawn)
+                .whenComplete((ignored, throwable) -> {
+                    synchronized (this) {
+                        if (this.activeSession != session) {
+                            return;
+                        }
+                        if (throwable == null) {
+                            session.participantCategoryByPlayer.put(playerRef.getUuid(), PlayerRunCategory.ACTIVE);
+                            session.participantsEverJoined.add(playerRef.getUuid());
+                            session.readyPlayerIds.add(playerRef.getUuid());
+                            PLAYER_RUN_CATEGORY_CACHE.put(playerRef.getUuid(), PlayerRunCategory.ACTIVE);
+                            applyRunPlayerTag(playerRef.getUuid(), PlayerRunCategory.ACTIVE);
+                        } else {
+                            session.participantCategoryByPlayer.put(playerRef.getUuid(), PlayerRunCategory.DISCONNECTED);
+                            PLAYER_RUN_CATEGORY_CACHE.put(playerRef.getUuid(), PlayerRunCategory.DISCONNECTED);
+                            applyRunPlayerTag(playerRef.getUuid(), PlayerRunCategory.DISCONNECTED);
+                        }
+                    }
+                });
     }
 
     @Nonnull
@@ -525,9 +791,7 @@ public final class GameSessionManager {
     private CompletableFuture<StartSessionResult> cleanupFailedStart(@Nonnull ActiveSession session, @Nonnull Throwable throwable) {
         Universe universe = Universe.get();
         try {
-            if (universe.getWorld(session.runWorldName) != null) {
-                universe.removeWorld(session.runWorldName);
-            }
+            removeWorldOnOwningThread(universe, session.runWorldName);
             deleteDirectoryIfPresent(session.runWorldPath);
         } catch (Exception ignored) {
         }
@@ -567,18 +831,71 @@ public final class GameSessionManager {
     }
 
     @Nonnull
+    private static CompletableFuture<Void> movePlayersToRunWorld(
+            @Nonnull PlayerRef starter,
+            @Nonnull World fromWorld,
+            @Nonnull World toWorld,
+            @Nonnull ActiveSession session
+    ) {
+        List<CompletableFuture<Void>> transfers = new ArrayList<>();
+        for (UUID playerId : session.expectedPlayerIds) {
+            PlayerRef partyPlayer = Universe.get().getPlayer(playerId);
+            if (partyPlayer == null || !partyPlayer.isValid() || partyPlayer.getWorldUuid() == null) {
+                return CompletableFuture.failedFuture(new IllegalStateException("Player unavailable for run start: " + playerId));
+            }
+            if (!fromWorld.getWorldConfig().getUuid().equals(partyPlayer.getWorldUuid())) {
+                return CompletableFuture.failedFuture(new IllegalStateException("All team members must be in hub before start."));
+            }
+            Transform personalSpawn = session.runSpawnTransformByPlayer.getOrDefault(playerId, session.runSpawnTransform);
+            boolean applyPreTeleportDelay = playerId.equals(starter.getUuid());
+            transfers.add(movePlayerToWorld(
+                    partyPlayer,
+                    fromWorld,
+                    toWorld,
+                    personalSpawn,
+                    applyPreTeleportDelay,
+                    session.templateWorldName
+            ));
+        }
+        if (transfers.isEmpty()) {
+            return CompletableFuture.failedFuture(new IllegalStateException("No players available to move to run world."));
+        }
+        return CompletableFuture.allOf(transfers.toArray(new CompletableFuture[0]));
+    }
+
+    @Nonnull
     private static CompletableFuture<Void> movePlayerToWorld(
             @Nonnull PlayerRef playerRef,
             @Nonnull World fromWorld,
             @Nonnull World toWorld,
             @Nullable Transform targetSpawn
     ) {
+        return movePlayerToWorld(playerRef, fromWorld, toWorld, targetSpawn, false, fromWorld.getName());
+    }
+
+    @Nonnull
+    private static CompletableFuture<Void> movePlayerToWorld(
+            @Nonnull PlayerRef playerRef,
+            @Nonnull World fromWorld,
+            @Nonnull World toWorld,
+            @Nullable Transform targetSpawn,
+            boolean applyRunStartPreTeleportDelay,
+            @Nonnull String selectionWorldName
+    ) {
         CompletableFuture<Void> teleportCompleted = new CompletableFuture<>();
         Transform destination = PlayerSpawnSafety.sanitizeTransform(
                 targetSpawn != null ? copyTransformOrNull(targetSpawn) : playerRef.getTransform()
         );
 
-        return prewarmSpawnChunks(toWorld, destination).thenCompose(ignored -> CompletableFuture.runAsync(() -> {
+        return prewarmSpawnChunks(toWorld, destination, playerRef, selectionWorldName).thenCompose(ignored -> CompletableFuture.runAsync(() -> {
+                    if (applyRunStartPreTeleportDelay) {
+                        RunStartMovementLockManager.get().lockPlayerForIntro(playerRef);
+                        try {
+                            Thread.sleep(RUN_START_PRE_TELEPORT_DELAY_MS);
+                        } catch (InterruptedException interruptedException) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
                     UUID playerWorldUuid = playerRef.getWorldUuid();
                     if (playerWorldUuid == null) {
                         throw new IllegalStateException("Player has no current world before transfer.");
@@ -623,7 +940,12 @@ public final class GameSessionManager {
     }
 
     @Nonnull
-    private static CompletableFuture<Void> prewarmSpawnChunks(@Nonnull World world, @Nullable Transform targetSpawn) {
+    private static CompletableFuture<Void> prewarmSpawnChunks(
+            @Nonnull World world,
+            @Nullable Transform targetSpawn,
+            @Nonnull PlayerRef playerRef,
+            @Nonnull String selectionWorldName
+    ) {
         if (targetSpawn == null) {
             return CompletableFuture.completedFuture(null);
         }
@@ -635,12 +957,59 @@ public final class GameSessionManager {
         int centerChunkX = ChunkUtil.chunkCoordinate(blockX);
         int centerChunkZ = ChunkUtil.chunkCoordinate(blockZ);
 
-        ArrayList<CompletableFuture<?>> futures = new ArrayList<>(25);
+        RunChunkSelectionManager selectionManager = RunChunkSelectionManager.get();
+        Set<RunChunkSelectionManager.ChunkPosKey> selectedChunks = selectionManager.getSelectedChunks(selectionWorldName);
+        LongSet pinnedChunkIndices = selectionManager.getPinnedChunkIndices(selectionWorldName);
+        LongSet chunksToLoad = new LongOpenHashSet(Math.max(25, selectedChunks.size() + 25));
+
         for (int dz = -2; dz <= 2; dz++) {
             for (int dx = -2; dx <= 2; dx++) {
                 long chunkIndex = ChunkUtil.indexChunk(centerChunkX + dx, centerChunkZ + dz);
-                futures.add(world.getChunkStore().getChunkReferenceAsync(chunkIndex));
+                chunksToLoad.add(chunkIndex);
             }
+        }
+        for (RunChunkSelectionManager.ChunkPosKey selected : selectedChunks) {
+            chunksToLoad.add(ChunkUtil.indexChunk(selected.x(), selected.z()));
+        }
+
+        boolean notifyLoadingProgress = GameFlowConfigManager.get().isChunkLoadingMessagesEnabled();
+        int totalChunks = chunksToLoad.size();
+        if (notifyLoadingProgress && totalChunks > 0) {
+            playerRef.sendMessage(Message.raw("[Run] Loading chunks before TP: 0/" + totalChunks + " (pinned=" + pinnedChunkIndices.size() + ")"));
+        }
+
+        AtomicInteger loadedCount = new AtomicInteger(0);
+        ArrayList<CompletableFuture<?>> futures = new ArrayList<>(totalChunks);
+        UUID worldId = world.getWorldConfig().getUuid();
+        if (!pinnedChunkIndices.isEmpty()) {
+            PINNED_CHUNK_INDICES_BY_RUN_WORLD.put(worldId, new LongOpenHashSet(pinnedChunkIndices));
+        } else {
+            PINNED_CHUNK_INDICES_BY_RUN_WORLD.remove(worldId);
+        }
+        for (long chunkIndex : chunksToLoad) {
+            CompletableFuture<Ref<ChunkStore>> chunkFuture = world.getChunkStore().getChunkReferenceAsync(chunkIndex);
+            futures.add(chunkFuture.thenAcceptAsync(chunkRef -> {
+                if (chunkRef != null && pinnedChunkIndices.contains(chunkIndex)) {
+                    PINNED_CHUNK_REFS_BY_WORLD.computeIfAbsent(worldId, ignored -> Collections.synchronizedList(new ArrayList<>()))
+                            .add(chunkRef);
+                    WorldChunk pinnedChunk = world.getChunkStore().getChunkComponent(chunkIndex, WorldChunk.getComponentType());
+                    if (pinnedChunk != null) {
+                        try {
+                            pinnedChunk.addKeepLoaded();
+                            pinnedChunk.resetKeepAlive();
+                            pinnedChunk.resetActiveTimer();
+                            pinnedChunk.setFlag(ChunkFlag.TICKING, true);
+                        } catch (Throwable ignored) {
+                        }
+                    }
+                }
+                if (notifyLoadingProgress) {
+                    int current = loadedCount.incrementAndGet();
+                    if (current == totalChunks || current % 100 == 0) {
+                        playerRef.sendMessage(Message.raw("[Run] Loading chunks before TP: " + current + "/" + totalChunks));
+                    }
+                }
+            }, world));
         }
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
@@ -768,12 +1137,152 @@ public final class GameSessionManager {
         if (runWorldUuid == null) {
             return;
         }
+        LongSet pinnedIndices = PINNED_CHUNK_INDICES_BY_RUN_WORLD.remove(runWorldUuid);
+        World runWorld = Universe.get().getWorld(runWorldUuid);
+        if (runWorld != null && pinnedIndices != null && !pinnedIndices.isEmpty()) {
+            runWorld.execute(() -> {
+                ChunkStore chunkStore = runWorld.getChunkStore();
+                for (long chunkIndex : pinnedIndices) {
+                    WorldChunk worldChunk = chunkStore.getChunkComponent(chunkIndex, WorldChunk.getComponentType());
+                    if (worldChunk == null) {
+                        continue;
+                    }
+                    try {
+                        worldChunk.removeKeepLoaded();
+                    } catch (Throwable ignored) {
+                    }
+                }
+            });
+        }
+        PINNED_CHUNK_REFS_BY_WORLD.remove(runWorldUuid);
         RedWaveManager.clearRuntime(runWorldUuid);
         RedCoreRegistry.clear(runWorldUuid);
         RedCoreProfileRegistry.clear(runWorldUuid);
         RooterManManager.get().clearRuntimeForWorld(runWorldUuid);
         LootChestRuntime.get().clearWorld(runWorldUuid);
         OrangeBlobBlockManager.clearRuntimeForWorld(runWorldUuid);
+    }
+
+    private static void removeWorldOnOwningThread(@Nonnull Universe universe, @Nonnull String worldName) {
+        World existing = universe.getWorld(worldName);
+        if (existing == null) {
+            return;
+        }
+        CompletableFuture<Void> removalFuture = new CompletableFuture<>();
+        existing.execute(() -> {
+            try {
+                universe.removeWorld(worldName);
+                removalFuture.complete(null);
+            } catch (Throwable throwable) {
+                removalFuture.completeExceptionally(throwable);
+            }
+        });
+        try {
+            removalFuture.get(15L, TimeUnit.SECONDS);
+        } catch (Exception ignored) {
+        }
+    }
+
+    public static void maintainPinnedRunChunks(@Nonnull World world) {
+        UUID worldId = world.getWorldConfig().getUuid();
+        if (!isPinnedKeepAliveActiveForWorld(worldId)) {
+            return;
+        }
+        ActiveSessionSnapshot snapshot = GameSessionManager.get().getActiveSession();
+        if (snapshot != null) {
+            RunChunkSelectionManager.get().reloadFromConfig(snapshot.templateWorldName());
+            LongSet refreshedPinned = RunChunkSelectionManager.get().getPinnedChunkIndices(snapshot.templateWorldName());
+            if (!refreshedPinned.isEmpty()) {
+                PINNED_CHUNK_INDICES_BY_RUN_WORLD.put(worldId, refreshedPinned);
+            }
+        }
+        LongSet pinned = PINNED_CHUNK_INDICES_BY_RUN_WORLD.get(worldId);
+        if (pinned == null || pinned.isEmpty()) {
+            return;
+        }
+        ChunkStore chunkStore = world.getChunkStore();
+        for (long chunkIndex : pinned) {
+            WorldChunk worldChunk = chunkStore.getChunkComponent(chunkIndex, WorldChunk.getComponentType());
+            if (worldChunk == null) {
+                chunkStore.getChunkReferenceAsync(chunkIndex).thenAcceptAsync(chunkRef -> {
+                    if (!isPinnedKeepAliveActiveForWorld(worldId)) {
+                        return;
+                    }
+                    LongSet activePinned = PINNED_CHUNK_INDICES_BY_RUN_WORLD.get(worldId);
+                    if (activePinned == null || !activePinned.contains(chunkIndex)) {
+                        return;
+                    }
+                    WorldChunk loadedChunk = chunkStore.getChunkComponent(chunkIndex, WorldChunk.getComponentType());
+                    if (loadedChunk == null) {
+                        return;
+                    }
+                    try {
+                        loadedChunk.addKeepLoaded();
+                        loadedChunk.resetKeepAlive();
+                        loadedChunk.resetActiveTimer();
+                        loadedChunk.setFlag(ChunkFlag.TICKING, true);
+                    } catch (Throwable ignored) {
+                    }
+                }, world);
+                continue;
+            }
+            try {
+                worldChunk.addKeepLoaded();
+                worldChunk.resetKeepAlive();
+                worldChunk.resetActiveTimer();
+                worldChunk.setFlag(ChunkFlag.TICKING, true);
+            } catch (Throwable ignored) {
+            }
+        }
+    }
+
+    public static void refreshActiveRunMap(@Nonnull World world) {
+        if (!dynamicMapRefreshEnabled) {
+            return;
+        }
+        ActiveSessionSnapshot snapshot = GameSessionManager.get().getActiveSession();
+        UUID worldId = world.getWorldConfig().getUuid();
+        if (snapshot == null || snapshot.runWorldUuid() == null || !worldId.equals(snapshot.runWorldUuid())) {
+            return;
+        }
+        LongSet chunksToRefresh = new LongOpenHashSet();
+        RunChunkSelectionManager selectionManager = RunChunkSelectionManager.get();
+        selectionManager.reloadFromConfig(snapshot.templateWorldName());
+        Set<RunChunkSelectionManager.ChunkPosKey> selectedChunks = selectionManager.getSelectedChunks(snapshot.templateWorldName());
+        for (RunChunkSelectionManager.ChunkPosKey selectedChunk : selectedChunks) {
+            chunksToRefresh.add(ChunkUtil.indexChunk(selectedChunk.x(), selectedChunk.z()));
+        }
+        if (chunksToRefresh.isEmpty()) {
+            return;
+        }
+        if (world.getWorldMapManager() != null) {
+            world.getWorldMapManager().clearImagesInChunks(chunksToRefresh);
+        }
+        for (PlayerRef playerRef : world.getPlayerRefs()) {
+            Player player = world.getEntityStore().getStore().getComponent(playerRef.getReference(), Player.getComponentType());
+            if (player != null && player.getWorldMapTracker() != null) {
+                player.getWorldMapTracker().clearChunks(chunksToRefresh);
+            }
+        }
+    }
+
+    public static boolean isDynamicMapRefreshEnabled() {
+        return dynamicMapRefreshEnabled;
+    }
+
+    public static void setDynamicMapRefreshEnabled(boolean enabled) {
+        dynamicMapRefreshEnabled = enabled;
+    }
+
+    private static boolean isPinnedKeepAliveActiveForWorld(@Nonnull UUID worldId) {
+        ActiveSessionSnapshot snapshot = GameSessionManager.get().getActiveSession();
+        if (snapshot == null || snapshot.runWorldUuid() == null) {
+            return false;
+        }
+        if (!worldId.equals(snapshot.runWorldUuid())) {
+            return false;
+        }
+        return snapshot.phase() != RunPhase.IDLE && snapshot.phase() != RunPhase.ENDING;
     }
 
     private static void scrubRunWorldMarkersAndUnusedCores(@Nonnull World runWorld, @Nonnull ActiveSession session) {
@@ -783,10 +1292,12 @@ public final class GameSessionManager {
 
     private static void customizeRunWorld(@Nonnull World runWorld, @Nonnull ActiveSession session) {
         runWorld.getWorldConfig().setIsAllNPCFrozen(false);
+        runWorld.getWorldConfig().setForcedWeather("Run_Fog");
         runWorld.getWorldConfig().markChanged();
         int selectedHour = chooseRunHour();
         session.appliedRunHour = selectedHour;
         applyRunWorldTimeSet(runWorld, selectedHour);
+        applyRunWorldWeatherSet(runWorld, "Run_Fog");
         configureQuestChest(runWorld, session.templateWorldName);
         replaceRandomBlightBeastWithRooter(runWorld);
     }
@@ -867,6 +1378,15 @@ public final class GameSessionManager {
         }
         double dayFraction = clampedHour / (double) WorldTimeResource.HOURS_PER_DAY;
         worldTime.setDayTime(dayFraction, runWorld, store);
+    }
+
+    private static void applyRunWorldWeatherSet(@Nonnull World runWorld, @Nonnull String weatherId) {
+        Store<EntityStore> store = runWorld.getEntityStore().getStore();
+        WeatherResource weatherResource = store.getResource(WeatherResource.getResourceType());
+        if (weatherResource == null) {
+            return;
+        }
+        weatherResource.setForcedWeather(weatherId);
     }
 
     private static void replaceRandomBlightBeastWithRooter(@Nonnull World runWorld) {
@@ -1011,6 +1531,16 @@ public final class GameSessionManager {
         ENDING
     }
 
+    public enum PlayerRunCategory {
+        NONE,
+        ACTIVE,
+        EXTRACTED,
+        DEAD,
+        SPECTATING,
+        RETURNED_LOBBY,
+        DISCONNECTED
+    }
+
     private static final class ActiveSession {
         @Nonnull
         private final String templateWorldName;
@@ -1026,6 +1556,8 @@ public final class GameSessionManager {
         private final Transform runSpawnTransform;
         @Nullable
         private final Transform returnSpawnTransform;
+        @Nonnull
+        private final Map<UUID, Transform> runSpawnTransformByPlayer;
         @Nullable
         private UUID runWorldUuid;
         @Nonnull
@@ -1033,10 +1565,15 @@ public final class GameSessionManager {
         @Nonnull
         private final Set<UUID> readyPlayerIds = new LinkedHashSet<>();
         @Nonnull
+        private final Set<UUID> participantsEverJoined = new LinkedHashSet<>();
+        @Nonnull
+        private final Map<UUID, PlayerRunCategory> participantCategoryByPlayer = new LinkedHashMap<>();
+        @Nonnull
         private RunPhase phase = RunPhase.IDLE;
         private long startedAtEpochMillis;
         private long runEndsAtEpochMillis;
         private long crimsonStartAtEpochMillis;
+        private long emptyWorldSinceEpochMs;
         private int appliedRunHour = -1;
 
         private ActiveSession(
@@ -1046,7 +1583,9 @@ public final class GameSessionManager {
                 @Nonnull UUID starterPlayerId,
                 @Nonnull List<RedCoreProfileRegistry.RedCoreProfile> crimsonProfiles,
                 @Nullable Transform runSpawnTransform,
-                @Nullable Transform returnSpawnTransform
+                @Nullable Transform returnSpawnTransform,
+                @Nonnull List<UUID> expectedPlayerIds,
+                @Nonnull Map<UUID, Transform> runSpawnTransformByPlayer
         ) {
             this.templateWorldName = templateWorldName;
             this.runWorldName = runWorldName;
@@ -1055,7 +1594,18 @@ public final class GameSessionManager {
             this.crimsonProfiles = copyProfiles(crimsonProfiles);
             this.runSpawnTransform = runSpawnTransform;
             this.returnSpawnTransform = returnSpawnTransform;
-            this.expectedPlayerIds.add(starterPlayerId);
+            this.expectedPlayerIds.addAll(expectedPlayerIds.isEmpty() ? List.of(starterPlayerId) : expectedPlayerIds);
+            for (UUID playerId : this.expectedPlayerIds) {
+                this.participantCategoryByPlayer.put(playerId, PlayerRunCategory.NONE);
+                PLAYER_RUN_CATEGORY_CACHE.put(playerId, PlayerRunCategory.NONE);
+            }
+            this.runSpawnTransformByPlayer = new LinkedHashMap<>();
+            for (Map.Entry<UUID, Transform> entry : runSpawnTransformByPlayer.entrySet()) {
+                if (entry.getKey() == null || entry.getValue() == null) {
+                    continue;
+                }
+                this.runSpawnTransformByPlayer.put(entry.getKey(), copyTransformOrNull(entry.getValue()));
+            }
         }
 
         @Nonnull

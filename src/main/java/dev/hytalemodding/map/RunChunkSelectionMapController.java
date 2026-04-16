@@ -19,8 +19,10 @@ import java.util.Map;
 import java.util.Set;
 
 public final class RunChunkSelectionMapController {
-    private static final int BORDER_COLOR = packMapColor(0xFF, 0x00, 0x55, 0xFF);
-    private static final double BORDER_BLEND = 0.55D;
+    private static final int PREWARM_BORDER_COLOR = packMapColor(0xFF, 0x00, 0x55, 0xFF);
+    private static final double PREWARM_BORDER_BLEND = 0.55D;
+    private static final int PINNED_BORDER_COLOR = packMapColor(0xA0, 0x00, 0x35, 0xFF);
+    private static final double PINNED_BORDER_BLEND = 0.75D;
 
     @Nonnull
     private final JavaPlugin plugin;
@@ -70,18 +72,21 @@ public final class RunChunkSelectionMapController {
             if (!selected.contains(new RunChunkSelectionManager.ChunkPosKey(chunk.chunkX, chunk.chunkZ))) {
                 continue;
             }
-            tintChunk(chunk);
+            boolean pinned = manager.isPinned(worldName, chunk.chunkX, chunk.chunkZ);
+            tintChunk(chunk, pinned);
         }
 
         return false;
     }
 
-    private static void tintChunk(@Nonnull MapChunk chunk) {
+    private static void tintChunk(@Nonnull MapChunk chunk, boolean pinned) {
         MapImage image = chunk.image;
         int pixelCount = image.width * image.height;
         if (image.width <= 0 || image.height <= 0 || pixelCount <= 0) {
             return;
         }
+        int borderColor = pinned ? PINNED_BORDER_COLOR : PREWARM_BORDER_COLOR;
+        double borderBlend = pinned ? PINNED_BORDER_BLEND : PREWARM_BORDER_BLEND;
         int[] pixels = unpackPixels(image, pixelCount);
         int borderThickness = Math.max(1, Math.min(image.width, image.height) / 10);
         int maxX = image.width - 1;
@@ -96,7 +101,7 @@ public final class RunChunkSelectionMapController {
                     continue;
                 }
                 int index = (y * image.width) + x;
-                pixels[index] = blendMapColor(pixels[index], BORDER_COLOR, BORDER_BLEND);
+                pixels[index] = blendMapColor(pixels[index], borderColor, borderBlend);
             }
         }
         chunk.image = packPixels(image.width, image.height, pixels);

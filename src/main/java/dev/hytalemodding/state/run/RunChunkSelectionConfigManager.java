@@ -1,6 +1,9 @@
 package dev.hytalemodding.state.run;
 
 import com.hypixel.hytale.server.core.universe.Universe;
+import com.hypixel.hytale.math.util.ChunkUtil;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -24,15 +27,16 @@ public final class RunChunkSelectionConfigManager {
     }
 
     @Nonnull
-    public static synchronized LinkedHashSet<RunChunkSelectionManager.ChunkPosKey> load(@Nonnull String worldName) {
+    public static synchronized LoadedChunkSelection loadSelection(@Nonnull String worldName) {
         Properties properties = loadProperties();
         String prefix = prefix(worldName);
         Integer count = parseInt(properties.getProperty(prefix + ".count"));
         if (count == null || count <= 0) {
-            return new LinkedHashSet<>();
+            return new LoadedChunkSelection(new LinkedHashSet<>(), new LongOpenHashSet());
         }
 
         ArrayList<RunChunkSelectionManager.ChunkPosKey> values = new ArrayList<>();
+        LongSet pinned = new LongOpenHashSet();
         for (int i = 0; i < count; i++) {
             String base = prefix + ".chunk." + i;
             Integer x = parseInt(properties.getProperty(base + ".x"));
@@ -41,13 +45,20 @@ public final class RunChunkSelectionConfigManager {
                 continue;
             }
             values.add(new RunChunkSelectionManager.ChunkPosKey(x, z));
+            if (parseBoolean(properties.getProperty(base + ".pinned"), false)) {
+                pinned.add(ChunkUtil.indexChunk(x, z));
+            }
         }
         values.sort(Comparator.comparingInt(RunChunkSelectionManager.ChunkPosKey::x)
                 .thenComparingInt(RunChunkSelectionManager.ChunkPosKey::z));
-        return new LinkedHashSet<>(values);
+        return new LoadedChunkSelection(new LinkedHashSet<>(values), pinned);
     }
 
-    public static synchronized void save(@Nonnull String worldName, @Nonnull Set<RunChunkSelectionManager.ChunkPosKey> chunks) {
+    public static synchronized void saveSelection(
+            @Nonnull String worldName,
+            @Nonnull Set<RunChunkSelectionManager.ChunkPosKey> chunks,
+            @Nonnull LongSet pinnedChunkIndices
+    ) {
         Properties properties = loadProperties();
         String prefix = prefix(worldName);
 
@@ -68,6 +79,8 @@ public final class RunChunkSelectionConfigManager {
             String base = prefix + ".chunk." + i;
             properties.setProperty(base + ".x", Integer.toString(chunk.x()));
             properties.setProperty(base + ".z", Integer.toString(chunk.z()));
+            boolean pinned = pinnedChunkIndices.contains(ChunkUtil.indexChunk(chunk.x(), chunk.z()));
+            properties.setProperty(base + ".pinned", Boolean.toString(pinned));
         }
 
         saveProperties(properties);
@@ -135,5 +148,25 @@ public final class RunChunkSelectionConfigManager {
         } catch (NumberFormatException ignored) {
             return null;
         }
+    }
+
+    private static boolean parseBoolean(String raw, boolean defaultValue) {
+        if (raw == null) {
+            return defaultValue;
+        }
+        String normalized = raw.trim().toLowerCase(Locale.ROOT);
+        if ("true".equals(normalized) || "1".equals(normalized) || "yes".equals(normalized) || "on".equals(normalized)) {
+            return true;
+        }
+        if ("false".equals(normalized) || "0".equals(normalized) || "no".equals(normalized) || "off".equals(normalized)) {
+            return false;
+        }
+        return defaultValue;
+    }
+
+    public record LoadedChunkSelection(
+            @Nonnull LinkedHashSet<RunChunkSelectionManager.ChunkPosKey> chunks,
+            @Nonnull LongSet pinnedChunkIndices
+    ) {
     }
 }

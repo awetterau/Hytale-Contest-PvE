@@ -21,6 +21,8 @@ import dev.hytalemodding.state.transition.GameFlowConfigManager;
 import com.hypixel.hytale.math.vector.Vector3i;
 import java.util.List;
 import java.util.Set;
+import java.util.Deque;
+import java.util.ArrayDeque;
 import java.util.concurrent.ThreadLocalRandom;
 import com.hypixel.hytale.server.npc.NPCPlugin;
 import com.hypixel.hytale.server.npc.asset.builder.BuilderInfo;
@@ -39,8 +41,11 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
     private final ConcurrentHashMap<UUID, Long> lastShownSecond = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Set<Integer>> executedAutomationByWorld = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Integer>> failedAutomationByWorld = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, ConcurrentHashMap<String, CoreGrowthQueue>> pendingGrowthByWorld = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Boolean> witchSpawnedInWorld = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, String> currentFormattedTime = new ConcurrentHashMap<>();
+    private static final long GROWTH_STAGE_INTERVAL_MS = 500L;
+    private static final float GROWTH_EXPANSION_PROGRESS_THRESHOLD = 0.96f;
     private static Vector3d witchMarkerPos = null;
 
     public static String getFormattedTime(@Nonnull UUID playerId) {
@@ -54,6 +59,7 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
             hideAllTimerHuds();
             this.executedAutomationByWorld.clear();
             this.failedAutomationByWorld.clear();
+            this.pendingGrowthByWorld.clear();
             return;
         }
         if (snapshot.phase() != GameSessionManager.RunPhase.EXPLORATION
@@ -61,6 +67,7 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
             hideAllTimerHuds();
             this.executedAutomationByWorld.clear();
             this.failedAutomationByWorld.clear();
+            this.pendingGrowthByWorld.clear();
             return;
         }
 
@@ -70,14 +77,28 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
             return;
         }
 
+        GameSessionManager.get().refreshParticipantConnectionStates();
         long remainingMs = Math.max(0L, snapshot.runEndsAtEpochMillis() - System.currentTimeMillis());
         updateRunWorldTimerHud(worldId, remainingMs);
         processAutomatedActions(world, snapshot);
+        processPendingGrowth(world);
 
         // End run when time expires, wiping inventory like death
         if (remainingMs <= 0) {
             sendRunWorldMessage(worldId, "Time's up! Returning to hub.");
             GameSessionManager.get().endSessionAndWipeInventory(null, null);
+            return;
+        }
+
+        if (GameSessionManager.get().shouldAutoEndForParticipants()) {
+            sendRunWorldMessage(worldId, "All run participants are marked as extracted or dead. Ending run.");
+            GameSessionManager.get().endSession(null, null);
+            return;
+        }
+
+        if (GameSessionManager.get().shouldAutoEndForEmptyRunWorld()) {
+            sendRunWorldMessage(worldId, "Run world has been empty for 20 seconds. Ending run.");
+            GameSessionManager.get().endSession(null, null);
             return;
         }
 
@@ -95,7 +116,9 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
                     if (coreType == null || !RedWaveConfig.isCoreBlockId(coreType.getId())) {
                         continue;
                     }
-                    RedWaveManager.beginUndoSession(worldId, profile.corePos());
+                    if (RedWaveManager.isUndoRecordingEnabled()) {
+                        RedWaveManager.beginUndoSession(worldId, profile.corePos());
+                    }
                     RedWaveManager.startWave(worldId, profile.corePos(), profile.radiusBlocks(), profile.startSeconds());
                     started++;
                 }
@@ -165,8 +188,12 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
         String blockId = "weak".equalsIgnoreCase(action.coreTier()) ? WEAK_RUNTIME_CORE_BLOCK_ID : RedWaveConfig.CORE_BLOCK_ID;
         world.setBlock(target.x, target.y, target.z, blockId);
         RedCoreRegistry.register(worldId, target);
-        RedWaveManager.beginUndoSession(worldId, target);
-        RedWaveManager.startWave(worldId, target, Math.max(1, action.radius()), Math.max(0.1f, action.ticksPerBlock() / 20.0f));
+        if (RedWaveManager.isUndoRecordingEnabled()) {
+            RedWaveManager.beginUndoSession(worldId, target);
+        }
+        int targetRadius = Math.max(1, action.radius());
+        float targetSeconds = Math.max(0.1f, action.ticksPerBlock() / 20.0f);
+        RedWaveManager.startWave(worldId, target, targetRadius, targetSeconds);
         return true;
     }
 
@@ -198,20 +225,201 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
         } else {
             target = cores.get(ThreadLocalRandom.current().nextInt(cores.size()));
         }
-        RedWaveManager.ActiveWave currentWave = RedWaveManager.getActiveWave(worldId, target);
+
+        RedWaveManager.ActiveWave activeBeforeReset = RedWaveManager.getActiveWave(worldId, target);
+        int activeRadiusBeforeReset = activeBeforeReset == null ? 0 : activeBeforeReset.radiusBlocks();
+
+        // Restart grow from zero by replacing the core and stopping any active spread for this core.
+        String coreBlockId = "weak".equalsIgnoreCase(action.coreTier()) ? WEAK_RUNTIME_CORE_BLOCK_ID : RedWaveConfig.CORE_BLOCK_ID;
+        RedWaveManager.clearWave(worldId, target);
+        world.setBlock(target.x, target.y, target.z, coreBlockId);
+        RedCoreRegistry.register(worldId, target);
+        ConcurrentHashMap<String, CoreGrowthQueue> pendingByCore = this.pendingGrowthByWorld.get(worldId);
+        if (pendingByCore != null) {
+            pendingByCore.remove(growthKey(target));
+        }
+
         int growthRadius = Math.max(1, action.radius());
-        if (currentWave != null) {
-            growthRadius = Math.max(growthRadius, currentWave.radiusBlocks() + Math.max(1, action.radius()));
-        } else {
-            int existingRadius = estimateExistingCrimsonRadius(world, target, 64);
-            if (existingRadius > 0) {
-                growthRadius = Math.max(growthRadius, existingRadius + Math.max(1, action.radius()));
+        float targetSeconds = Math.max(0.1f, action.ticksPerBlock() / 20.0f);
+        sendRunWorldMessage(
+                worldId,
+                "[GrowDebug] tier=" + action.coreTier()
+                        + " selectedCore=" + target.x + "," + target.y + "," + target.z
+                        + " activeBeforeReset=" + (activeBeforeReset != null)
+                        + " activeRadiusBeforeReset=" + activeRadiusBeforeReset
+                        + " requestedRadius=" + action.radius()
+                        + " appliedRadius=" + growthRadius
+                        + " ticksPerBlock=" + action.ticksPerBlock()
+                        + " appliedSeconds=" + targetSeconds
+        );
+        sendStatusIfEnabled(worldId, "[InfectionAction] Grow restarted core at " + target.x + "," + target.y + "," + target.z + " targetRadius=" + growthRadius + ".");
+        if (RedWaveManager.isUndoRecordingEnabled()) {
+            RedWaveManager.beginUndoSession(worldId, target);
+        }
+        RedWaveManager.startWave(worldId, target, growthRadius, targetSeconds, true);
+        return true;
+    }
+
+    private void processPendingGrowth(@Nonnull World world) {
+        UUID worldId = world.getWorldConfig().getUuid();
+        ConcurrentHashMap<String, CoreGrowthQueue> pendingByCore = this.pendingGrowthByWorld.get(worldId);
+        if (pendingByCore == null || pendingByCore.isEmpty()) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        for (var entry : pendingByCore.entrySet()) {
+            CoreGrowthQueue queue = entry.getValue();
+            if (queue == null) {
+                continue;
+            }
+            GrowthEventJob running = queue.running;
+            if (running == null) {
+                running = queue.queue.pollFirst();
+                queue.running = running;
+            }
+            if (running == null || running.status != GrowthEventStatus.RUNNING || now < running.nextApplyAtMs) {
+                if (running == null && queue.queue.isEmpty()) {
+                    pendingByCore.remove(entry.getKey());
+                }
+                continue;
+            }
+            if (applyGrowthStep(worldId, running, now)) {
+                queue.running = null;
+                GrowthEventJob next = queue.queue.pollFirst();
+                if (next != null) {
+                    next.status = GrowthEventStatus.RUNNING;
+                    next.nextApplyAtMs = 0L;
+                    queue.running = next;
+                } else {
+                    pendingByCore.remove(entry.getKey());
+                }
             }
         }
-        sendStatusIfEnabled(worldId, "[InfectionAction] Grow target core at " + target.x + "," + target.y + "," + target.z + " radius=" + growthRadius + ".");
-        RedWaveManager.beginUndoSession(worldId, target);
-        RedWaveManager.startWave(worldId, target, growthRadius, Math.max(0.1f, action.ticksPerBlock() / 20.0f));
+        if (pendingByCore.isEmpty()) {
+            this.pendingGrowthByWorld.remove(worldId);
+        }
+    }
+
+    private void scheduleGrowth(
+            @Nonnull World world,
+            @Nonnull UUID worldId,
+            @Nonnull Vector3i corePos,
+            int targetRadius,
+            float targetSeconds,
+            int sourceActionIndex
+    ) {
+        int normalizedTarget = Math.max(1, targetRadius);
+        float normalizedTargetSeconds = Math.max(0.1f, targetSeconds);
+
+        String key = growthKey(corePos);
+        ConcurrentHashMap<String, CoreGrowthQueue> pendingByCore = this.pendingGrowthByWorld.computeIfAbsent(worldId, ignored -> new ConcurrentHashMap<>());
+        CoreGrowthQueue queue = pendingByCore.computeIfAbsent(key, ignored -> new CoreGrowthQueue());
+        GrowthEventJob event = new GrowthEventJob(
+                UUID.randomUUID(),
+                sourceActionIndex,
+                new Vector3i(corePos),
+                normalizedTarget,
+                normalizedTargetSeconds,
+                System.currentTimeMillis()
+        );
+
+        // Preempt any current wave for this core (spawn or grow) and replace queued grow work.
+        RedWaveManager.ActiveWave activeWave = RedWaveManager.getActiveWave(worldId, corePos);
+        if (activeWave != null) {
+            RedWaveManager.clearWave(worldId, corePos);
+        }
+
+        // Preempt tracked grow pipeline work for this core.
+        if (queue.running != null) {
+            queue.running.status = GrowthEventStatus.CANCELED;
+        }
+        while (!queue.queue.isEmpty()) {
+            GrowthEventJob queued = queue.queue.pollFirst();
+            if (queued != null && queued.status == GrowthEventStatus.QUEUED) {
+                queued.status = GrowthEventStatus.CANCELED;
+            }
+        }
+        event.status = GrowthEventStatus.RUNNING;
+        queue.running = event;
+        if (applyGrowthStep(worldId, event, System.currentTimeMillis())) {
+            queue.running = null;
+            if (queue.queue.isEmpty()) {
+                pendingByCore.remove(key);
+            }
+        }
+    }
+
+    private boolean applyGrowthStep(@Nonnull UUID worldId, @Nonnull GrowthEventJob pending, long now) {
+        if (pending.status != GrowthEventStatus.RUNNING) {
+            return true;
+        }
+        RedWaveManager.ActiveWave currentWave = RedWaveManager.getActiveWave(worldId, pending.corePos);
+        int currentRadius = currentWave == null ? 0 : Math.max(0, currentWave.radiusBlocks());
+        if (currentRadius <= 0) {
+            RedWaveManager.startWave(worldId, pending.corePos, pending.targetRadius, pending.targetSeconds, true);
+            pending.nextApplyAtMs = now + GROWTH_STAGE_INTERVAL_MS;
+            return true;
+        }
+        if (currentRadius >= pending.targetRadius) {
+            pending.status = GrowthEventStatus.DONE;
+            return true;
+        }
+        float waveProgress = currentWave == null ? 1.0f : currentWave.progress();
+        if (waveProgress < GROWTH_EXPANSION_PROGRESS_THRESHOLD) {
+            pending.nextApplyAtMs = now + GROWTH_STAGE_INTERVAL_MS;
+            return false;
+        }
+        RedWaveManager.startWave(worldId, pending.corePos, pending.targetRadius, pending.targetSeconds, true);
+        pending.nextApplyAtMs = now + GROWTH_STAGE_INTERVAL_MS;
+        pending.status = GrowthEventStatus.DONE;
         return true;
+    }
+
+    @Nonnull
+    private static String growthKey(@Nonnull Vector3i corePos) {
+        return corePos.x + ":" + corePos.y + ":" + corePos.z;
+    }
+
+    private enum GrowthEventStatus {
+        QUEUED,
+        RUNNING,
+        CANCELED,
+        DONE,
+        FAILED
+    }
+
+    private static final class GrowthEventJob {
+        private final UUID eventId;
+        private final int sourceActionIndex;
+        private final Vector3i corePos;
+        private final int targetRadius;
+        private final float targetSeconds;
+        private final long createdAtMs;
+        private GrowthEventStatus status;
+        private long nextApplyAtMs;
+
+        private GrowthEventJob(
+                @Nonnull UUID eventId,
+                int sourceActionIndex,
+                @Nonnull Vector3i corePos,
+                int targetRadius,
+                float targetSeconds,
+                long createdAtMs
+        ) {
+            this.eventId = eventId;
+            this.sourceActionIndex = sourceActionIndex;
+            this.corePos = corePos;
+            this.targetRadius = targetRadius;
+            this.targetSeconds = Math.max(0.1f, targetSeconds);
+            this.createdAtMs = createdAtMs;
+            this.status = GrowthEventStatus.QUEUED;
+            this.nextApplyAtMs = 0L;
+        }
+    }
+
+    private static final class CoreGrowthQueue {
+        private GrowthEventJob running;
+        private final Deque<GrowthEventJob> queue = new ArrayDeque<>();
     }
 
     @Nonnull
@@ -245,23 +453,6 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
             ));
         }
         return mapped;
-    }
-
-    private static int estimateExistingCrimsonRadius(@Nonnull World world, @Nonnull Vector3i origin, int maxRadius) {
-        int farthest = 0;
-        for (int dx = -maxRadius; dx <= maxRadius; dx++) {
-            for (int dz = -maxRadius; dz <= maxRadius; dz++) {
-                var block = world.getBlockType(origin.x + dx, origin.y, origin.z + dz);
-                if (block == null || !RedWaveConfig.CRIMSON_LAYER_BLOCK_ID.equals(block.getId())) {
-                    continue;
-                }
-                int distance = (int) Math.round(Math.sqrt((dx * dx) + (dz * dz)));
-                if (distance > farthest) {
-                    farthest = distance;
-                }
-            }
-        }
-        return farthest;
     }
 
     private void sendStatusIfEnabled(@Nonnull UUID worldId, @Nonnull String text) {
@@ -422,4 +613,5 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
             System.err.println("[ERROR] Failed to spawn witch: " + e.getMessage());
         }
     }
+
 }

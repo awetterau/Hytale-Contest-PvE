@@ -1,0 +1,100 @@
+Group {
+  Anchor: (Left: 80, Top: 80, Right: 80, Bottom: 80);
+  Background: (Color: #4a1010(0.82));
+
+  Label {
+    Anchor: (Left: 12, Top: 10, Right: 12, Height: 28);
+    Text: "PARTY MANAGER";
+    Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 20);
+  }
+
+  Label #PartyStatusLabel {
+    Anchor: (Left: 12, Top: 44, Width: 360, Height: 84);
+    Text: "You are not in a party.";
+    Style: (HorizontalAlignment: Start, VerticalAlignment: Start);
+  }
+
+  Label #PartyMembersLabel {
+    Anchor: (Left: 12, Top: 132, Width: 360, Bottom: 120);
+    Text: "Members: none";
+    Style: (HorizontalAlignment: Start, VerticalAlignment: Start);
+  }
+
+  Label {
+    Anchor: (Left: 390, Top: 44, Right: 12, Height: 22);
+    Text: "Available parties";
+    Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
+  }
+
+  Label #PendingInviteLabel {
+    Anchor: (Left: 390, Top: 70, Right: 12, Height: 22);
+    Text: "Pending invite: none";
+    Style: (HorizontalAlignment: Start, VerticalAlignment: Center);
+  }
+
+  Group #PartyListArea {
+    Anchor: (Left: 390, Top: 98, Right: 12, Bottom: 160);
+    Background: (Color: #2f0b0b(0.72));
+
+    Label #PartyRow1Label { Anchor: (Left: 8, Top: 8, Right: 100, Height: 22); Text: ""; Visible: false; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+    TextButton #PartyRow1JoinButton { Anchor: (Right: 8, Top: 8, Width: 84, Height: 22); Text: "Join"; Visible: false; Background: (Color: #441010(0.92)); }
+    Label #PartyRow2Label { Anchor: (Left: 8, Top: 34, Right: 100, Height: 22); Text: ""; Visible: false; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+    TextButton #PartyRow2JoinButton { Anchor: (Right: 8, Top: 34, Width: 84, Height: 22); Text: "Join"; Visible: false; Background: (Color: #441010(0.92)); }
+    Label #PartyRow3Label { Anchor: (Left: 8, Top: 60, Right: 100, Height: 22); Text: ""; Visible: false; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+    TextButton #PartyRow3JoinButton { Anchor: (Right: 8, Top: 60, Width: 84, Height: 22); Text: "Join"; Visible: false; Background: (Color: #441010(0.92)); }
+    Label #PartyRow4Label { Anchor: (Left: 8, Top: 86, Right: 100, Height: 22); Text: ""; Visible: false; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+    TextButton #PartyRow4JoinButton { Anchor: (Right: 8, Top: 86, Width: 84, Height: 22); Text: "Join"; Visible: false; Background: (Color: #441010(0.92)); }
+    Label #PartyRow5Label { Anchor: (Left: 8, Top: 112, Right: 100, Height: 22); Text: ""; Visible: false; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+    TextButton #PartyRow5JoinButton { Anchor: (Right: 8, Top: 112, Width: 84, Height: 22); Text: "Join"; Visible: false; Background: (Color: #441010(0.92)); }
+    Label #PartyRow6Label { Anchor: (Left: 8, Top: 138, Right: 100, Height: 22); Text: ""; Visible: false; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+    TextButton #PartyRow6JoinButton { Anchor: (Right: 8, Top: 138, Width: 84, Height: 22); Text: "Join"; Visible: false; Background: (Color: #441010(0.92)); }
+    Label #PartyRow7Label { Anchor: (Left: 8, Top: 164, Right: 100, Height: 22); Text: ""; Visible: false; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+    TextButton #PartyRow7JoinButton { Anchor: (Right: 8, Top: 164, Width: 84, Height: 22); Text: "Join"; Visible: false; Background: (Color: #441010(0.92)); }
+    Label #PartyRow8Label { Anchor: (Left: 8, Top: 190, Right: 100, Height: 22); Text: ""; Visible: false; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+    TextButton #PartyRow8JoinButton { Anchor: (Right: 8, Top: 190, Width: 84, Height: 22); Text: "Join"; Visible: false; Background: (Color: #441010(0.92)); }
+  }
+
+  TextField #InviteTargetInput {
+    Anchor: (Left: 390, Bottom: 122, Right: 120, Height: 26);
+    Value: "Exploration group";
+    Background: (Color: #6a2b8e(0.35));
+  }
+  TextButton #InviteButton { Anchor: (Right: 12, Bottom: 122, Width: 100, Height: 26); Text: "Save group"; Background: (Color: #441010(0.92)); }
+
+  TextButton #CreatePartyButton { Anchor: (Left: 12, Bottom: 82, Width: 120, Height: 28); Text: "Create"; Background: (Color: #441010(0.92)); }
+  TextButton #AcceptInviteButton { Anchor: (Left: 138, Bottom: 82, Width: 120, Height: 28); Text: "Accept"; Background: (Color: #441010(0.92)); }
+  TextButton #LeavePartyButton { Anchor: (Left: 264, Bottom: 82, Width: 120, Height: 28); Text: "Leave"; Background: (Color: #441010(0.92)); }
+  TextButton #DisbandPartyButton { Anchor: (Left: 390, Bottom: 82, Width: 120, Height: 28); Text: "Disband"; Background: (Color: #441010(0.92)); }
+
+  Group #CreatePartyOverlay {
+    Anchor: (Left: 190, Top: 110, Right: 190, Bottom: 110);
+    Background: (Color: #120406(0.96));
+    Visible: false;
+
+    Label {
+      Anchor: (Left: 12, Top: 10, Right: 12, Height: 28);
+      Text: "CREATE PARTY";
+      Style: (HorizontalAlignment: Center, VerticalAlignment: Center, RenderBold: true, FontSize: 18);
+    }
+
+    Label { Anchor: (Left: 12, Top: 48, Width: 130, Height: 24); Text: "Party name"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+    TextField #CreatePartyNameInput {
+      Anchor: (Left: 148, Top: 48, Right: 12, Height: 24);
+      Value: "Exploration group";
+      Background: (Color: #6a2b8e(0.35));
+    }
+
+    Label { Anchor: (Left: 12, Top: 78, Width: 130, Height: 24); Text: "Party size (2-5)"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+    TextField #CreatePartySizeInput {
+      Anchor: (Left: 148, Top: 78, Width: 72, Height: 24);
+      Value: "4";
+      Background: (Color: #6a2b8e(0.35));
+    }
+
+    TextButton #CreatePartyCancelButton { Anchor: (Right: 122, Bottom: 12, Width: 100, Height: 28); Text: "Cancel"; Background: (Color: #2b0d0d(0.96)); }
+    TextButton #CreatePartyConfirmButton { Anchor: (Right: 12, Bottom: 12, Width: 100, Height: 28); Text: "Create"; Background: (Color: #441010(0.96)); }
+  }
+
+  TextButton #RefreshButton { Anchor: (Right: 122, Bottom: 24, Width: 100, Height: 30); Text: "Refresh"; Background: (Color: #441010(0.92)); }
+  TextButton #CloseButton { Anchor: (Right: 12, Bottom: 24, Width: 100, Height: 30); Text: "Close"; Background: (Color: #441010(0.92)); }
+}

@@ -3,6 +3,7 @@ package dev.hytalemodding.state.run;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.vector.Transform;
+import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.protocol.InteractionType;
@@ -15,12 +16,14 @@ import com.hypixel.hytale.server.core.event.events.player.PlayerMouseButtonEvent
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
 import com.hypixel.hytale.server.core.modules.entitystats.asset.DefaultEntityStatTypes;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
+import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.npc.entities.NPCEntity;
 import dev.hytalemodding.domain.housing.BaseHousingManager;
+import dev.hytalemodding.state.party.PartyManager;
 import dev.hytalemodding.state.transition.GameFlowConfigManager;
 import dev.hytalemodding.state.transition.SpawnPointZoneConfigManager;
 import dev.hytalemodding.state.transition.RunHubTransferService;
@@ -29,7 +32,9 @@ import dev.hytalemodding.ui.dev.DoorRunZoneSelectPage;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -154,6 +159,17 @@ public final class GameDoorInteractionHandler {
     }
 
     private static void tryStartFromDoor(@Nonnull PlayerRef playerRef, @Nonnull World templateWorld) {
+        PartyManager partyManager = PartyManager.get();
+        if (!partyManager.isLeaderOrSolo(playerRef.getUuid())) {
+            sendStatusMessage(playerRef, "Only team leaders can start a run.");
+            return;
+        }
+        List<UUID> participantIds = partyManager.getRunParticipantIds(playerRef.getUuid());
+        if (participantIds.isEmpty()) {
+            sendStatusMessage(playerRef, "Only team leaders can start a run.");
+            return;
+        }
+
         GameFlowConfigManager config = GameFlowConfigManager.get();
         String hubWorldName = config.getHubWorldName();
         if (!isHubWorld(templateWorld)) {
@@ -180,28 +196,57 @@ public final class GameDoorInteractionHandler {
             sendStatusMessage(playerRef, "No spawn zones with registered SpawnPoint_Block entries are available.");
             return;
         }
-
         SpawnPointZoneManager.SpawnSelectionResult spawnSelection =
                 SpawnPointZoneManager.reserveRandomSpawnForPlayer(runTemplateWorld, selectedZone.intValue(), playerRef.getUuid(), playerRef.getTransform());
         if (spawnSelection == null) {
             sendStatusMessage(playerRef, "Selected door zone " + SpawnPointZoneManager.getFormattedZoneLabel(selectedZone.intValue()) + " has no registered SpawnPoint_Block entries.");
             return;
         }
+        LinkedHashMap<UUID, Transform> spawnByPlayer = planTeamSpawns(
+                runTemplateWorld,
+                selectedZone.intValue(),
+                spawnSelection.locationIndex(),
+                participantIds,
+                playerRef.getTransform()
+        );
+        if (spawnByPlayer.size() != participantIds.size()) {
+            SpawnPointZoneManager.releaseReservedSpawn(playerRef.getUuid());
+            sendStatusMessage(playerRef, "Cannot start run: one or more team members are unavailable.");
+            return;
+        }
 
         Transform baseSpawn = config.getBaseSpawn();
-        List<UUID> lockedPlayerIds = collectRunStartPlayerIds(playerRef);
+        List<UUID> lockedPlayerIds = collectRunStartPlayerIds(playerRef, participantIds);
         RunStartMovementLockManager.get().unlockPlayers(lockedPlayerIds);
-        RunStartMovementLockManager.get().lockPlayerForIntro(playerRef);
+        for (UUID playerId : participantIds) {
+            PlayerRef memberRef = Universe.get().getPlayer(playerId);
+            if (memberRef != null) {
+                RunStartMovementLockManager.get().lockPlayerForIntro(memberRef);
+            }
+        }
 
-        GameSessionManager.get().startSession(playerRef, runTemplateWorld, spawnSelection.transform(), baseSpawn).whenComplete((result, throwable) -> {
+        GameSessionManager.get().startSession(
+                playerRef,
+                runTemplateWorld,
+                spawnSelection.transform(),
+                baseSpawn,
+                participantIds,
+                spawnByPlayer
+        ).whenComplete((result, throwable) -> {
             if (throwable != null) {
                 String reason = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
-                SpawnPointZoneManager.releaseReservedSpawn(playerRef.getUuid());
+                for (UUID participantId : participantIds) {
+                    SpawnPointZoneManager.releaseReservedSpawn(participantId);
+                }
                 RunStartMovementLockManager.get().unlockPlayers(lockedPlayerIds);
                 sendStatusMessage(playerRef, "Failed to start run: " + reason);
                 return;
             }
-            sendStatusMessage(playerRef, "Loading run from " + SpawnPointZoneManager.getFormattedLocationLabel(selectedZone.intValue(), spawnSelection.locationIndex()) + ". The timer will start when gameplay is ready.");
+            sendStatusMessage(
+                    playerRef,
+                    "Loading run from " + SpawnPointZoneManager.getFormattedLocationLabel(selectedZone.intValue(), spawnSelection.locationIndex())
+                            + " for " + participantIds.size() + " player(s). The timer will start when gameplay is ready."
+            );
         });
     }
 
@@ -257,30 +302,39 @@ public final class GameDoorInteractionHandler {
             playerRef.sendMessage(Message.raw("Animal rescue not queued (the missing animal is not following you yet)."));
         }
 
-        return GameSessionManager.get().endSession(baseSpawn, hubWorld).handle((result, throwable) -> {
-            if (throwable != null) {
-                String reason = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
-                return new GameSessionManager.EndSessionResult(false, session.runWorldName(), session.templateWorldName(), reason == null ? "unknown extraction error" : reason);
-            }
-            if (result == null || !result.success()) {
-                return result == null
-                        ? new GameSessionManager.EndSessionResult(false, session.runWorldName(), session.templateWorldName(), "Extraction returned no result.")
-                        : result;
-            }
-            SpawnPointZoneManager.releaseReservedSpawn(playerRef.getUuid());
-            healIfAdventurePlayer(playerRef);
-            sendStatusMessage(playerRef, "Extraction complete.");
-            QuestProgressManager.get().incrementSuccessfulExtraction(playerRef);
-            if (queuedRescue) {
-                RescueObjectiveManager.get().commitPendingRescueAsRescued();
-                hubWorld.execute(() -> BaseHousingManager.get().ensureAssignmentsInWorld(hubWorld));
-            }
-            if (queuedAnimal) {
-                FarmerAnimalRescueManager.get().commitPendingAnimalsAsRescued();
-                hubWorld.execute(() -> FarmerAnimalRescueManager.get().ensureHubAnimalsInWorld(hubWorld));
-            }
-            return result;
-        });
+        Ref<EntityStore> playerEntityRef = playerRef.getReference();
+        if (playerEntityRef == null || !playerEntityRef.isValid()) {
+            return java.util.concurrent.CompletableFuture.completedFuture(
+                    new GameSessionManager.EndSessionResult(false, session.runWorldName(), session.templateWorldName(), "Player reference unavailable.")
+            );
+        }
+        Store<EntityStore> playerStore = playerEntityRef.getStore();
+        if (playerStore == null) {
+            return java.util.concurrent.CompletableFuture.completedFuture(
+                    new GameSessionManager.EndSessionResult(false, session.runWorldName(), session.templateWorldName(), "Player store unavailable.")
+            );
+        }
+
+        Teleport teleport = Teleport.createForPlayer(hubWorld, baseSpawn);
+        playerStore.addComponent(playerEntityRef, Teleport.getComponentType(), teleport);
+
+        GameSessionManager.get().markPlayerCategory(playerRef.getUuid(), GameSessionManager.PlayerRunCategory.EXTRACTED);
+        SpawnPointZoneManager.releaseReservedSpawn(playerRef.getUuid());
+        healIfAdventurePlayer(playerRef);
+        sendStatusMessage(playerRef, "Extraction complete.");
+        QuestProgressManager.get().incrementSuccessfulExtraction(playerRef);
+        if (queuedRescue) {
+            RescueObjectiveManager.get().commitPendingRescueAsRescued();
+            hubWorld.execute(() -> BaseHousingManager.get().ensureAssignmentsInWorld(hubWorld));
+        }
+        if (queuedAnimal) {
+            FarmerAnimalRescueManager.get().commitPendingAnimalsAsRescued();
+            hubWorld.execute(() -> FarmerAnimalRescueManager.get().ensureHubAnimalsInWorld(hubWorld));
+        }
+
+        return java.util.concurrent.CompletableFuture.completedFuture(
+                new GameSessionManager.EndSessionResult(true, session.runWorldName(), session.templateWorldName(), "Player extracted.")
+        );
     }
 
     public static boolean isHubWorld(@Nullable World world) {
@@ -366,7 +420,57 @@ public final class GameDoorInteractionHandler {
     }
 
     @Nonnull
-    private static List<UUID> collectRunStartPlayerIds(@Nonnull PlayerRef playerRef) {
-        return List.of(playerRef.getUuid());
+    private static List<UUID> collectRunStartPlayerIds(@Nonnull PlayerRef playerRef, @Nonnull List<UUID> participantIds) {
+        if (participantIds.isEmpty()) {
+            return List.of(playerRef.getUuid());
+        }
+        return List.copyOf(participantIds);
+    }
+
+    @Nonnull
+    private static LinkedHashMap<UUID, Transform> planTeamSpawns(
+            @Nonnull World runTemplateWorld,
+            int zoneIndex,
+            int locationIndex,
+            @Nonnull List<UUID> participantIds,
+            @Nullable Transform referenceTransform
+    ) {
+        LinkedHashMap<UUID, Transform> result = new LinkedHashMap<>();
+        SpawnPointZoneConfigManager.SpawnZoneState state = SpawnPointZoneConfigManager.load(runTemplateWorld.getName());
+        LinkedHashMap<Integer, ArrayList<SpawnPointZoneConfigManager.SpawnPointEntry>> byLocation = state.zones().get(zoneIndex);
+        if (byLocation == null || byLocation.isEmpty()) {
+            return result;
+        }
+        ArrayList<SpawnPointZoneConfigManager.SpawnPointEntry> pool = new ArrayList<>();
+        for (SpawnPointZoneConfigManager.SpawnPointEntry entry : byLocation.getOrDefault(locationIndex, new ArrayList<>())) {
+            if (entry.dimension().equalsIgnoreCase(runTemplateWorld.getName())) {
+                pool.add(entry);
+            }
+        }
+        if (pool.isEmpty()) {
+            return result;
+        }
+
+        Vector3f rotation = referenceTransform == null
+                ? new Vector3f(0.0f, 0.0f, 0.0f)
+                : new Vector3f(referenceTransform.getRotation());
+        for (int i = 0; i < participantIds.size(); i++) {
+            UUID participantId = participantIds.get(i);
+            PlayerRef memberRef = Universe.get().getPlayer(participantId);
+            if (memberRef == null || !memberRef.isValid() || memberRef.getWorldUuid() == null) {
+                return new LinkedHashMap<>();
+            }
+            SpawnPointZoneConfigManager.SpawnPointEntry assigned = pool.get(i % pool.size());
+            Transform spawn = new Transform(
+                    new com.hypixel.hytale.math.vector.Vector3d(
+                            assigned.position().x + 0.5d,
+                            assigned.position().y + 1.0d,
+                            assigned.position().z + 0.5d
+                    ),
+                    new Vector3f(rotation)
+            );
+            result.put(participantId, spawn);
+        }
+        return result;
     }
 }

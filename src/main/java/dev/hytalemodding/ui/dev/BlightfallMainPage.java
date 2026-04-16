@@ -5,6 +5,7 @@ import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.math.vector.Transform;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
@@ -25,10 +26,12 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.redwave.RedCoreRegistry;
 import dev.hytalemodding.redwave.RedWaveManager;
+import dev.hytalemodding.redwave.RedWoolDamageSystem;
 import dev.hytalemodding.state.run.GameDoorInteractionHandler;
 import dev.hytalemodding.state.run.GameSessionManager;
 import dev.hytalemodding.state.run.InfectionCoreRegistry;
 import dev.hytalemodding.state.run.InfectionActionConfigManager;
+import dev.hytalemodding.state.run.RunChunkSelectionManager;
 import dev.hytalemodding.state.transition.GameFlowConfigManager;
 
 import javax.annotation.Nonnull;
@@ -45,6 +48,7 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
     private static final int MAX_TIMELINE_EVENTS = 8;
     private static final ConcurrentHashMap<UUID, String> SECTION_BY_PLAYER = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, Integer> SELECTED_TIMELINE_EVENT_BY_PLAYER = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, Integer> TIMELINE_PAGE_START_BY_PLAYER = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, Integer> SELECTED_WEAK_INDEX_BY_PLAYER = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, Integer> SELECTED_CORE_INDEX_BY_PLAYER = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, ArrayList<TimelineEvent>> TIMELINE_EVENTS_BY_PLAYER = new ConcurrentHashMap<>();
@@ -52,6 +56,7 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
     private static final ConcurrentHashMap<UUID, Integer> PENDING_EDITOR_INDEX_BY_PLAYER = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, String> PENDING_ACTION_TYPE_BY_PLAYER = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, String> PENDING_CORE_TIER_BY_PLAYER = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, Integer> CHUNK_BRUSH_RANGE_BY_PLAYER = new ConcurrentHashMap<>();
 
     public BlightfallMainPage(@Nonnull PlayerRef playerRef) {
         super(playerRef, CustomPageLifetime.CanDismiss, PageEventData.CODEC);
@@ -74,6 +79,9 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         ui.set("#RunTimeHourMinInput.Value", (double) GameFlowConfigManager.get().getRunTimeHourMin());
         ui.set("#RunTimeHourMaxInput.Value", (double) GameFlowConfigManager.get().getRunTimeHourMax());
         boolean runControlVisible = "run".equals(section);
+        boolean chunkControlVisible = "chunks".equals(section);
+        boolean infectionControlVisible = "red".equals(section);
+        int chunkBrushRange = Math.max(0, Math.min(5, CHUNK_BRUSH_RANGE_BY_PLAYER.getOrDefault(this.playerRef.getUuid(), 0)));
         ui.set("#TemplateWorldLabel.Visible", runControlVisible);
         ui.set("#TemplateInput.Visible", runControlVisible);
         ui.set("#RunDurationLabel.Visible", runControlVisible);
@@ -86,18 +94,38 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         ui.set("#ApplyGameControlButton.Visible", runControlVisible);
         ui.set("#CenterContent.Text", buildCenterContent(section, worldId, session));
         ui.set("#RightContent.Text", buildRightContent(section, session));
-        ui.set("#ToggleStatusChatButton.Text", "Status Chat: " + (GameFlowConfigManager.get().isStatusMessagesEnabled() ? "ON" : "OFF"));
+        ui.set("#ChunkToolsSection.Visible", chunkControlVisible);
+        ui.set("#ChunkVisualToggleButton.Text", "Map Visual: " + (RunChunkSelectionManager.get().isEnabled(this.playerRef) ? "ON" : "OFF"));
+        ui.set("#ChunkBrushRangeValue.Text", Integer.toString(chunkBrushRange));
+        ui.set("#ChunkBrushSizeLabel.Text", "Brush: " + ((chunkBrushRange * 2) + 1) + "x" + ((chunkBrushRange * 2) + 1));
+        boolean alertsEnabled = GameFlowConfigManager.get().isStatusMessagesEnabled() || GameFlowConfigManager.get().isChunkLoadingMessagesEnabled();
+        ui.set("#ToggleAlertsButton.Text", "Alerts: " + (alertsEnabled ? "ON" : "OFF"));
+        ui.set("#ToggleDynamicMapButton.Visible", runControlVisible);
+        ui.set("#ToggleDynamicMapButton.Text", "Dinamic map: " + (GameSessionManager.isDynamicMapRefreshEnabled() ? "ON" : "OFF"));
+        RedWoolDamageSystem.setHazardFogEnabled(GameFlowConfigManager.get().isHazardFogWeatherEnabled());
+        ui.set("#ToggleFogWeatherCenterButton.Visible", infectionControlVisible);
+        ui.set("#ToggleFogWeatherCenterButton.Text", "Hazard fog: " + (RedWoolDamageSystem.isHazardFogEnabled() ? "ON" : "OFF"));
+        ui.set("#ChunkReloadFileButton.Visible", chunkControlVisible);
         applyInfectionButtons(ui, events, worldId, "red".equals(section));
         applyInfectionTimeline(ui, events, "red".equals(section));
 
         events.addEventBinding(CustomUIEventBindingType.Activating, "#NavRunButton", EventData.of("Action", "nav_run"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#NavRedButton", EventData.of("Action", "nav_red"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#NavChunksButton", EventData.of("Action", "nav_chunks"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#ChunkBrushRangeDownButton", EventData.of("Action", "chunk_range_down"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#ChunkBrushRangeUpButton", EventData.of("Action", "chunk_range_up"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#ChunkVisualToggleButton", EventData.of("Action", "chunk_toggle_visual"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#ChunkSetPinnedButton", EventData.of("Action", "chunk_set_pin"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#ChunkSetMarkerButton", EventData.of("Action", "chunk_set_marker"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#ChunkSetClearButton", EventData.of("Action", "chunk_set_clear"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#RunStartButton", EventData.of("Action", "run_start"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#RunResetButton", EventData.of("Action", "run_reset"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#RunStopButton", EventData.of("Action", "run_stop"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#ApplyGameControlButton", withGameControl("apply_game_control"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#AddEventButton", EventData.of("Action", "timeline_add"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#RemoveEventButton", EventData.of("Action", "timeline_remove"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#TimeLinePagePrevButton", EventData.of("Action", "timeline_page_prev"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#TimeLinePageNextButton", EventData.of("Action", "timeline_page_next"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#PrevActionButton", EventData.of("Action", "action_prev"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#NextActionButton", EventData.of("Action", "action_next"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#ActionTypePrevButton", EventData.of("Action", "action_type_prev"), false);
@@ -105,7 +133,10 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         events.addEventBinding(CustomUIEventBindingType.Activating, "#CoreTierPrevButton", EventData.of("Action", "core_tier_prev"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#CoreTierNextButton", EventData.of("Action", "core_tier_next"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#ApplyEventButton", withTimelineEditor("timeline_apply"), false);
-        events.addEventBinding(CustomUIEventBindingType.Activating, "#ToggleStatusChatButton", EventData.of("Action", "toggle_status_chat"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#ToggleAlertsButton", EventData.of("Action", "toggle_alerts"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#ToggleDynamicMapButton", EventData.of("Action", "toggle_dynamic_map"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#ToggleFogWeatherCenterButton", EventData.of("Action", "toggle_fog_weather"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#ChunkReloadFileButton", EventData.of("Action", "chunk_reload_file"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#RefreshButton", EventData.of("Action", "refresh"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#CloseButton", EventData.of("Action", "close"), false);
     }
@@ -128,6 +159,34 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
                 SECTION_BY_PLAYER.put(this.playerRef.getUuid(), "red");
                 reopen(ref, store, player);
             }
+            case "nav_chunks" -> {
+                SECTION_BY_PLAYER.put(this.playerRef.getUuid(), "chunks");
+                reopen(ref, store, player);
+            }
+            case "chunk_range_down" -> {
+                shiftChunkBrushRange(-1);
+                reopen(ref, store, player);
+            }
+            case "chunk_range_up" -> {
+                shiftChunkBrushRange(1);
+                reopen(ref, store, player);
+            }
+            case "chunk_set_pin" -> {
+                applyChunkBrush(store, ChunkBrushMode.PIN);
+                reopen(ref, store, player);
+            }
+            case "chunk_set_marker" -> {
+                applyChunkBrush(store, ChunkBrushMode.MARKER);
+                reopen(ref, store, player);
+            }
+            case "chunk_set_clear" -> {
+                applyChunkBrush(store, ChunkBrushMode.CLEAR);
+                reopen(ref, store, player);
+            }
+            case "chunk_toggle_visual" -> {
+                toggleChunkMapVisual(store);
+                reopen(ref, store, player);
+            }
             case "run_start" -> startRun();
             case "run_reset" -> resetRun();
             case "run_stop" -> stopRun();
@@ -141,6 +200,14 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
             }
             case "timeline_remove" -> {
                 removeTimelineEvent();
+                reopen(ref, store, player);
+            }
+            case "timeline_page_prev" -> {
+                shiftTimelinePage(-1);
+                reopen(ref, store, player);
+            }
+            case "timeline_page_next" -> {
+                shiftTimelinePage(1);
                 reopen(ref, store, player);
             }
             case "action_prev" -> {
@@ -171,12 +238,28 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
                 applyTimelineEventEditor(eventData);
                 reopen(ref, store, player);
             }
-            case "toggle_status_chat" -> {
-                boolean next = !GameFlowConfigManager.get().isStatusMessagesEnabled();
+            case "toggle_alerts" -> {
+                boolean next = !(GameFlowConfigManager.get().isStatusMessagesEnabled() || GameFlowConfigManager.get().isChunkLoadingMessagesEnabled());
                 GameFlowConfigManager.get().setStatusMessagesEnabled(next);
-                if (next) {
-                    sendUiMessage("Status chat messages: ON");
-                }
+                GameFlowConfigManager.get().setChunkLoadingMessagesEnabled(next);
+                sendUiMessage("Alerts: " + (next ? "ON" : "OFF"));
+                reopen(ref, store, player);
+            }
+            case "toggle_dynamic_map" -> {
+                boolean next = !GameSessionManager.isDynamicMapRefreshEnabled();
+                GameSessionManager.setDynamicMapRefreshEnabled(next);
+                sendUiMessage("Dinamic map: " + (next ? "ON" : "OFF"));
+                reopen(ref, store, player);
+            }
+            case "toggle_fog_weather" -> {
+                boolean next = !RedWoolDamageSystem.isHazardFogEnabled();
+                RedWoolDamageSystem.setHazardFogEnabled(next);
+                GameFlowConfigManager.get().setHazardFogWeatherEnabled(next);
+                sendUiMessage("Hazard fog: " + (next ? "ON" : "OFF"));
+                reopen(ref, store, player);
+            }
+            case "chunk_reload_file" -> {
+                reloadChunkSelectionFromFile();
                 reopen(ref, store, player);
             }
             case "weak_prev" -> {
@@ -238,6 +321,7 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
     private static String buildCenterContent(@Nonnull String section, @Nonnull UUID worldId, GameSessionManager.ActiveSessionSnapshot session) {
         return switch (section) {
             case "red" -> buildInfectionManagerContent(worldId);
+            case "chunks" -> "RUNCHUNKS TOOLS\nEdit selected chunks from this panel.\nChoose type: PIN / MARKER / CLEAR and set brush range.";
             default -> "RUN CONTROL\nUse this panel for start/reset/stop and Apply Game Control.\n\nActive session: " + (session == null ? "No" : "Yes");
         };
     }
@@ -251,6 +335,18 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
                 && session.startedAtEpochMillis() > 0L) {
             elapsedSeconds = Math.max(0L, (System.currentTimeMillis() - session.startedAtEpochMillis()) / 1000L);
         }
+        if ("chunks".equals(section)) {
+            String templateWorld = GameFlowConfigManager.get().getTemplateWorldName();
+            RunChunkSelectionManager manager = RunChunkSelectionManager.get();
+            manager.reloadFromConfig(templateWorld);
+            int total = manager.count(templateWorld);
+            int pinned = manager.countPinned(templateWorld);
+            int marker = Math.max(0, total - pinned);
+            return "RUNCHUNKS INFO\nTemplate: " + templateWorld
+                    + "\nTotal: " + total
+                    + "\nPinned: " + pinned
+                    + "\nMarker: " + marker;
+        }
         return "EXTRAS\nSection: " + formatSectionName(section) + "\nRun phase: "
                 + (session == null ? "IDLE" : session.phase().name()) + "\nElapsed: " + elapsedSeconds + "s";
     }
@@ -260,7 +356,110 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         if ("red".equals(section)) {
             return "INFECTION MANAGER";
         }
+        if ("chunks".equals(section)) {
+            return "RUNCHUNKS";
+        }
         return "run".equals(section) ? "RUN CONTROL" : section.toUpperCase();
+    }
+
+    private void shiftChunkBrushRange(int direction) {
+        UUID playerId = this.playerRef.getUuid();
+        int current = CHUNK_BRUSH_RANGE_BY_PLAYER.getOrDefault(playerId, 0);
+        int next = Math.max(0, Math.min(5, current + (direction < 0 ? -1 : 1)));
+        CHUNK_BRUSH_RANGE_BY_PLAYER.put(playerId, next);
+        sendUiMessage("Run chunk brush range: " + next);
+    }
+
+    private void applyChunkBrush(@Nonnull Store<EntityStore> store, @Nonnull ChunkBrushMode mode) {
+        World world = store.getExternalData().getWorld();
+        if (world == null || this.playerRef.getTransform() == null || this.playerRef.getTransform().getPosition() == null) {
+            return;
+        }
+        String worldName = world.getName();
+        RunChunkSelectionManager manager = RunChunkSelectionManager.get();
+
+        int centerChunkX = ChunkUtil.chunkCoordinate((int) Math.floor(this.playerRef.getTransform().getPosition().getX()));
+        int centerChunkZ = ChunkUtil.chunkCoordinate((int) Math.floor(this.playerRef.getTransform().getPosition().getZ()));
+        int range = Math.max(0, Math.min(5, CHUNK_BRUSH_RANGE_BY_PLAYER.getOrDefault(this.playerRef.getUuid(), 0)));
+        int changed = 0;
+        for (int dz = -range; dz <= range; dz++) {
+            for (int dx = -range; dx <= range; dx++) {
+                int targetChunkX = centerChunkX + dx;
+                int targetChunkZ = centerChunkZ + dz;
+                boolean didChange = switch (mode) {
+                    case PIN -> manager.markPinned(worldName, targetChunkX, targetChunkZ);
+                    case MARKER -> {
+                        boolean marked = manager.mark(worldName, targetChunkX, targetChunkZ);
+                        boolean unpinned = manager.setPinned(worldName, targetChunkX, targetChunkZ, false);
+                        yield marked || unpinned;
+                    }
+                    case CLEAR -> manager.unmark(worldName, targetChunkX, targetChunkZ);
+                };
+                if (didChange) {
+                    changed++;
+                }
+                manager.queueMapRefresh(worldName, targetChunkX, targetChunkZ);
+            }
+        }
+        sendUiMessage("Runchunks " + mode.label + ": " + changed + " chunks.");
+    }
+
+    private void toggleChunkMapVisual(@Nonnull Store<EntityStore> store) {
+        World world = store.getExternalData().getWorld();
+        if (world == null) {
+            return;
+        }
+        String worldName = world.getName();
+        RunChunkSelectionManager manager = RunChunkSelectionManager.get();
+        if (manager.isEnabled(this.playerRef)) {
+            manager.disableFor(this.playerRef);
+            refreshPlayerMapNow(world, this.playerRef, manager.getSelectedChunks(worldName));
+            sendUiMessage("Runchunk map visual: OFF");
+            return;
+        }
+        manager.enableFor(this.playerRef);
+        manager.queueMapRefreshForChunks(worldName, manager.getSelectedChunks(worldName));
+        refreshPlayerMapNow(world, this.playerRef, manager.getSelectedChunks(worldName));
+        sendUiMessage("Runchunk map visual: ON");
+    }
+
+    private static void refreshPlayerMapNow(
+            @Nonnull World world,
+            @Nonnull PlayerRef playerRef,
+            @Nonnull java.util.Set<RunChunkSelectionManager.ChunkPosKey> chunks
+    ) {
+        if (chunks.isEmpty()) {
+            return;
+        }
+        it.unimi.dsi.fastutil.longs.LongSet indices = new it.unimi.dsi.fastutil.longs.LongOpenHashSet(chunks.size());
+        for (RunChunkSelectionManager.ChunkPosKey chunk : chunks) {
+            indices.add(ChunkUtil.indexChunk(chunk.x(), chunk.z()));
+        }
+        if (world.getWorldMapManager() != null) {
+            world.getWorldMapManager().clearImagesInChunks(indices);
+        }
+        Player player = world.getEntityStore().getStore().getComponent(playerRef.getReference(), Player.getComponentType());
+        if (player != null && player.getWorldMapTracker() != null) {
+            player.getWorldMapTracker().clearChunks(indices);
+        }
+    }
+
+    private void reloadChunkSelectionFromFile() {
+        String templateWorld = GameFlowConfigManager.get().getTemplateWorldName();
+        RunChunkSelectionManager.get().reloadFromConfig(templateWorld);
+        sendUiMessage("Run chunk file reloaded for: " + templateWorld);
+    }
+
+    private enum ChunkBrushMode {
+        PIN("pin"),
+        MARKER("marker"),
+        CLEAR("clear");
+
+        private final String label;
+
+        ChunkBrushMode(String label) {
+            this.label = label;
+        }
     }
 
     @Nonnull
@@ -337,15 +536,22 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         }
 
         ui.set("#TimelineHeader.Text", "Timeline Events (" + timeline.size() + ")");
+        int pageStart = getTimelinePageStart(timeline.size());
+        int pageCount = Math.max(1, (int) Math.ceil(timeline.size() / (double) MAX_TIMELINE_EVENTS));
+        int currentPage = (pageStart / MAX_TIMELINE_EVENTS) + 1;
+        ui.set("#TimelinePageLabel.Text", "Page " + currentPage + "/" + pageCount);
+        ui.set("#TimeLinePagePrevButton.Visible", pageCount > 1);
+        ui.set("#TimeLinePageNextButton.Visible", pageCount > 1);
         for (int i = 0; i < MAX_TIMELINE_EVENTS; i++) {
             String buttonId = "#TimelineEventButton" + (i + 1);
-            boolean buttonVisible = i < timeline.size();
+            int timelineIndex = pageStart + i;
+            boolean buttonVisible = timelineIndex < timeline.size();
             ui.set(buttonId + ".Visible", buttonVisible);
             if (buttonVisible) {
-                TimelineEvent event = timeline.get(i);
-                String selectedMarker = i == selectedIndex ? "* " : "";
+                TimelineEvent event = timeline.get(timelineIndex);
+                String selectedMarker = timelineIndex == selectedIndex ? "* " : "";
                 ui.set(buttonId + ".Text", selectedMarker + event.actionType.toUpperCase() + "/" + event.coreTier.toUpperCase() + " @" + event.triggerSecond + "s p=" + event.probabilityPercent + "%");
-                events.addEventBinding(CustomUIEventBindingType.Activating, buttonId, EventData.of("Action", "timeline_select_" + i), false);
+                events.addEventBinding(CustomUIEventBindingType.Activating, buttonId, EventData.of("Action", "timeline_select_" + timelineIndex), false);
             }
         }
 
@@ -455,12 +661,9 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
 
     private void addTimelineEvent() {
         List<TimelineEvent> timeline = getTimelineForPlayer();
-        if (timeline.size() >= MAX_TIMELINE_EVENTS) {
-            sendUiMessage("Timeline is full (max " + MAX_TIMELINE_EVENTS + " events).");
-            return;
-        }
         timeline.add(defaultAction("spawn"));
         SELECTED_TIMELINE_EVENT_BY_PLAYER.put(this.playerRef.getUuid(), timeline.size() - 1);
+        alignTimelinePageToSelection(timeline.size());
         persistActionsForPlayer();
         sendUiMessage("Action added: spawn.");
     }
@@ -479,6 +682,7 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         timeline.remove(selectedIndex);
         int replacement = timeline.isEmpty() ? -1 : Math.min(selectedIndex, timeline.size() - 1);
         SELECTED_TIMELINE_EVENT_BY_PLAYER.put(this.playerRef.getUuid(), replacement);
+        alignTimelinePageToSelection(timeline.size());
         persistActionsForPlayer();
         sendUiMessage("Action removed.");
     }
@@ -495,6 +699,7 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
             next += timeline.size();
         }
         SELECTED_TIMELINE_EVENT_BY_PLAYER.put(this.playerRef.getUuid(), next);
+        alignTimelinePageToSelection(timeline.size());
         clearPendingEditorSelection();
     }
 
@@ -546,6 +751,7 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         List<TimelineEvent> timeline = getTimelineForPlayer();
         if (selectedIndex >= 0 && selectedIndex < timeline.size()) {
             SELECTED_TIMELINE_EVENT_BY_PLAYER.put(this.playerRef.getUuid(), selectedIndex);
+            alignTimelinePageToSelection(timeline.size());
             clearPendingEditorSelection();
         }
     }
@@ -703,6 +909,58 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
             SELECTED_TIMELINE_EVENT_BY_PLAYER.put(this.playerRef.getUuid(), index);
         }
         return index;
+    }
+
+    private int getTimelinePageStart(int timelineSize) {
+        if (timelineSize <= 0) {
+            TIMELINE_PAGE_START_BY_PLAYER.put(this.playerRef.getUuid(), 0);
+            return 0;
+        }
+        int maxStart = Math.max(0, ((timelineSize - 1) / MAX_TIMELINE_EVENTS) * MAX_TIMELINE_EVENTS);
+        int start = TIMELINE_PAGE_START_BY_PLAYER.getOrDefault(this.playerRef.getUuid(), 0);
+        if (start < 0 || start > maxStart || start % MAX_TIMELINE_EVENTS != 0) {
+            start = 0;
+        }
+        int selected = getSelectedTimelineIndex(timelineSize);
+        if (selected >= 0 && (selected < start || selected >= start + MAX_TIMELINE_EVENTS)) {
+            start = (selected / MAX_TIMELINE_EVENTS) * MAX_TIMELINE_EVENTS;
+        }
+        TIMELINE_PAGE_START_BY_PLAYER.put(this.playerRef.getUuid(), start);
+        return start;
+    }
+
+    private void shiftTimelinePage(int direction) {
+        List<TimelineEvent> timeline = getTimelineForPlayer();
+        if (timeline.isEmpty()) {
+            TIMELINE_PAGE_START_BY_PLAYER.put(this.playerRef.getUuid(), 0);
+            return;
+        }
+        int pageCount = Math.max(1, (int) Math.ceil(timeline.size() / (double) MAX_TIMELINE_EVENTS));
+        int currentPage = getTimelinePageStart(timeline.size()) / MAX_TIMELINE_EVENTS;
+        int nextPage = (currentPage + direction) % pageCount;
+        if (nextPage < 0) {
+            nextPage += pageCount;
+        }
+        int newStart = nextPage * MAX_TIMELINE_EVENTS;
+        TIMELINE_PAGE_START_BY_PLAYER.put(this.playerRef.getUuid(), newStart);
+        int selected = getSelectedTimelineIndex(timeline.size());
+        if (selected < newStart || selected >= newStart + MAX_TIMELINE_EVENTS) {
+            SELECTED_TIMELINE_EVENT_BY_PLAYER.put(this.playerRef.getUuid(), Math.min(newStart, timeline.size() - 1));
+            clearPendingEditorSelection();
+        }
+    }
+
+    private void alignTimelinePageToSelection(int timelineSize) {
+        if (timelineSize <= 0) {
+            TIMELINE_PAGE_START_BY_PLAYER.put(this.playerRef.getUuid(), 0);
+            return;
+        }
+        int selected = getSelectedTimelineIndex(timelineSize);
+        if (selected < 0) {
+            TIMELINE_PAGE_START_BY_PLAYER.put(this.playerRef.getUuid(), 0);
+            return;
+        }
+        TIMELINE_PAGE_START_BY_PLAYER.put(this.playerRef.getUuid(), (selected / MAX_TIMELINE_EVENTS) * MAX_TIMELINE_EVENTS);
     }
 
     @Nullable

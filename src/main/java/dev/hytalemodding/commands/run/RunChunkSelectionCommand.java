@@ -19,7 +19,7 @@ import it.unimi.dsi.fastutil.longs.LongSet;
 import javax.annotation.Nonnull;
 
 public final class RunChunkSelectionCommand extends AbstractPlayerCommand {
-    private final RequiredArg<String> actionArg = this.withRequiredArg("action", "on|off|mark|unmark|toggle|list", ArgTypes.STRING);
+    private final RequiredArg<String> actionArg = this.withRequiredArg("action", "on|off|mark|pin|prewarm|unmark|toggle|list", ArgTypes.STRING);
 
     public RunChunkSelectionCommand() {
         super("runchunks", "Manage and visualize selected run chunks.");
@@ -60,7 +60,27 @@ public final class RunChunkSelectionCommand extends AbstractPlayerCommand {
                 }
                 boolean added = manager.mark(worldName, chunkX, chunkZ);
                 manager.queueMapRefresh(worldName, chunkX, chunkZ);
-                context.sendMessage(Message.raw((added ? "Marked" : "Already marked") + " chunk " + chunkX + "," + chunkZ));
+                context.sendMessage(Message.raw((added ? "Marked prewarm" : "Already prewarm") + " chunk " + chunkX + "," + chunkZ));
+            }
+            case "pin" -> {
+                if (!manager.isEnabled(playerRef)) {
+                    context.sendMessage(Message.raw("Enable first: /runchunks on"));
+                    return;
+                }
+                boolean changed = manager.markPinned(worldName, chunkX, chunkZ);
+                manager.queueMapRefresh(worldName, chunkX, chunkZ);
+                context.sendMessage(Message.raw((changed ? "Pinned" : "Already pinned") + " chunk " + chunkX + "," + chunkZ));
+            }
+            case "prewarm" -> {
+                if (!manager.isEnabled(playerRef)) {
+                    context.sendMessage(Message.raw("Enable first: /runchunks on"));
+                    return;
+                }
+                boolean added = manager.mark(worldName, chunkX, chunkZ);
+                boolean changedPinned = manager.setPinned(worldName, chunkX, chunkZ, false);
+                manager.queueMapRefresh(worldName, chunkX, chunkZ);
+                context.sendMessage(Message.raw((added || changedPinned ? "Set prewarm" : "Already prewarm")
+                        + " chunk " + chunkX + "," + chunkZ));
             }
             case "unmark" -> {
                 if (!manager.isEnabled(playerRef)) {
@@ -80,8 +100,13 @@ public final class RunChunkSelectionCommand extends AbstractPlayerCommand {
                 manager.queueMapRefresh(worldName, chunkX, chunkZ);
                 context.sendMessage(Message.raw((marked ? "Marked" : "Unmarked") + " chunk " + chunkX + "," + chunkZ));
             }
-            case "list" -> context.sendMessage(Message.raw("World '" + worldName + "' selected chunks: " + manager.count(worldName)));
-            default -> context.sendMessage(Message.raw("Usage: /runchunks <on|off|mark|unmark|toggle|list>"));
+            case "list" -> {
+                int total = manager.count(worldName);
+                int pinned = manager.countPinned(worldName);
+                int prewarm = Math.max(0, total - pinned);
+                context.sendMessage(Message.raw("World '" + worldName + "' chunks: total=" + total + ", pinned=" + pinned + ", prewarm=" + prewarm));
+            }
+            default -> context.sendMessage(Message.raw("Usage: /runchunks <on|off|mark|pin|prewarm|unmark|toggle|list>"));
         }
     }
 

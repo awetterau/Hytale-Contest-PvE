@@ -36,6 +36,13 @@ public final class RedWaveConfig {
     public static final int FINAL_SHAPE_BOOTSTRAP_MIN_NEIGHBORS = 2;
     public static final boolean FINAL_SHAPE_RANDOM_TIPS_ENABLED = true;
     public static final boolean ENABLE_UNDO_RECORDING = false;
+    public static final float DECORATION_PROBABILITY_MULTIPLIER = 1.3f;
+    public static final boolean EXPONENTIAL_SPEED_SCALING_ENABLED = true;
+    public static final float EXPONENTIAL_SPEED_CURVE = 3.0f;
+    public static final float EXPONENTIAL_SPEED_MAX_MULTIPLIER = 4.0f;
+    public static final String RUN_DEFAULT_WEATHER_ID = "Run_Fog";
+    public static final String CRIMSON_HAZARD_WEATHER_ID = "Run_Fog_Hazard";
+    public static final float CRIMSON_HAZARD_WEATHER_REFRESH_SECONDS = 3.0f;
 
     public static final List<String> NON_CONVERTIBLE_ID_KEYWORDS = List.of(
             "leaf",

@@ -281,7 +281,9 @@ public class RedControlPage extends InteractiveCustomUIPage<RedControlPage.PageE
                 return;
             }
 
-            RedWaveManager.beginUndoSession(worldId, corePos);
+            if (RedWaveManager.isUndoRecordingEnabled()) {
+                RedWaveManager.beginUndoSession(worldId, corePos);
+            }
             RedWaveManager.ActiveWave wave = RedWaveManager.startWave(worldId, corePos, state.globalRadius, state.globalSpreadSeconds);
             double speed = wave.spreadSpeedPerTick();
             int limit = RedWaveManager.getWorldFrontierLimit(worldId);

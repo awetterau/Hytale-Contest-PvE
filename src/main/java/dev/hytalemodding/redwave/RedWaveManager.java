@@ -9,8 +9,10 @@ import com.hypixel.hytale.server.core.universe.world.World;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -111,7 +113,18 @@ public final class RedWaveManager {
 
     @Nonnull
     public static ActiveWave startWave(@Nonnull UUID worldId, @Nonnull Vector3i corePos, int radiusBlocks, float seconds) {
-        ActiveWave wave = new ActiveWave(worldId, corePos, radiusBlocks, seconds);
+        return startWave(worldId, corePos, radiusBlocks, seconds, false);
+    }
+
+    @Nonnull
+    public static ActiveWave startWave(
+            @Nonnull UUID worldId,
+            @Nonnull Vector3i corePos,
+            int radiusBlocks,
+            float seconds,
+            boolean ignoreFrontierLimit
+    ) {
+        ActiveWave wave = new ActiveWave(worldId, corePos, radiusBlocks, seconds, ignoreFrontierLimit);
         ACTIVE_WAVES
                 .computeIfAbsent(worldId, ignored -> new ConcurrentHashMap<>())
                 .put(coreKey(corePos), wave);
@@ -131,6 +144,10 @@ public final class RedWaveManager {
         WORLD_READY_FLAGS.remove(worldId);
         WORLD_SPREAD_SPEED.remove(worldId);
         WORLD_FRONTIER_LIMIT.remove(worldId);
+    }
+
+    public static boolean isUndoRecordingEnabled() {
+        return RedWaveConfig.ENABLE_UNDO_RECORDING;
     }
 
     public static void setWorldSpreadSpeed(@Nonnull UUID worldId, int speed) {
@@ -368,7 +385,7 @@ public final class RedWaveManager {
         if (id == null || id.isEmpty()) {
             return false;
         }
-        if (isCrimsonFamilyId(id) || RedWaveConfig.isCoreBlockId(id)) {
+        if (isCrimsonFamilyId(id) || isCrimsonFamilyBlock(blockType) || RedWaveConfig.isCoreBlockId(id)) {
             return false;
         }
 
@@ -428,7 +445,7 @@ public final class RedWaveManager {
                 continue;
             }
             String id = neighbor.getId();
-            if (isCrimsonFamilyId(id) || RedWaveConfig.isCoreBlockId(id)) {
+            if (isCrimsonFamilyId(id) || isCrimsonFamilyBlock(neighbor) || RedWaveConfig.isCoreBlockId(id)) {
                 return true;
             }
         }
@@ -441,6 +458,60 @@ public final class RedWaveManager {
         }
         return RedWaveConfig.CRIMSON_LAYER_BLOCK_ID.equals(blockId)
                 || RedWaveConfig.CRIMSON_PLATE_BLOCK_ID.equals(blockId);
+    }
+
+    public static boolean isCrimsonFamilyBlock(@Nullable BlockType blockType) {
+        if (blockType == null || blockType == BlockType.EMPTY) {
+            return false;
+        }
+        Object family = invokeOptionalZeroArg(blockType, "getFamily");
+        if (family == null) {
+            family = invokeOptionalZeroArg(blockType, "family");
+        }
+        if (family instanceof String familyName && "crimson".equalsIgnoreCase(familyName)) {
+            return true;
+        }
+
+        Object tags = invokeOptionalZeroArg(blockType, "getTags");
+        if (tags == null) {
+            tags = invokeOptionalZeroArg(blockType, "tags");
+        }
+        return containsCrimsonTag(tags);
+    }
+
+    @Nullable
+    private static Object invokeOptionalZeroArg(@Nonnull Object target, @Nonnull String methodName) {
+        try {
+            Method method = target.getClass().getMethod(methodName);
+            return method.invoke(target);
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
+    }
+
+    private static boolean containsCrimsonTag(@Nullable Object tags) {
+        if (tags == null) {
+            return false;
+        }
+        if (tags instanceof Collection<?> collection) {
+            for (Object entry : collection) {
+                if (entry != null && "crimson".equalsIgnoreCase(String.valueOf(entry))) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        if (tags instanceof String tagText) {
+            if ("crimson".equalsIgnoreCase(tagText)) {
+                return true;
+            }
+            for (String token : tagText.split("[,;|\\s]+")) {
+                if ("crimson".equalsIgnoreCase(token)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static int countFullCubeNeighbors(
@@ -505,6 +576,11 @@ public final class RedWaveManager {
                 {0, 1, 0}, {0, -1, 0}
         };
         private static final int FINAL_MASK_SIDES = 24;
+        private static final float INITIAL_DYNAMIC_RADIUS = 20.0f;
+        private static final float INITIAL_DYNAMIC_HALF_HEIGHT = 12.0f;
+        private static final float DYNAMIC_RADIUS_GROWTH_PER_SECOND = 2.0f;
+        private static final float DYNAMIC_HEIGHT_GROWTH_PER_SECOND = 1.2f;
+        private static final float MIN_RADIUS_BEFORE_CONVERSION = 18.0f;
         @Nonnull
         private final UUID worldId;
         @Nonnull
@@ -519,6 +595,7 @@ public final class RedWaveManager {
         private final float targetSeconds;
         private final int conversionLimit;
         private final int frontierLimit;
+        private final boolean ignoreFrontierLimit;
         private final long noiseSeed;
         @Nonnull
         private final double[] lobeLengthByIndex;
@@ -535,6 +612,8 @@ public final class RedWaveManager {
         @Nonnull
         private final boolean[] queued;
         @Nonnull
+        private final byte[] maskState;
+        @Nonnull
         private final ArrayDeque<Integer> frontier = new ArrayDeque<>();
         private final float innerUniformRadius;
         private final float innerUniformHeight;
@@ -546,11 +625,16 @@ public final class RedWaveManager {
         private double convertedRingSum;
         private double tickBudget;
         private int tickCounter;
+        private float dynamicHorizontalRadius;
+        private float dynamicHalfHeight;
+        private boolean fullyExpandedMask;
+        private boolean meshReadyForConversion;
 
-        private ActiveWave(@Nonnull UUID worldId, @Nonnull Vector3i corePos, int radiusBlocks, float seconds) {
+        private ActiveWave(@Nonnull UUID worldId, @Nonnull Vector3i corePos, int radiusBlocks, float seconds, boolean ignoreFrontierLimit) {
             this.worldId = worldId;
             this.corePos = new Vector3i(corePos);
             this.radiusBlocks = radiusBlocks;
+            this.ignoreFrontierLimit = ignoreFrontierLimit;
 
             int padding = 3;
             this.minX = corePos.x - radiusBlocks - padding;
@@ -563,19 +647,27 @@ public final class RedWaveManager {
             this.expanded = new boolean[totalCells];
             this.converted = new boolean[totalCells];
             this.queued = new boolean[totalCells];
+            this.maskState = new byte[totalCells];
             long seed = worldId.getLeastSignificantBits() ^ worldId.getMostSignificantBits() ^ corePos.hashCode() ^ System.nanoTime();
             this.random = new Random(seed);
             this.innerUniformRadius = Math.max(1.0f, this.radiusBlocks);
             this.innerUniformHeight = Math.max(1.0f, this.radiusBlocks);
             this.innerCenter = this.radiusBlocks + padding;
+            this.dynamicHorizontalRadius = Math.max(2.0f, Math.min(this.innerUniformRadius, INITIAL_DYNAMIC_RADIUS));
+            this.dynamicHalfHeight = Math.max(1.0f, Math.min(this.innerUniformHeight, INITIAL_DYNAMIC_HALF_HEIGHT));
+            this.fullyExpandedMask = this.dynamicHorizontalRadius >= this.innerUniformRadius
+                    && this.dynamicHalfHeight >= this.innerUniformHeight;
+            this.meshReadyForConversion = false;
             this.lobeLengthByIndex = new double[FINAL_MASK_SIDES];
             this.lobeSharpnessByIndex = new double[FINAL_MASK_SIDES];
             this.prepareLobeJitter(seed);
-            this.horizontalFootprintBlocks = 0L;
-            this.totalBlocks = this.prepareRadiusMask(padding);
+            this.horizontalFootprintBlocks = estimateHorizontalFootprintBlocks(this.innerUniformRadius);
+            this.totalBlocks = estimateTotalBlocks(this.innerUniformRadius, this.innerUniformHeight);
 
             this.frontierLimit = getWorldFrontierLimit(worldId);
-            this.conversionLimit = (int) Math.min(this.totalBlocks, this.frontierLimit);
+            this.conversionLimit = this.ignoreFrontierLimit
+                    ? (int) this.totalBlocks
+                    : (int) Math.min(this.totalBlocks, this.frontierLimit);
             this.targetSeconds = Math.max(0.1f, seconds);
             double targetWork = Math.max(1.0d, this.horizontalFootprintBlocks * RedWaveConfig.FINAL_SHAPE_WORK_SCALE);
             this.targetBlocksPerSecond = Math.max(0.0001d, targetWork / this.targetSeconds);
@@ -624,13 +716,34 @@ public final class RedWaveManager {
                 return 0;
             }
             this.tickCounter++;
-            this.tickBudget += this.targetBlocksPerSecond * Math.max(0.0f, dt);
+            this.advanceMaskGrowth(dt);
+            if (!this.meshReadyForConversion) {
+                return 0;
+            }
+            if (!this.fullyExpandedMask && this.dynamicHorizontalRadius < Math.min(this.innerUniformRadius, MIN_RADIUS_BEFORE_CONVERSION)) {
+                return 0;
+            }
+            double dynamicBlocksPerSecond = this.targetBlocksPerSecond;
+            if (RedWaveConfig.EXPONENTIAL_SPEED_SCALING_ENABLED) {
+                dynamicBlocksPerSecond *= this.computeExponentialSpeedMultiplier();
+            }
+            this.tickBudget += dynamicBlocksPerSecond * Math.max(0.0f, dt);
             int amount = (int) Math.floor(this.tickBudget);
             if (amount <= 0) {
                 return 0;
             }
             this.tickBudget -= amount;
             return amount;
+        }
+
+        private double computeExponentialSpeedMultiplier() {
+            double maxMultiplier = Math.max(1.0d, RedWaveConfig.EXPONENTIAL_SPEED_MAX_MULTIPLIER);
+            double curve = Math.max(0.01d, RedWaveConfig.EXPONENTIAL_SPEED_CURVE);
+            double radiusRatio = Math.max(0.0d, Math.min(1.0d, this.areaEquivalentRadius() / Math.max(1.0d, this.radiusBlocks)));
+            double expAtProgress = Math.exp(curve * radiusRatio);
+            double expAtEnd = Math.exp(curve);
+            double normalized = (expAtProgress - 1.0d) / Math.max(1.0e-6d, (expAtEnd - 1.0d));
+            return 1.0d + ((maxMultiplier - 1.0d) * normalized);
         }
 
         public boolean shouldEmitRadiusSample() {
@@ -656,7 +769,14 @@ public final class RedWaveManager {
         public Vector3i consumeGrowthStep() {
             while (!this.frontier.isEmpty()) {
                 int index = this.popPriorityFrontierIndex();
-                if (this.expanded[index] || !this.inRadius[index]) {
+                if (index < 0) {
+                    continue;
+                }
+                int localX = index % this.width;
+                int yz = index / this.width;
+                int localY = yz % this.width;
+                int localZ = yz / this.width;
+                if (!this.ensureMaskEvaluated(index, localX, localY, localZ) || this.expanded[index]) {
                     continue;
                 }
 
@@ -707,6 +827,7 @@ public final class RedWaveManager {
 
             int frontierSeeds = this.seedFrontierFromExistingCrimson(world);
             if (frontierSeeds > 0) {
+                this.meshReadyForConversion = true;
                 System.out.println(
                         "[RedWave] core="
                                 + this.corePos.x + "," + this.corePos.y + "," + this.corePos.z
@@ -744,6 +865,7 @@ public final class RedWaveManager {
                 Vector3i target = new Vector3i(this.corePos.x + offset.x, this.corePos.y + offset.y, this.corePos.z + offset.z);
                 placed = this.tryBootstrapTarget(world, worldId, target, placed);
             }
+            this.meshReadyForConversion = !this.frontier.isEmpty() || this.convertedActualCount > 0L;
         }
 
         private int tryBootstrapTarget(@Nonnull World world, @Nonnull UUID worldId, @Nonnull Vector3i target, int placed) {
@@ -803,13 +925,19 @@ public final class RedWaveManager {
 
         private int seedFrontierFromExistingCrimson(@Nonnull World world) {
             int seeded = 0;
-            int maxX = this.minX + this.width - 1;
-            int maxY = this.minY + this.width - 1;
-            int maxZ = this.minZ + this.width - 1;
+            int scanRadius = Math.max(4, Math.min(this.radiusBlocks, Math.round(this.dynamicHorizontalRadius) + 4));
+            int scanHalfHeight = Math.max(3, Math.min(this.radiusBlocks, Math.round(this.dynamicHalfHeight) + 3));
 
-            for (int x = this.minX; x <= maxX; x++) {
-                for (int y = this.minY; y <= maxY; y++) {
-                    for (int z = this.minZ; z <= maxZ; z++) {
+            int minScanX = this.corePos.x - scanRadius;
+            int maxScanX = this.corePos.x + scanRadius;
+            int minScanY = this.corePos.y - scanHalfHeight;
+            int maxScanY = this.corePos.y + scanHalfHeight;
+            int minScanZ = this.corePos.z - scanRadius;
+            int maxScanZ = this.corePos.z + scanRadius;
+
+            for (int x = minScanX; x <= maxScanX; x++) {
+                for (int y = minScanY; y <= maxScanY; y++) {
+                    for (int z = minScanZ; z <= maxScanZ; z++) {
                         BlockType existing = world.getBlockType(x, y, z);
                         if (existing == null || !RedWaveConfig.CRIMSON_LAYER_BLOCK_ID.equals(existing.getId())) {
                             continue;
@@ -817,7 +945,10 @@ public final class RedWaveManager {
 
                         Vector3i crimsonPos = new Vector3i(x, y, z);
                         int crimsonIndex = this.toIndex(crimsonPos);
-                        if (crimsonIndex < 0 || !this.inRadius[crimsonIndex]) {
+                        if (crimsonIndex < 0) {
+                            continue;
+                        }
+                        if (!this.ensureMaskEvaluated(crimsonIndex, x - this.minX, y - this.minY, z - this.minZ)) {
                             continue;
                         }
                         this.markConverted(crimsonPos);
@@ -825,7 +956,10 @@ public final class RedWaveManager {
                         for (Vector3i offset : ADJACENT_OFFSETS) {
                             Vector3i candidate = new Vector3i(x + offset.x, y + offset.y, z + offset.z);
                             int candidateIndex = this.toIndex(candidate);
-                            if (candidateIndex < 0 || !this.inRadius[candidateIndex]) {
+                            if (candidateIndex < 0) {
+                                continue;
+                            }
+                            if (!this.ensureMaskEvaluated(candidateIndex, candidate.x - this.minX, candidate.y - this.minY, candidate.z - this.minZ)) {
                                 continue;
                             }
                             if (this.expanded[candidateIndex] || this.queued[candidateIndex]) {
@@ -879,50 +1013,6 @@ public final class RedWaveManager {
             return value;
         }
 
-        private long prepareRadiusMask(int padding) {
-            long count = 0L;
-            int center = this.innerCenter;
-            int sidesCount = this.lobeLengthByIndex.length;
-            double sides = sidesCount;
-            double tau = Math.PI * 2.0d;
-            for (int x = 0; x < this.width; x++) {
-                int dx = x - center;
-                for (int y = 0; y < this.width; y++) {
-                    int dy = y - center;
-                    for (int z = 0; z < this.width; z++) {
-                        int dz = z - center;
-                        int index = this.indexOf(x, y, z);
-
-                        float horizontalDistance = (float) Math.sqrt((dx * dx) + (dz * dz));
-                        double angle = Math.atan2(dz, dx);
-                        double normalizedAngle = angle < 0.0d ? angle + tau : angle;
-                        double sectorFloat = (normalizedAngle / tau) * sides;
-                        int sectorA = Math.floorMod((int) Math.floor(sectorFloat), sidesCount);
-                        int sectorB = (sectorA + 1) % sidesCount;
-                        double localT = sectorFloat - Math.floor(sectorFloat);
-                        double lerpT = localT * localT * (3.0d - (2.0d * localT));
-
-                        double lobeLength = lerp(this.lobeLengthByIndex[sectorA], this.lobeLengthByIndex[sectorB], lerpT);
-                        double lobeSharpness = lerp(this.lobeSharpnessByIndex[sectorA], this.lobeSharpnessByIndex[sectorB], lerpT);
-                        double wave = (Math.cos(angle * sides) + 1.0d) * 0.5d;
-                        double lobeStrength = Math.max(0.20d, Math.min(0.55d, (1.0d - RedWaveConfig.FINAL_SHAPE_TIP_SCALE) * 0.55d));
-                        double radiusScale = (1.0d - lobeStrength) + (lobeStrength * Math.pow(wave, lobeSharpness));
-                        double shapeRadius = this.innerUniformRadius * radiusScale * lobeLength;
-                        boolean inside = horizontalDistance <= shapeRadius && Math.abs(dy) <= this.innerUniformHeight;
-
-                        this.inRadius[index] = inside;
-                        if (inside) {
-                            count++;
-                            if (dy == 0) {
-                                this.horizontalFootprintBlocks++;
-                            }
-                        }
-                    }
-                }
-            }
-            return count;
-        }
-
         private void prepareLobeJitter(long seed) {
             Random lobeRandom = new Random(seed ^ 0xC2B2AE3D27D4EB4FL);
             for (int i = 0; i < this.lobeLengthByIndex.length; i++) {
@@ -968,14 +1058,24 @@ public final class RedWaveManager {
             if (localX < 0 || localY < 0 || localZ < 0 || localX >= this.width || localY >= this.width || localZ >= this.width) {
                 return;
             }
-            this.enqueue(this.indexOf(localX, localY, localZ));
+            int index = this.indexOf(localX, localY, localZ);
+            if (this.ensureMaskEvaluated(index, localX, localY, localZ)) {
+                this.enqueue(index);
+            }
         }
 
         private void enqueue(int index) {
-            if (!this.inRadius[index] || this.expanded[index] || this.queued[index]) {
+            if (index < 0 || this.expanded[index] || this.queued[index]) {
                 return;
             }
-            if (this.frontier.size() >= this.frontierLimit) {
+            int localX = index % this.width;
+            int yz = index / this.width;
+            int localY = yz % this.width;
+            int localZ = yz / this.width;
+            if (!this.ensureMaskEvaluated(index, localX, localY, localZ)) {
+                return;
+            }
+            if (!this.ignoreFrontierLimit && this.frontier.size() >= this.frontierLimit) {
                 return;
             }
             this.queued[index] = true;
@@ -1002,6 +1102,80 @@ public final class RedWaveManager {
                 return;
             }
             this.enqueueNeighbors(index);
+        }
+
+        private void advanceMaskGrowth(float dt) {
+            if (this.fullyExpandedMask) {
+                return;
+            }
+            float safeDt = Math.max(0.0f, dt);
+            this.dynamicHorizontalRadius = Math.min(this.innerUniformRadius, this.dynamicHorizontalRadius + (DYNAMIC_RADIUS_GROWTH_PER_SECOND * safeDt));
+            this.dynamicHalfHeight = Math.min(this.innerUniformHeight, this.dynamicHalfHeight + (DYNAMIC_HEIGHT_GROWTH_PER_SECOND * safeDt));
+            this.fullyExpandedMask = this.dynamicHorizontalRadius >= this.innerUniformRadius
+                    && this.dynamicHalfHeight >= this.innerUniformHeight;
+        }
+
+        private boolean ensureMaskEvaluated(int index, int localX, int localY, int localZ) {
+            byte state = this.maskState[index];
+            if (state == 1) {
+                return true;
+            }
+            if (state == 2 && this.fullyExpandedMask) {
+                return false;
+            }
+
+            int dx = localX - this.innerCenter;
+            int dy = localY - this.innerCenter;
+            int dz = localZ - this.innerCenter;
+            float horizontalDistance = (float) Math.sqrt((dx * dx) + (dz * dz));
+            if (horizontalDistance > this.dynamicHorizontalRadius || Math.abs(dy) > this.dynamicHalfHeight) {
+                if (this.fullyExpandedMask) {
+                    this.inRadius[index] = false;
+                    this.maskState[index] = 2;
+                }
+                return false;
+            }
+
+            boolean inside = this.computeFinalInside(dx, dy, dz);
+            this.inRadius[index] = inside;
+            if (inside || this.fullyExpandedMask) {
+                this.maskState[index] = inside ? (byte) 1 : (byte) 2;
+            } else {
+                this.maskState[index] = 0;
+            }
+            return inside;
+        }
+
+        private boolean computeFinalInside(int dx, int dy, int dz) {
+            int sidesCount = this.lobeLengthByIndex.length;
+            double sides = sidesCount;
+            double tau = Math.PI * 2.0d;
+            float horizontalDistance = (float) Math.sqrt((dx * dx) + (dz * dz));
+            double angle = Math.atan2(dz, dx);
+            double normalizedAngle = angle < 0.0d ? angle + tau : angle;
+            double sectorFloat = (normalizedAngle / tau) * sides;
+            int sectorA = Math.floorMod((int) Math.floor(sectorFloat), sidesCount);
+            int sectorB = (sectorA + 1) % sidesCount;
+            double localT = sectorFloat - Math.floor(sectorFloat);
+            double lerpT = localT * localT * (3.0d - (2.0d * localT));
+            double lobeLength = lerp(this.lobeLengthByIndex[sectorA], this.lobeLengthByIndex[sectorB], lerpT);
+            double lobeSharpness = lerp(this.lobeSharpnessByIndex[sectorA], this.lobeSharpnessByIndex[sectorB], lerpT);
+            double wave = (Math.cos(angle * sides) + 1.0d) * 0.5d;
+            double lobeStrength = Math.max(0.20d, Math.min(0.55d, (1.0d - RedWaveConfig.FINAL_SHAPE_TIP_SCALE) * 0.55d));
+            double radiusScale = (1.0d - lobeStrength) + (lobeStrength * Math.pow(wave, lobeSharpness));
+            double shapeRadius = this.innerUniformRadius * radiusScale * lobeLength;
+            return horizontalDistance <= shapeRadius && Math.abs(dy) <= this.innerUniformHeight;
+        }
+
+        private static long estimateHorizontalFootprintBlocks(float radius) {
+            double footprint = Math.PI * radius * radius;
+            return Math.max(1L, Math.round(footprint));
+        }
+
+        private static long estimateTotalBlocks(float radius, float halfHeight) {
+            double height = Math.max(1.0d, (halfHeight * 2.0d) + 1.0d);
+            double volume = Math.PI * radius * radius * height;
+            return Math.max(1L, Math.round(volume * 0.85d));
         }
 
         public boolean shouldConvertByNoise(@Nonnull Vector3i pos) {

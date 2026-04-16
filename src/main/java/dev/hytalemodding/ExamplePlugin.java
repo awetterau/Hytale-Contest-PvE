@@ -43,6 +43,7 @@ import dev.hytalemodding.commands.run.GameEndCommand;
 import dev.hytalemodding.commands.run.GameResetCommand;
 import dev.hytalemodding.commands.run.GameStartCommand;
 import dev.hytalemodding.commands.run.BlightfallCommand;
+import dev.hytalemodding.commands.run.PartyCommand;
 import dev.hytalemodding.commands.run.SetRunSpawnCommand;
 import dev.hytalemodding.commands.run.RunChunkSelectionCommand;
 import dev.hytalemodding.commands.run.SpawnStartTriggerCommand;
@@ -101,6 +102,8 @@ import dev.hytalemodding.state.hub.FarmerPrefabBuildSystem;
 import dev.hytalemodding.state.hub.FarmerWorkshopEntityMarker;
 import dev.hytalemodding.state.hub.RescueInteractionPacketWatcher;
 import dev.hytalemodding.state.hub.TransparentLightProtectionSystem;
+import dev.hytalemodding.state.party.PartyHubInteractionHandler;
+import dev.hytalemodding.state.party.PartyManagerUseInteraction;
 import dev.hytalemodding.state.run.GameDoorInteractionHandler;
 import dev.hytalemodding.state.run.GameDoorUseInteraction;
 import dev.hytalemodding.state.run.GameDoorBlockDetectionSystem;
@@ -115,19 +118,20 @@ import dev.hytalemodding.state.run.RescueObjectiveSystem;
 import dev.hytalemodding.state.run.RunDeathHandler;
 import dev.hytalemodding.state.run.RunClientReadyPacketWatcher;
 import dev.hytalemodding.state.run.RunChunkMapRefreshTickingSystem;
+import dev.hytalemodding.state.run.RunActiveMapRefreshSystem;
+import dev.hytalemodding.state.run.RunPinnedChunkKeepAliveSystem;
 import dev.hytalemodding.state.run.RunStartCameraSystem;
 import dev.hytalemodding.state.run.RunStartMovementLockSystem;
-import dev.hytalemodding.state.run.RunStartPlayerAnimationPatcher;
 import dev.hytalemodding.state.run.InfectionCoreDetectionSystem;
 import dev.hytalemodding.state.run.SpawnPointDetectionSystem;
 import dev.hytalemodding.state.run.SpawnPointPlacementHandler;
+import dev.hytalemodding.state.transition.GameFlowConfigManager;
 import dev.hytalemodding.state.transition.PlayerSpawnSafety;
 import dev.hytalemodding.npc.state.NpcStateManager;
 
 import javax.annotation.Nonnull;
 
 public class ExamplePlugin extends JavaPlugin {
-    private boolean introAnimationPatched;
     private RescueInteractionPacketWatcher rescueInteractionPacketWatcher;
     private RunClientReadyPacketWatcher runClientReadyPacketWatcher;
     private MapReplacementPacketController mapReplacementPacketController;
@@ -164,6 +168,7 @@ public class ExamplePlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new SetRunSpawnCommand());
         this.getCommandRegistry().registerCommand(new SpawnStartTriggerCommand());
         this.getCommandRegistry().registerCommand(new SpawnUiCommand());
+        this.getCommandRegistry().registerCommand(new PartyCommand());
         this.getCommandRegistry().registerCommand(new RunChunkSelectionCommand());
         this.getCommandRegistry().registerCommand(new SetBaseSpawnCommand());
         this.getCommandRegistry().registerCommand(new SetRescueSpawnCommand());
@@ -199,6 +204,16 @@ public class ExamplePlugin extends JavaPlugin {
         );
 
         this.getCodecRegistry(Interaction.CODEC).register(
+                "party_manager_use_interaction",
+                PartyManagerUseInteraction.class,
+                PartyManagerUseInteraction.CODEC
+        );
+        this.getCodecRegistry(Interaction.CODEC).register(
+                "Party_Manager_Use_Interaction",
+                PartyManagerUseInteraction.class,
+                PartyManagerUseInteraction.CODEC
+        );
+        this.getCodecRegistry(Interaction.CODEC).register(
                 "base_plot_use_interaction",
                 BasePlotUseInteraction.class,
                 BasePlotUseInteraction.CODEC
@@ -208,9 +223,11 @@ public class ExamplePlugin extends JavaPlugin {
         this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, BaseHousingManager::onPlayerReady);
         this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, FarmerAnimalRescueManager.get()::onPlayerReady);
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, GameDoorInteractionHandler::onPlayerInteract);
+        this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, PartyHubInteractionHandler::onPlayerInteract);
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, BasePlotInteractionHandler::onPlayerInteract);
         this.getEventRegistry().registerGlobal(PlayerInteractEvent.class, RescueObjectiveManager.get()::onPlayerInteract);
         this.getEventRegistry().registerGlobal(PlayerMouseButtonEvent.class, GameDoorInteractionHandler::onPlayerMouseButton);
+        this.getEventRegistry().registerGlobal(PlayerMouseButtonEvent.class, PartyHubInteractionHandler::onPlayerMouseButton);
         this.getEventRegistry().registerGlobal(PlaceBlockEvent.class, SpawnPointPlacementHandler::onPlaceBlock);
 
         this.getCommandRegistry().registerCommand(new RedCoreCommand());
@@ -221,14 +238,10 @@ public class ExamplePlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new RedSpeedCommand());
         this.getCommandRegistry().registerCommand(new RedLimitCommand());
 
-        this.introAnimationPatched = patchRunIntroAnimationSet("setup");
     }
 
     @Override
     protected void start() {
-        if (!this.introAnimationPatched) {
-            this.introAnimationPatched = patchRunIntroAnimationSet("start");
-        }
         GameSessionManager.get().cleanupOrphanRunWorldsOnStartup();
         NpcDefinitionRegistry.get().initialize();
         NpcProgressManager.get().initialize();
@@ -244,6 +257,7 @@ public class ExamplePlugin extends JavaPlugin {
         NpcUnifiedRegistry.get().initialize();
         NpcStateManager.get().initialize();
         NpcAdminService.get().initialize();
+        RedWoolDamageSystem.setHazardFogEnabled(GameFlowConfigManager.get().isHazardFogWeatherEnabled());
         BlacksmithSharedMarkerManager.sync();
         this.mapReplacementPacketController = new MapReplacementPacketController(this);
         this.mapReplacementPacketController.register();
@@ -269,6 +283,8 @@ public class ExamplePlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new RunStartCameraSystem());
         this.getEntityStoreRegistry().registerSystem(new RunStartMovementLockSystem());
         this.getEntityStoreRegistry().registerSystem(new RunChunkMapRefreshTickingSystem());
+        this.getEntityStoreRegistry().registerSystem(new RunActiveMapRefreshSystem());
+        this.getEntityStoreRegistry().registerSystem(new RunPinnedChunkKeepAliveSystem());
         this.getEntityStoreRegistry().registerSystem(new RunDeathHandler());
         this.getEntityStoreRegistry().registerSystem(new BlightBeastKillTrackerSystem());
         this.getEntityStoreRegistry().registerSystem(new BaseHousingSystem());
@@ -306,7 +322,7 @@ public class ExamplePlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new PotionBrewerWitchProjectileSystem());
         this.getEntityStoreRegistry().registerSystem(new PotionBrewerWitchHealZoneHealingSystem());
         this.getEntityStoreRegistry().registerSystem(new PotionBrewerWitchPoisonDamageSystem());
-        }
+    }
     @Override
     protected void shutdown() {
         if (this.rescueInteractionPacketWatcher != null) {
@@ -347,14 +363,4 @@ public class ExamplePlugin extends JavaPlugin {
         }
     }
 
-    private static boolean patchRunIntroAnimationSet(@Nonnull String phase) {
-        boolean patchedIntroAnimation = RunStartPlayerAnimationPatcher.ensureAnimationSetPatched(
-                "Player_Anim_LargeRope_A",
-                "Characters/Animations/Default/Player_Anim_LargeRope_A.blockyanim"
-        );
-        if (!patchedIntroAnimation) {
-            System.out.println("[RunStartIntro] (" + phase + ") Failed to patch player AnimationSets for Player_Anim_LargeRope_A.");
-        }
-        return patchedIntroAnimation;
-    }
 }

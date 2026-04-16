@@ -5,6 +5,7 @@ import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.universe.Universe;
+import com.hypixel.hytale.server.core.universe.world.World;
 import dev.hytalemodding.redwave.RedCoreProfileRegistry;
 
 import javax.annotation.Nonnull;
@@ -26,7 +27,7 @@ import java.util.Set;
 
 public final class GameFlowConfigManager {
     private static final String DEFAULT_TEMPLATE_WORLD = "game";
-    private static final String DEFAULT_HUB_WORLD = "hub";
+    private static final String DEFAULT_HUB_WORLD = "default";
     private static final int DEFAULT_RUN_DURATION_SECONDS = 1200;
     private static final int DEFAULT_RUN_TIME_HOUR = 8;
     private static final String PLUGIN_CONFIG_DIR = "HytaleModding-ExamplePlugin";
@@ -45,6 +46,8 @@ public final class GameFlowConfigManager {
     @Nullable
     private Long runSeed;
     private boolean statusMessagesEnabled = true;
+    private boolean chunkLoadingMessagesEnabled = true;
+    private boolean hazardFogWeatherEnabled = true;
     @Nullable
     private Transform runSpawn;
     @Nullable
@@ -82,7 +85,7 @@ public final class GameFlowConfigManager {
     @Nonnull
     public synchronized String getHubWorldName() {
         ensureLoaded();
-        return this.hubWorldName;
+        return resolveHubWorldName(this.hubWorldName);
     }
 
 
@@ -145,10 +148,45 @@ public final class GameFlowConfigManager {
         saveQuietly();
     }
 
+    public synchronized boolean isChunkLoadingMessagesEnabled() {
+        ensureLoaded();
+        return this.chunkLoadingMessagesEnabled;
+    }
+
+    public synchronized void setChunkLoadingMessagesEnabled(boolean enabled) {
+        ensureLoaded();
+        this.chunkLoadingMessagesEnabled = enabled;
+        saveQuietly();
+    }
+
+    public synchronized boolean isHazardFogWeatherEnabled() {
+        ensureLoaded();
+        return this.hazardFogWeatherEnabled;
+    }
+
+    public synchronized void setHazardFogWeatherEnabled(boolean enabled) {
+        ensureLoaded();
+        this.hazardFogWeatherEnabled = enabled;
+        saveQuietly();
+    }
+
     public synchronized void setHubWorldName(@Nonnull String hubWorldName) {
         ensureLoaded();
         this.hubWorldName = normalizeWorldName(hubWorldName, DEFAULT_HUB_WORLD);
         saveQuietly();
+    }
+
+    @Nonnull
+    private static String resolveHubWorldName(@Nullable String configuredHubWorldName) {
+        String normalized = normalizeWorldName(configuredHubWorldName, DEFAULT_HUB_WORLD);
+        World defaultWorld = Universe.get().getDefaultWorld();
+        if ("hub".equalsIgnoreCase(normalized) && defaultWorld != null && defaultWorld.getName() != null && !defaultWorld.getName().isBlank()) {
+            return defaultWorld.getName();
+        }
+        if (normalized.isBlank() && defaultWorld != null && defaultWorld.getName() != null && !defaultWorld.getName().isBlank()) {
+            return defaultWorld.getName();
+        }
+        return normalized;
     }
 
     public synchronized void setDoorBlock(@Nonnull Vector3i doorBlock) {
@@ -326,7 +364,7 @@ public final class GameFlowConfigManager {
         ensureLoaded();
         List<String> lines = new ArrayList<>();
         lines.add("Template world: " + this.templateWorldName);
-        lines.add("Hub world: " + this.hubWorldName);
+        lines.add("Hub world: " + getHubWorldName());
         lines.add("Run spawn: " + formatTransform(this.runSpawn));
         lines.add("Base spawn: " + formatTransform(this.baseSpawn));
         lines.add("Rescue run spawn: " + formatTransform(this.rescueRunSpawn));
@@ -342,6 +380,8 @@ public final class GameFlowConfigManager {
         lines.add("Run time hour range: " + this.runTimeHourMin + "-" + this.runTimeHourMax);
         lines.add("Run seed: " + (this.runSeed == null ? "<random>" : this.runSeed));
         lines.add("Status chat messages: " + this.statusMessagesEnabled);
+        lines.add("Chunk loading messages: " + this.chunkLoadingMessagesEnabled);
+        lines.add("Hazard fog weather: " + this.hazardFogWeatherEnabled);
         lines.add("Rescued NPC keys: " + String.join(",", this.rescuedNpcKeys));
         return lines;
     }
@@ -365,7 +405,7 @@ public final class GameFlowConfigManager {
         }
 
         this.templateWorldName = normalizeWorldName(properties.getProperty("templateWorld"), DEFAULT_TEMPLATE_WORLD);
-        this.hubWorldName = normalizeWorldName(properties.getProperty("hubWorld"), DEFAULT_HUB_WORLD);
+        this.hubWorldName = resolveHubWorldName(normalizeWorldName(properties.getProperty("hubWorld"), DEFAULT_HUB_WORLD));
         this.doorBlock = readVector3i(properties, "doorBlock");
         Integer loadedRunDuration = readInt(properties.getProperty("runDurationSeconds"));
         this.runDurationSeconds = loadedRunDuration == null ? DEFAULT_RUN_DURATION_SECONDS : Math.max(1, loadedRunDuration);
@@ -380,6 +420,8 @@ public final class GameFlowConfigManager {
         }
         this.runSeed = readLong(properties.getProperty("runSeed"));
         this.statusMessagesEnabled = parseBoolean(properties.getProperty("statusMessagesEnabled"), true);
+        this.chunkLoadingMessagesEnabled = parseBoolean(properties.getProperty("chunkLoadingMessagesEnabled"), true);
+        this.hazardFogWeatherEnabled = parseBoolean(properties.getProperty("hazardFogWeatherEnabled"), true);
         this.runSpawn = readTransform(properties, "runSpawn");
         this.baseSpawn = readTransform(properties, "baseSpawn");
         this.rescueRunSpawn = readTransform(properties, "rescueRunSpawn");
@@ -396,7 +438,7 @@ public final class GameFlowConfigManager {
 
         Properties properties = new Properties();
         properties.setProperty("templateWorld", this.templateWorldName);
-        properties.setProperty("hubWorld", this.hubWorldName);
+        properties.setProperty("hubWorld", getHubWorldName());
         properties.setProperty("runDurationSeconds", Integer.toString(Math.max(1, this.runDurationSeconds)));
         properties.setProperty("runTimeHourMin", Integer.toString(Math.max(0, Math.min(23, this.runTimeHourMin))));
         properties.setProperty("runTimeHourMax", Integer.toString(Math.max(0, Math.min(23, this.runTimeHourMax))));
@@ -406,6 +448,8 @@ public final class GameFlowConfigManager {
             properties.setProperty("runSeed", Long.toString(this.runSeed));
         }
         properties.setProperty("statusMessagesEnabled", Boolean.toString(this.statusMessagesEnabled));
+        properties.setProperty("chunkLoadingMessagesEnabled", Boolean.toString(this.chunkLoadingMessagesEnabled));
+        properties.setProperty("hazardFogWeatherEnabled", Boolean.toString(this.hazardFogWeatherEnabled));
         writeVector3i(properties, "doorBlock", this.doorBlock);
         writeTransform(properties, "runSpawn", this.runSpawn);
         writeTransform(properties, "baseSpawn", this.baseSpawn);

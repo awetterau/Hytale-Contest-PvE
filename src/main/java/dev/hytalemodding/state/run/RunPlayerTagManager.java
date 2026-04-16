@@ -1,15 +1,18 @@
 package dev.hytalemodding.state.run;
 
 import javax.annotation.Nonnull;
-import java.util.Collections;
-import java.util.Set;
+import javax.annotation.Nullable;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class RunPlayerTagManager {
     public static final String RESET_TAG = "Reset";
+    public static final String EXTRACTED_TAG = "Extracted";
+    public static final String DEAD_TAG = "Dead";
+    public static final String DISCONNECTED_TAG = "Disconnected";
+    public static final String SPECTATING_TAG = "Spectating";
 
-    private static final ConcurrentHashMap<UUID, Set<String>> TAGS_BY_PLAYER = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, String> TAG_BY_PLAYER = new ConcurrentHashMap<>();
 
     private RunPlayerTagManager() {
     }
@@ -19,7 +22,7 @@ public final class RunPlayerTagManager {
         if (normalized.isEmpty()) {
             return;
         }
-        TAGS_BY_PLAYER.computeIfAbsent(playerId, ignored -> ConcurrentHashMap.newKeySet()).add(normalized);
+        TAG_BY_PLAYER.put(playerId, normalized);
     }
 
     public static void removeTag(@Nonnull UUID playerId, @Nonnull String tag) {
@@ -27,13 +30,12 @@ public final class RunPlayerTagManager {
         if (normalized.isEmpty()) {
             return;
         }
-        Set<String> tags = TAGS_BY_PLAYER.get(playerId);
-        if (tags == null) {
+        String existing = TAG_BY_PLAYER.get(playerId);
+        if (existing == null) {
             return;
         }
-        tags.remove(normalized);
-        if (tags.isEmpty()) {
-            TAGS_BY_PLAYER.remove(playerId);
+        if (existing.equals(normalized)) {
+            TAG_BY_PLAYER.remove(playerId);
         }
     }
 
@@ -42,17 +44,13 @@ public final class RunPlayerTagManager {
         if (normalized.isEmpty()) {
             return false;
         }
-        Set<String> tags = TAGS_BY_PLAYER.get(playerId);
-        return tags != null && tags.contains(normalized);
+        String existing = TAG_BY_PLAYER.get(playerId);
+        return existing != null && existing.equals(normalized);
     }
 
-    @Nonnull
-    public static Set<String> snapshot(@Nonnull UUID playerId) {
-        Set<String> tags = TAGS_BY_PLAYER.get(playerId);
-        if (tags == null || tags.isEmpty()) {
-            return Set.of();
-        }
-        return Collections.unmodifiableSet(Set.copyOf(tags));
+    @Nullable
+    public static String snapshot(@Nonnull UUID playerId) {
+        return TAG_BY_PLAYER.get(playerId);
     }
 
     private static String normalize(@Nonnull String tag) {

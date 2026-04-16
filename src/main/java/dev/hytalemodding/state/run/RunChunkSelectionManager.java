@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class RunChunkSelectionManager {
     private static final RunChunkSelectionManager INSTANCE = new RunChunkSelectionManager();
     private final Map<String, LinkedHashSet<ChunkPosKey>> chunksByWorld = new ConcurrentHashMap<>();
+    private final Map<String, LongSet> pinnedChunkIndicesByWorld = new ConcurrentHashMap<>();
     private final Set<UUID> enabledPlayers = ConcurrentHashMap.newKeySet();
     private final Map<String, LongSet> worldMapRefreshQueue = new ConcurrentHashMap<>();
 
@@ -53,29 +54,50 @@ public final class RunChunkSelectionManager {
     @Nonnull
     public LinkedHashSet<ChunkPosKey> getSelectedChunks(@Nonnull String worldName) {
         String worldKey = normalizeWorldKey(worldName);
-        return this.chunksByWorld.computeIfAbsent(worldKey, RunChunkSelectionConfigManager::load);
+        ensureWorldLoaded(worldKey);
+        return this.chunksByWorld.get(worldKey);
     }
 
     public int count(@Nonnull String worldName) {
         return getSelectedChunks(worldName).size();
     }
 
+    public void reloadFromConfig(@Nonnull String worldName) {
+        String worldKey = normalizeWorldKey(worldName);
+        RunChunkSelectionConfigManager.LoadedChunkSelection loaded = RunChunkSelectionConfigManager.loadSelection(worldKey);
+        this.chunksByWorld.put(worldKey, loaded.chunks());
+        this.pinnedChunkIndicesByWorld.put(worldKey, new LongOpenHashSet(loaded.pinnedChunkIndices()));
+    }
+
     public boolean mark(@Nonnull String worldName, int chunkX, int chunkZ) {
         String worldKey = normalizeWorldKey(worldName);
         LinkedHashSet<ChunkPosKey> chunks = getSelectedChunks(worldKey);
         boolean added = chunks.add(new ChunkPosKey(chunkX, chunkZ));
+        setPinned(worldKey, chunkX, chunkZ, false);
         if (added) {
-            RunChunkSelectionConfigManager.save(worldKey, chunks);
+            persistWorld(worldKey);
         }
         return added;
+    }
+
+    public boolean markPinned(@Nonnull String worldName, int chunkX, int chunkZ) {
+        String worldKey = normalizeWorldKey(worldName);
+        LinkedHashSet<ChunkPosKey> chunks = getSelectedChunks(worldKey);
+        boolean added = chunks.add(new ChunkPosKey(chunkX, chunkZ));
+        boolean changedPinned = setPinned(worldKey, chunkX, chunkZ, true);
+        if (added || changedPinned) {
+            persistWorld(worldKey);
+        }
+        return added || changedPinned;
     }
 
     public boolean unmark(@Nonnull String worldName, int chunkX, int chunkZ) {
         String worldKey = normalizeWorldKey(worldName);
         LinkedHashSet<ChunkPosKey> chunks = getSelectedChunks(worldKey);
         boolean removed = chunks.remove(new ChunkPosKey(chunkX, chunkZ));
+        setPinned(worldKey, chunkX, chunkZ, false);
         if (removed) {
-            RunChunkSelectionConfigManager.save(worldKey, chunks);
+            persistWorld(worldKey);
         }
         return removed;
     }
@@ -86,6 +108,39 @@ public final class RunChunkSelectionManager {
         }
         mark(worldName, chunkX, chunkZ);
         return true;
+    }
+
+    public boolean setPinned(@Nonnull String worldName, int chunkX, int chunkZ, boolean pinned) {
+        String worldKey = normalizeWorldKey(worldName);
+        ensureWorldLoaded(worldKey);
+        long chunkIndex = ChunkUtil.indexChunk(chunkX, chunkZ);
+        LongSet pinnedSet = this.pinnedChunkIndicesByWorld.computeIfAbsent(worldKey, ignored -> new LongOpenHashSet());
+        if (pinned) {
+            return pinnedSet.add(chunkIndex);
+        }
+        return pinnedSet.remove(chunkIndex);
+    }
+
+    public boolean isPinned(@Nonnull String worldName, int chunkX, int chunkZ) {
+        String worldKey = normalizeWorldKey(worldName);
+        ensureWorldLoaded(worldKey);
+        LongSet pinnedSet = this.pinnedChunkIndicesByWorld.get(worldKey);
+        if (pinnedSet == null) {
+            return false;
+        }
+        return pinnedSet.contains(ChunkUtil.indexChunk(chunkX, chunkZ));
+    }
+
+    @Nonnull
+    public LongSet getPinnedChunkIndices(@Nonnull String worldName) {
+        String worldKey = normalizeWorldKey(worldName);
+        ensureWorldLoaded(worldKey);
+        LongSet pinnedSet = this.pinnedChunkIndicesByWorld.get(worldKey);
+        return pinnedSet == null ? new LongOpenHashSet() : new LongOpenHashSet(pinnedSet);
+    }
+
+    public int countPinned(@Nonnull String worldName) {
+        return getPinnedChunkIndices(worldName).size();
     }
 
     public void queueMapRefresh(@Nonnull String worldName, int chunkX, int chunkZ) {
@@ -130,5 +185,23 @@ public final class RunChunkSelectionManager {
             return "default";
         }
         return trimmed.toLowerCase(Locale.ROOT);
+    }
+
+    private void ensureWorldLoaded(@Nonnull String worldKey) {
+        if (this.chunksByWorld.containsKey(worldKey) && this.pinnedChunkIndicesByWorld.containsKey(worldKey)) {
+            return;
+        }
+        RunChunkSelectionConfigManager.LoadedChunkSelection loaded = RunChunkSelectionConfigManager.loadSelection(worldKey);
+        this.chunksByWorld.putIfAbsent(worldKey, loaded.chunks());
+        this.pinnedChunkIndicesByWorld.putIfAbsent(worldKey, new LongOpenHashSet(loaded.pinnedChunkIndices()));
+    }
+
+    private void persistWorld(@Nonnull String worldKey) {
+        LinkedHashSet<ChunkPosKey> chunks = this.chunksByWorld.get(worldKey);
+        if (chunks == null) {
+            return;
+        }
+        LongSet pinned = this.pinnedChunkIndicesByWorld.get(worldKey);
+        RunChunkSelectionConfigManager.saveSelection(worldKey, chunks, pinned == null ? new LongOpenHashSet() : pinned);
     }
 }

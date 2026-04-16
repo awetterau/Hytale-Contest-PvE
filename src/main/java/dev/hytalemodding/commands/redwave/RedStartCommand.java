@@ -81,7 +81,9 @@ public class RedStartCommand extends AbstractPlayerCommand {
             return;
         }
 
-        RedWaveManager.beginUndoSession(worldId, corePos);
+        if (RedWaveManager.isUndoRecordingEnabled()) {
+            RedWaveManager.beginUndoSession(worldId, corePos);
+        }
         RedWaveManager.ActiveWave wave = RedWaveManager.startWave(worldId, corePos, radius, seconds);
         double speed = wave.spreadSpeedPerTick();
         int limit = RedWaveManager.getWorldFrontierLimit(worldId);
