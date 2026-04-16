@@ -1,0 +1,15 @@
+{
+  "Parent": "Game_Start_Trigger_Invisible",
+  "HitBox": {
+    "Max": {
+      "X": 0.45,
+      "Y": 0.9,
+      "Z": 0.45
+    },
+    "Min": {
+      "X": -0.45,
+      "Y": -0.9,
+      "Z": -0.45
+    }
+  }
+}

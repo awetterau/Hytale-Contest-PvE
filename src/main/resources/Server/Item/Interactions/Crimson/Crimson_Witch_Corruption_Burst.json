@@ -1,0 +1,33 @@
+{
+  "Type": "Simple",
+  "Effects": {
+    "ItemPlayerAnimationsId": "Skeleton_Spellbook",
+    "ItemAnimationId": "CastHurlCharging",
+    "WorldSoundEventId": "SFX_Skeleton_Mage_Spellbook_Charge"
+  },
+  "RunTime": 0.8,
+  "Next": {
+    "Type": "LaunchProjectile",
+    "RunTime": 0.3,
+    "Effects": {
+      "WorldSoundEventId": "SFX_Skeleton_Mage_Spellbook_Impact"
+    },
+    "ProjectileId": "Skeleton_Mage_Corruption_Orb",
+    "Next": {
+      "Type": "LaunchProjectile",
+      "RunTime": 0.3,
+      "Effects": {
+        "WorldSoundEventId": "SFX_Skeleton_Mage_Spellbook_Impact"
+      },
+      "ProjectileId": "Skeleton_Mage_Corruption_Orb",
+      "Next": {
+        "Type": "LaunchProjectile",
+        "RunTime": 0.3,
+        "Effects": {
+          "WorldSoundEventId": "SFX_Skeleton_Mage_Spellbook_Impact"
+        },
+        "ProjectileId": "Skeleton_Mage_Corruption_Orb"
+      }
+    }
+  }
+}

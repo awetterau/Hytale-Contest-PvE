@@ -1,0 +1,8 @@
+{
+  "Type": "Simple",
+  "Effects": {
+    "ItemPlayerAnimationsId": "Skeleton_Spellbook",
+    "ItemAnimationId": "CastHurlCharging"
+  },
+  "RunTime": 1.0
+}

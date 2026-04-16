@@ -1,0 +1,13 @@
+{
+  "Tags": {
+    "Attack": [
+      "Ranged"
+    ]
+  },
+  "Cooldown": {
+    "Cooldown": 4.0
+  },
+  "Interactions": [
+    "Potion_Brewer_Witch_Heal_Thrown"
+  ]
+}

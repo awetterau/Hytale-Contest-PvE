@@ -1,0 +1,146 @@
+{
+  "RenderMode": "BlendLinear",
+  "EmitOffset": {
+    "X": {
+      "Min": 10,
+      "Max": 20
+    },
+    "Y": {
+      "Min": -4,
+      "Max": 4
+    },
+    "Z": {
+      "Min": 10,
+      "Max": 20
+    }
+  },
+  "ParticleRotationInfluence": "Billboard",
+  "LinearFiltering": true,
+  "LightInfluence": 1,
+  "ParticleRotateWithSpawner": false,
+  "TrailSpawnerPositionMultiplier": 1,
+  "TrailSpawnerRotationMultiplier": 1,
+  "MaxConcurrentParticles": 30,
+  "ParticleLifeSpan": {
+    "Min": 3.3333333333333335,
+    "Max": 6.666666666666667
+  },
+  "SpawnRate": {
+    "Min": 150,
+    "Max": 500
+  },
+  "InitialVelocity": {
+    "Yaw": {
+      "Min": 10,
+      "Max": 180
+    },
+    "Pitch": {
+      "Min": 60,
+      "Max": 130
+    },
+    "Speed": {
+      "Min": -4,
+      "Max": -6
+    }
+  },
+  "Attractors": [
+    {
+      "LinearAcceleration": {
+        "X": 0.2,
+        "Y": 2.4,
+        "Z": 0
+      },
+      "TrailPositionMultiplier": 0.172,
+      "RadialAcceleration": 0.6,
+      "RadialTangentAcceleration": 1
+    }
+  ],
+  "Particle": {
+    "Texture": "Particles/Textures/Smoke/Crimson_Smoke_Dense.png",
+    "FrameSize": {
+      "Width": 64,
+      "Height": 64
+    },
+    "ScaleRatioConstraint": "OneToOne",
+    "UVOption": "RandomFlipU",
+    "Animation": {
+      "0": {
+        "Scale": {
+          "X": {
+            "Min": 0.3,
+            "Max": 0.5
+          },
+          "Y": {
+            "Min": 0.2,
+            "Max": 0.6
+          }
+        },
+        "Opacity": 0
+      },
+      "20": {
+        "Opacity": 0.46
+      },
+      "40": {
+        "Opacity": 0.748
+      },
+      "80": {
+        "Opacity": 0.176,
+        "Scale": {
+          "X": {
+            "Min": 1.2,
+            "Max": 1.3
+          },
+          "Y": {
+            "Min": 1.2,
+            "Max": 1.3
+          }
+        }
+      },
+      "100": {
+        "Opacity": 0,
+        "Scale": {
+          "X": {
+            "Min": 1.3,
+            "Max": 1.6
+          },
+          "Y": {
+            "Min": 1.3,
+            "Max": 1.7
+          }
+        },
+        "Color": "#f7dcdc"
+      }
+    },
+    "InitialAnimationFrame": {
+      "Scale": {
+        "X": {
+          "Min": 4,
+          "Max": 8
+        },
+        "Y": {
+          "Min": 4,
+          "Max": 8
+        }
+      },
+      "Opacity": 0.968,
+      "Rotation": {
+        "X": {
+          "Min": 0,
+          "Max": 270
+        },
+        "Y": {
+          "Max": 209
+        },
+        "Z": {
+          "Max": 300
+        }
+      }
+    },
+    "SoftParticlesFadeFactor": 1.301,
+    "UseSpriteBlending": false
+  },
+  "ParticleCollision": {
+    "ParticleRotationInfluence": "Velocity",
+    "BlockType": "Air"
+  }
+}

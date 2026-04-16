@@ -1,0 +1,7 @@
+{
+  "Type": "Variant",
+  "Reference": "Tamed_Cow_Calf",
+  "Modify": {
+    "NameTranslationKey": "server.npcRoles.Farmer_Calf_Base.name"
+  }
+}

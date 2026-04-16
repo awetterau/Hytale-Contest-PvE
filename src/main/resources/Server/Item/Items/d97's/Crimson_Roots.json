@@ -1,0 +1,126 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.Crimson_Roots.name"
+  },
+  "Icon": "Icons/ItemsGenerated/Crimson_Roots.png",
+  "Categories": [
+    "Blocks.Plants"
+  ],
+  "Consumable": false,
+  "BlockType": {
+    "DrawType": "Model",
+    "Opacity": "Transparent",
+    "CustomModel": "Blocks/d97's/Crimson_Ambience/Crimson_Roots.blockymodel",
+    "CustomModelTexture": [
+      {
+        "Texture": "Blocks/d97's/Crimson_Ambience/Crimson_Roots_00_Texture.png",
+        "Weight": 2
+      },
+      {
+        "Texture": "Blocks/d97's/Crimson_Ambience/Crimson_Roots_01_Texture.png",
+        "Weight": 2
+      },
+      {
+        "Texture": "Blocks/d97's/Crimson_Ambience/Crimson_Roots_02_Texture.png",
+        "Weight": 2
+      },
+      {
+        "Texture": "Blocks/d97's/Crimson_Ambience/Crimson_Roots_03_Texture.png",
+        "Weight": 2
+      },
+      {
+        "Texture": "Blocks/d97's/Crimson_Ambience/Crimson_Roots_04_Texture.png",
+        "Weight": 1
+      },
+      {
+        "Texture": "Blocks/d97's/Crimson_Ambience/Crimson_Roots_05_Texture.png",
+        "Weight": 1
+      },
+      {
+        "Texture": "Blocks/d97's/Crimson_Ambience/Crimson_Roots_06_Texture.png",
+        "Weight": 1
+      },
+      {
+        "Texture": "Blocks/d97's/Crimson_Ambience/Crimson_Roots_07_Texture.png",
+        "Weight": 1
+      }
+    ],
+    "Group": "Plant",
+    "HitboxType": "Plant_Large",
+    "Flags": {
+      "IsStackable": false
+    },
+    "RandomRotation": "YawStep1",
+    "Support": {
+      "Up": [
+        {
+          "FaceType": "Full",
+          "Filler": [
+            {
+              "X": 0,
+              "Y": 0,
+              "Z": 0
+            }
+          ]
+        },
+        {
+          "FaceType": "Branch",
+          "Filler": [
+            {
+              "X": 0,
+              "Y": 0,
+              "Z": 0
+            }
+          ]
+        },
+        {
+          "FaceType": "Rock_Beam",
+          "Filler": [
+            {
+              "X": 0,
+              "Y": 0,
+              "Z": 0
+            }
+          ]
+        },
+        {
+          "FaceType": "Wood_Beam",
+          "Filler": [
+            {
+              "X": 0,
+              "Y": 0,
+              "Z": 0
+            }
+          ]
+        }
+      ]
+    },
+    "BlockParticleSetId": "Dust",
+    "ParticleColor": "#5b090e",
+    "BlockSoundSetId": "Mushroom"
+  },
+  "PlayerAnimationsId": "Block",
+  "Scale": 1.2,
+  "Tags": {
+    "Type": [
+      "Plant"
+    ],
+    "Family": [
+      "Crimson"
+    ]
+  },
+  "ItemSoundSetId": "ISS_Items_Foliage",
+  "DropOnDeath": true,
+  "IconProperties": {
+    "Scale": 0.5,
+    "Rotation": [
+      0,
+      206,
+      0
+    ],
+    "Translation": [
+      1,
+      1
+    ]
+  }
+}

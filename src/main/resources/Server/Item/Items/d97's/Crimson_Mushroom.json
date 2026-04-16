@@ -1,0 +1,49 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.Crimson_Mushroom.name"
+  },
+  "ItemLevel": 12,
+  "Icon": "Icons/ItemsGenerated/Crimson_Mushroom.png",
+  "Categories": [
+    "Blocks.Plants"
+  ],
+  "PlayerAnimationsId": "Block",
+  "BlockType": {
+    "DrawType": "Model",
+    "Group": "Crimson",
+    "Flags": {},
+    "BlockParticleSetId": "Dust",
+    "BlockSoundSetId": "Mushroom",
+    "BiomeTintUp": 15,
+    "ParticleColor": "#81281d",
+    "CustomModel": "Blocks/d97's/Crimson_Ambience/Crimson_Mushroom.blockymodel",
+    "CustomModelTexture": [
+      {
+        "Texture": "Blocks/d97's/Crimson_Ambience/Crimson_Mushroom.png"
+      }
+    ],
+    "VariantRotation": "NESW",
+    "HitboxType": "Crimson_Mushroom"
+  },
+  "Tags": {
+    "Type": [
+      "Plant"
+    ],
+    "Family": [
+      "Crimson"
+    ]
+  },
+  "IconProperties": {
+    "Scale": 0.6,
+    "Rotation": [
+      158,
+      212,
+      177
+    ],
+    "Translation": [
+      -1,
+      -18
+    ]
+  },
+  "ItemSoundSetId": "ISS_Items_Foliage"
+}

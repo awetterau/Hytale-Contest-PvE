@@ -1,0 +1,13 @@
+{
+  "Tags": {
+    "Attack": [
+      "Ranged"
+    ]
+  },
+  "Cooldown": {
+    "Cooldown": 2.0
+  },
+  "Interactions": [
+    "Potion_Brewer_Witch_Shadow_Bolt"
+  ]
+}

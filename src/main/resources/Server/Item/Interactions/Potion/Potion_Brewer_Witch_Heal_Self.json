@@ -1,0 +1,9 @@
+{
+  "Type": "Simple",
+  "Effects": {
+    "ItemPlayerAnimationsId": "Skeleton_Spellbook",
+    "ItemAnimationId": "CastSummon"
+  }
+  ,
+  "RunTime": 1.0
+}

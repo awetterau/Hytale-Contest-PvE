@@ -1,0 +1,13 @@
+{
+  "Tags": {
+    "Attack": [
+      "Ranged"
+    ]
+  },
+  "Cooldown": {
+    "Cooldown": 15.0
+  },
+  "Interactions": [
+    "Crimson_Witch_Corruption_Burst"
+  ]
+}

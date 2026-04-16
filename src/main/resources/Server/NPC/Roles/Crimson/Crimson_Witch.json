@@ -1,0 +1,52 @@
+{
+  "Type": "Variant",
+  "Reference": "Template_Trork_Mage",
+  "Parameters": {
+    "NameTranslationKey": {
+      "Value": "server.npcRoles.crimson_witch.name",
+      "Description": "Translation key for NPC name display"
+    }
+  },
+  "Modify": {
+    "Appearance": "Crimson_Witch",
+    "Weapons": [
+      "Weapon_Spellbook_Grimoire_Purple",
+      "Weapon_Spellbook_Grimoire_Purple"
+    ],
+    "ViewRange": 18,
+    "ViewSector": 270,
+    "HearingRange": 8,
+    "AlertedRange": 18,
+    "TooCloseDistance": 4.5,
+    "CloseRange": 8,
+    "RangedAttack": "Skeleton_Sand_Mage_Spellbook_Corruption_Orb",
+    "RangedAttackSequence": "Component_Instruction_Attack_Sequence_Crimson_Witch",
+    "SummonKind": "Scarak_Louse",
+    "DesiredRangedAttackDistanceRange": [
+      8,
+      13
+    ],
+    "MaxSpeed": 8,
+    "CombatRelativeTurnSpeed": 1.5,
+    "LeashDistance": 45,
+    "LeashMinPlayerDistance": 18,
+    "LeashTimer": [
+      3,
+      5
+    ],
+    "TargetGroups": [
+      "Outlander"
+    ],
+    "DisableDamageGroups": [
+      "Self"
+    ],
+    "AttitudeGroup": "Outlander",
+    "MaxHealth": 74,
+    "IsMemory": true,
+    "MemoriesCategory": "Outlander",
+    "MemoriesNameOverride": "Crimson_Witch",
+    "NameTranslationKey": {
+      "Compute": "NameTranslationKey"
+    }
+  }
+}
