@@ -1,0 +1,76 @@
+{
+  "Version": 4,
+  "UUID": {
+    "$binary": "1vaDAb3xSHi/6l5SQQb94Q==",
+    "$type": "04"
+  },
+  "DisplayName": "Blightfall",
+  "Seed": 1775676143502,
+  "SpawnProvider": {
+    "Id": "Global",
+    "SpawnPoint": {
+      "X": 552.2774047851562,
+      "Y": 179.00010681152344,
+      "Z": 60.850067138671875,
+      "Pitch": -1.905081868171692,
+      "Yaw": -178.12103271484375,
+      "Roll": 0.0
+    }
+  },
+  "WorldGen": {
+    "Type": "Hytale",
+    "Name": "Default",
+    "Version": "0.0.0"
+  },
+  "WorldMap": {
+    "Type": "WorldGen"
+  },
+  "ChunkStorage": {
+    "Type": "Hytale"
+  },
+  "ChunkConfig": {},
+  "IsTicking": true,
+  "IsBlockTicking": true,
+  "IsPvpEnabled": false,
+  "IsFallDamageEnabled": true,
+  "IsGameTimePaused": false,
+  "GameTime": "0001-02-11T07:43:56.763816279Z",
+  "ClientEffects": {
+    "SunHeightPercent": 100.0,
+    "SunAngleDegrees": 0.0,
+    "BloomIntensity": 0.30000001192092896,
+    "BloomPower": 8.0,
+    "SunIntensity": 0.25,
+    "SunshaftIntensity": 0.30000001192092896,
+    "SunshaftScaleFactor": 4.0
+  },
+  "RequiredPlugins": {},
+  "GameMode": "Adventure",
+  "IsSpawningNPC": true,
+  "IsSpawnMarkersEnabled": true,
+  "IsAllNPCFrozen": false,
+  "GameplayConfig": "Default",
+  "Death": {
+    "RespawnController": {
+      "Type": "HomeOrSpawnPoint"
+    },
+    "ItemsLossMode": "Configured",
+    "ItemsAmountLossPercentage": 50.0,
+    "ItemsDurabilityLossPercentage": 10.0
+  },
+  "DaytimeDurationSeconds": 1728,
+  "NighttimeDurationSeconds": 1152,
+  "IsCompassUpdating": true,
+  "IsSavingPlayers": true,
+  "IsSavingChunks": true,
+  "SaveNewChunks": true,
+  "IsUnloadingChunks": true,
+  "IsObjectiveMarkersEnabled": true,
+  "DeleteOnUniverseStart": false,
+  "DeleteOnRemove": false,
+  "DisabledFluidTickers": [],
+  "ResourceStorage": {
+    "Type": "Hytale"
+  },
+  "Plugin": {}
+}
