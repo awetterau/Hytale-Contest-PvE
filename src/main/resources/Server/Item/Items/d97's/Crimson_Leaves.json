@@ -1,0 +1,36 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.Plant_Leaves_Fir.name"
+  },
+  "Icon": "Icons/ItemsGenerated/Crimson_Leaves.png",
+  "Parent": "Plant_Leaves_Oak",
+  "BlockType": {
+    "Opacity": "Cutout",
+    "CustomModel": "Blocks/Foliage/Leaves/PineShape_NSEW.blockymodel",
+    "CustomModelTexture": [
+      {
+        "Texture": "Blocks/d97's/Crimson_Ambience/Crimson_Leaves.png",
+        "Weight": 1
+      },
+      {
+        "Texture": "Blocks/d97's/Crimson_Ambience/Crimson_Leaves_01.png",
+        "Weight": 1
+      }
+    ],
+    "RandomRotation": "None",
+    "VariantRotation": "NESW",
+    "ParticleColor": "#7d1f1f"
+  },
+  "IconProperties": {
+    "Scale": 0.5,
+    "Rotation": [
+      21,
+      80,
+      16
+    ],
+    "Translation": [
+      -3,
+      -18
+    ]
+  }
+}

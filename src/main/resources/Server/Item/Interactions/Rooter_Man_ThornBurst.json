@@ -1,0 +1,54 @@
+{
+  "Type": "Simple",
+  "RunTime": 0.25,
+  "Next": {
+    "Type": "Parallel",
+    "Interactions": [
+      {
+        "Interactions": [
+          {
+            "Type": "Selector",
+            "RunTime": 0.2,
+            "Selector": {
+              "Id": "Horizontal",
+              "Direction": "ToLeft",
+              "TestLineOfSight": true,
+              "ExtendTop": 0.6,
+              "ExtendBottom": 3.0,
+              "StartDistance": 2.0,
+              "EndDistance": 13.0,
+              "Length": 52,
+              "RollOffset": -26,
+              "YawStartOffset": -26
+            },
+            "HitEntity": {
+              "Interactions": [
+                {
+                  "Type": "Replace",
+                  "DefaultValue": {
+                    "Interactions": [
+                      "Rooter_Man_Burst_Damage"
+                    ]
+                  },
+                  "Var": ""
+                }
+              ]
+            },
+            "Next": {
+              "Type": "Simple",
+              "RunTime": 0.22
+            }
+          }
+        ]
+      },
+      {
+        "Interactions": [
+          {
+            "Type": "Simple",
+            "RunTime": 0.4
+          }
+        ]
+      }
+    ]
+  }
+}

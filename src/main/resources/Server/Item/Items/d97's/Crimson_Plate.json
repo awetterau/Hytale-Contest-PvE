@@ -1,0 +1,75 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.Crimson_Plate.name"
+  },
+  "ItemLevel": 20,
+  "Icon": "Icons/ItemsGenerated/Crimson_Plate.png",
+  "Categories": [
+    "Blocks.Soils"
+  ],
+  "SubCategory": "GrassAndDirt",
+  "PlayerAnimationsId": "Block",
+  "BlockType": {
+    "Material": "Solid",
+    "DrawType": "Cube",
+    "Group": "Crimson",
+    "Flags": {},
+    "Gathering": {
+      "Breaking": {
+        "GatherType": "Soils"
+      }
+    },
+    "BlockParticleSetId": "Dust",
+    "Textures": [
+      {
+        "Down": "BlockTextures/Soil_Hive_Corrupted.png",
+        "Sides": "BlockTextures/Soil_Volcanic_Gravel.png",
+        "Up": "BlockTextures/Soil_Grass_Dry_Side_Full_GS.png",
+        "Weight": 1
+      }
+    ],
+    "BlockSoundSetId": "Stone",
+    "BiomeTintUp": 15,
+    "TextureSideMask": "BlockTextures/Soil_Grass_Wet_Side_GS.png",
+    "TintUp": [
+      "#5c0b0b"
+    ],
+    "TransitionTexture": "BlockTextures/Transition_Soil_Dirt_Dry.png",
+    "TransitionToGroups": [
+      "Stone",
+      "Dirt",
+      "Dirt_Dark",
+      "Sand",
+      "Sand_White",
+      "Gravel",
+      "Wood",
+      "Cobble",
+      "Grass",
+      "Sand",
+      "Metal",
+      "Props"
+    ],
+    "ParticleColor": "#822216"
+  },
+  "Tags": {
+    "Type": [
+      "Soil"
+    ],
+    "Family": [
+      "Crimson"
+    ]
+  },
+  "IconProperties": {
+    "Scale": 0.5,
+    "Rotation": [
+      339.295,
+      229.107,
+      337.792
+    ],
+    "Translation": [
+      -1,
+      -13
+    ]
+  },
+  "ItemSoundSetId": "ISS_Blocks_Soft"
+}

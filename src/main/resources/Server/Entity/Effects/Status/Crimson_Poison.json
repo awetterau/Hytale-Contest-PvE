@@ -1,0 +1,13 @@
+{
+  "Parent": "Poison",
+  "ApplicationEffects": {
+    "ScreenEffect": "ScreenEffects/Fire.png"
+  },
+  "DamageCalculator": {
+    "BaseDamage": {
+      "Poison": 5
+    }
+  },
+  "DamageCalculatorCooldown": 2,
+  "Duration": 3
+}

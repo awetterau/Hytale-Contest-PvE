@@ -1,0 +1,19 @@
+{
+  "Parent": "DamageEntityParent",
+  "DamageCalculator": {
+    "BaseDamage": {
+      "Physical": 15
+    }
+  },
+  "DamageEffects": {
+    "Knockback": {
+      "Force": 1.0,
+      "RelativeX": 0,
+      "RelativeZ": -1.5,
+      "VelocityY": 2.0,
+      "VelocityType": "Set"
+    },
+    "WorldSoundEventId": "SFX_Skeleton_Mage_Spellbook_Impact",
+    "LocalSoundEventId": "SFX_Skeleton_Mage_Spellbook_Impact"
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.Crimson_Fluid.name"
+  },
+  "Icon": "Icons/ItemsGenerated/Crimson_Fluid.png",
+  "Categories": [
+    "Blocks.Fluids"
+  ],
+  "Interactions": {
+    "Secondary": {
+      "Interactions": [
+        {
+          "Type": "PlaceFluid",
+          "FluidToPlace": "Crimson_Source"
+        }
+      ]
+    }
+  },
+  "BlockType": {
+    "Material": "Solid",
+    "DrawType": "Cube",
+    "Effect": [
+      "Lava"
+    ],
+    "Opacity": "Transparent",
+    "DamageToEntities": 17,
+    "Group": "Lava",
+    "Light": {
+      "Color": "#a25"
+    },
+    "Flags": {},
+    "BlockParticleSetId": "Lava",
+    "Textures": [
+      {
+        "Weight": 1,
+        "All": "BlockTextures/Crimson_Fluid.png"
+      }
+    ],
+    "ParticleColor": "#6a1b1b",
+    "CubeShadingMode": "Fullbright",
+    "BlockSoundSetId": "Empty",
+    "Interactions": {
+      "Collision": {
+        "Cooldown": {
+          "Id": "BurnEffect",
+          "Cooldown": 1
+        },
+        "Interactions": [
+          {
+            "Type": "Condition",
+            "RequiredGameMode": "Adventure",
+            "Next": {
+              "Type": "ApplyEffect",
+              "EffectId": {
+                "Duration": 1,
+                "OverlapBehavior": "Overwrite",
+                "ApplicationEffects": {
+                  "HorizontalSpeedMultiplier": 0.5
+                }
+              },
+              "Next": {
+                "Type": "ApplyEffect",
+                "EffectId": "Lava_Burn"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "PlayerAnimationsId": "Block",
+  "Tags": {
+    "Material": [
+      "Fluid"
+    ],
+    "Family": [
+      "Crimson"
+    ]
+  },
+  "MaxStack": 1
+}

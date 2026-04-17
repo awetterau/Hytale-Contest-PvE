@@ -1,0 +1,13 @@
+{
+  "Tags": {
+    "Attack": [
+      "Magic"
+    ]
+  },
+  "Cooldown": {
+    "Cooldown": 3.0
+  },
+  "Interactions": [
+    "Rooter_Man_ThornBurst"
+  ]
+}

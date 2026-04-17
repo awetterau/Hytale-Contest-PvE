@@ -1,0 +1,12 @@
+{
+  "Spawners": [
+    {
+      "SpawnerId": "Crimson_Fog",
+      "FixedRotation": true,
+      "PositionOffset": {
+        "Y": -2
+      }
+    }
+  ],
+  "CullDistance": 30
+}

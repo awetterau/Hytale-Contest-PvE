@@ -1,0 +1,9 @@
+{
+  "Spawners": [
+    {
+      "SpawnerId": "Crimson_Spores",
+      "FixedRotation": true
+    }
+  ],
+  "CullDistance": 30
+}

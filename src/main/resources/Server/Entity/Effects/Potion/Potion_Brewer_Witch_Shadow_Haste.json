@@ -1,0 +1,10 @@
+{
+  "Duration": 6.5,
+  "OverlapBehavior": "Overwrite",
+  "ApplicationEffects": {
+    "EntityTopTint": "#34235f",
+    "EntityBottomTint": "#09040f",
+    "HorizontalSpeedMultiplier": 1.55,
+    "ModelVFXId": "Intangible_Dark"
+  }
+}

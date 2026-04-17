@@ -1,0 +1,54 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.Crimson_Layer.name"
+  },
+  "ItemLevel": 16,
+  "Icon": "Icons/ItemsGenerated/Crimson_Prop.png",
+  "Categories": [
+    "Blocks.Soils"
+  ],
+  "SubCategory": "GrassAndDirt",
+  "PlayerAnimationsId": "Block",
+  "BlockType": {
+    "Material": "Solid",
+    "DrawType": "Model",
+    "Group": "Crimson",
+    "Flags": {},
+    "Gathering": {
+      "Breaking": {
+        "GatherType": "Soils"
+      }
+    },
+    "BlockParticleSetId": "Dust",
+    "BlockSoundSetId": "Grass",
+    "BiomeTintUp": 15,
+    "ParticleColor": "#7e1d11",
+    "CustomModel": "Blocks/d97's/Crimson_Ambience/Crimson_Prop.blockymodel",
+    "CustomModelTexture": [
+      {
+        "Texture": "Blocks/d97's/Crimson_Ambience/Crimson_Prop.png"
+      }
+    ]
+  },
+  "Tags": {
+    "Type": [
+      "Soil"
+    ],
+    "Family": [
+      "Crimson"
+    ]
+  },
+  "IconProperties": {
+    "Scale": 0.45,
+    "Rotation": [
+      25,
+      45,
+      23
+    ],
+    "Translation": [
+      0,
+      -13.5
+    ]
+  },
+  "ItemSoundSetId": "ISS_Blocks_Soft"
+}

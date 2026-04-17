@@ -1,0 +1,68 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.Crimson_Mushroom_Fox.name"
+  },
+  "Icon": "Icons/ItemsGenerated/Crimson_Mushroom_Fox.png",
+  "Categories": [
+    "Blocks.Plants"
+  ],
+  "Consumable": false,
+  "BlockType": {
+    "DrawType": "Model",
+    "Opacity": "Transparent",
+    "CustomModel": "Blocks/Foliage/Plants/Mushroom_Fox.blockymodel",
+    "CustomModelTexture": [
+      {
+        "Texture": "Blocks/d97's/Crimson_Ambience/Crimson_Mushroom_Fox.png",
+        "Weight": 1
+      }
+    ],
+    "Group": "Plant",
+    "HitboxType": "Mushroom_Large",
+    "Flags": {
+      "IsStackable": false
+    },
+    "RandomRotation": "YawStep1",
+    "Support": {
+      "Down": [
+        {
+          "FaceType": "Full"
+        }
+      ]
+    },
+    "BlockParticleSetId": "Dust",
+    "ParticleColor": "#cf8f43",
+    "BlockSoundSetId": "Mushroom",
+    "Particles": [
+      {
+        "SystemId": "Crimson_Spores",
+        "Color": "#c5e4ee",
+        "Scale": 0.3,
+        "TargetEntityPart": "Self"
+      }
+    ]
+  },
+  "PlayerAnimationsId": "Block",
+  "IconProperties": {
+    "Scale": 0.6,
+    "Rotation": [
+      341,
+      196,
+      357
+    ],
+    "Translation": [
+      0,
+      -13.5
+    ]
+  },
+  "Tags": {
+    "Type": [
+      "Plant"
+    ],
+    "Family": [
+      "Crimson"
+    ]
+  },
+  "ItemSoundSetId": "ISS_Items_Foliage",
+  "DropOnDeath": true
+}

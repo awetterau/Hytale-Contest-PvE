@@ -1,0 +1,7 @@
+{
+  "Type": "Variant",
+  "Reference": "Tamed_Goat_Kid",
+  "Modify": {
+    "NameTranslationKey": "server.npcRoles.Farmer_Goat_Base.name"
+  }
+}
