@@ -245,6 +245,7 @@ public class ExamplePlugin extends JavaPlugin {
     @Override
     protected void start() {
         GameSessionManager.get().cleanupOrphanRunWorldsOnStartup();
+        applyDefaultWorldWeatherOverride();
         NpcDefinitionRegistry.get().initialize();
         NpcProgressManager.get().initialize();
         RunRescueRegistry.get().initialize();
@@ -325,6 +326,26 @@ public class ExamplePlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new PotionBrewerWitchHealZoneHealingSystem());
         this.getEntityStoreRegistry().registerSystem(new PotionBrewerWitchPoisonDamageSystem());
     }
+
+    private void applyDefaultWorldWeatherOverride() {
+        com.hypixel.hytale.server.core.universe.Universe universe = com.hypixel.hytale.server.core.universe.Universe.get();
+        if (universe == null || universe.getDefaultWorld() == null) {
+            return;
+        }
+        com.hypixel.hytale.server.core.universe.world.World defaultWorld = universe.getDefaultWorld();
+        com.hypixel.hytale.component.Store<com.hypixel.hytale.server.core.universe.world.storage.EntityStore> store =
+                defaultWorld.getEntityStore().getStore();
+        if (store == null) {
+            return;
+        }
+        com.hypixel.hytale.builtin.weather.resources.WeatherResource weatherResource =
+                store.getResource(com.hypixel.hytale.builtin.weather.resources.WeatherResource.getResourceType());
+        if (weatherResource == null) {
+            return;
+        }
+        weatherResource.setForcedWeather("Skylands_Rapids_Marsh_Cloudy_Medium");
+    }
+
     @Override
     protected void shutdown() {
         if (this.rescueInteractionPacketWatcher != null) {

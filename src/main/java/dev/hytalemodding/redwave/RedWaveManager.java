@@ -6,6 +6,7 @@ import com.hypixel.hytale.protocol.DrawType;
 import com.hypixel.hytale.protocol.Opacity;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.universe.world.World;
+import dev.hytalemodding.state.run.RunEnvironmentPainter;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -882,6 +883,7 @@ public final class RedWaveManager {
 
             recordOriginalBlock(worldId, this.corePos, target.x, target.y, target.z, existing.getId());
             world.setBlock(target.x, target.y, target.z, RedWaveConfig.CRIMSON_LAYER_BLOCK_ID);
+            RunEnvironmentPainter.paintColumnForRunBlock(world, target.x, target.y, target.z);
             this.markConverted(target);
             int targetIndex = this.toIndex(target);
             if (targetIndex >= 0) {
@@ -1361,6 +1363,7 @@ public final class RedWaveManager {
                 ChunkUndoBatch batch = this.chunkIterator.next();
                 for (UndoEntry entry : batch.entries()) {
                     world.setBlock(entry.position().x, entry.position().y, entry.position().z, entry.blockId());
+                    RunEnvironmentPainter.paintColumnForRunBlock(world, entry.position().x, entry.position().y, entry.position().z);
                     this.restoredBlocks++;
                 }
                 this.restoredChunks++;

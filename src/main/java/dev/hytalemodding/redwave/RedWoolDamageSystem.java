@@ -1,7 +1,5 @@
 package dev.hytalemodding.redwave;
 
-import com.hypixel.hytale.builtin.weather.components.WeatherTracker;
-import com.hypixel.hytale.builtin.weather.resources.WeatherResource;
 import com.hypixel.hytale.component.ArchetypeChunk;
 import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.component.ComponentType;
@@ -13,7 +11,6 @@ import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.math.util.MathUtil;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
-import com.hypixel.hytale.server.core.asset.type.weather.config.Weather;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.modules.entity.damage.Damage;
@@ -24,12 +21,14 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import dev.hytalemodding.state.run.RunEnvironmentPainter;
 
 import javax.annotation.Nonnull;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RedWoolDamageSystem extends EntityTickingSystem<EntityStore> {
+<<<<<<< HEAD
     private static final float DAMAGE_INTERVAL_SECONDS = 0.5f;
     private static final float DAMAGE_PER_TICK = 5.0f;
     private static final float EXIT_CONFIRM_SECONDS = 2.0f;
@@ -38,10 +37,16 @@ public class RedWoolDamageSystem extends EntityTickingSystem<EntityStore> {
     private static final boolean DEBUG_HAZARD_WEATHER = false;
     private static volatile boolean HAZARD_FOG_ENABLED = true;
     private static volatile boolean loggedWeatherIndexResolution = false;
+=======
+    private static final float DAMAGE_INTERVAL_SECONDS = 0.5f;
+    private static final float DAMAGE_PER_TICK = 5.0f;
+    private static volatile boolean HAZARD_FOG_ENABLED = true;
+>>>>>>> fe9202e (Crimson Update)
 
     private static final ComponentType<EntityStore, Player> PLAYER = Player.getComponentType();
     private static final ComponentType<EntityStore, TransformComponent> TRANSFORM = TransformComponent.getComponentType();
     private static final ComponentType<EntityStore, PlayerRef> PLAYER_REF = PlayerRef.getComponentType();
+<<<<<<< HEAD
     private static final ComponentType<EntityStore, WeatherTracker> WEATHER_TRACKER = WeatherTracker.getComponentType();
 
     private final Query<EntityStore> query = Query.and(PLAYER, TRANSFORM, PLAYER_REF, WEATHER_TRACKER);
@@ -51,6 +56,10 @@ public class RedWoolDamageSystem extends EntityTickingSystem<EntityStore> {
     private final ConcurrentHashMap<String, Set<java.util.UUID>> hazardFogPlayersByWorld = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, String> previousForcedWeatherByWorld = new ConcurrentHashMap<>();
     private final Set<String> worldsWithNullPreviousForcedWeather = ConcurrentHashMap.newKeySet();
+=======
+    private final Query<EntityStore> query = Query.and(PLAYER, TRANSFORM, PLAYER_REF);
+    private final ConcurrentHashMap<Ref<EntityStore>, Float> elapsedOnHazard = new ConcurrentHashMap<>();
+>>>>>>> fe9202e (Crimson Update)
 
     @Nonnull
     @Override
@@ -69,18 +78,17 @@ public class RedWoolDamageSystem extends EntityTickingSystem<EntityStore> {
         Player player = archetypeChunk.getComponent(index, PLAYER);
         TransformComponent transform = archetypeChunk.getComponent(index, TRANSFORM);
         PlayerRef playerRef = archetypeChunk.getComponent(index, PLAYER_REF);
-        WeatherTracker weatherTracker = archetypeChunk.getComponent(index, WEATHER_TRACKER);
-        if (player == null || transform == null || playerRef == null || weatherTracker == null) {
+        if (player == null || transform == null || playerRef == null) {
             return;
         }
 
         Ref<EntityStore> entityId = archetypeChunk.getReferenceTo(index);
         World world = store.getExternalData().getWorld();
-        java.util.UUID playerId = playerRef.getUuid();
         boolean onHazard = isStandingOnHazardBlockSafe(transform, world);
         logHazardPresenceChange(playerId, transform, weatherTracker, onHazard);
         if (onHazard) {
             applyDamage(dt, index, archetypeChunk, commandBuffer, entityId);
+<<<<<<< HEAD
             if (HAZARD_FOG_ENABLED) {
                 HazardWeatherState state = this.hazardWeatherStateByPlayer.computeIfAbsent(playerId, ignored -> new HazardWeatherState());
                 state.secondsOutsideHazard = 0.0f;
@@ -151,6 +159,13 @@ public class RedWoolDamageSystem extends EntityTickingSystem<EntityStore> {
             );
         }
     }
+=======
+            return;
+        }
+
+        this.elapsedOnHazard.remove(entityId);
+    }
+>>>>>>> fe9202e (Crimson Update)
 
     public static boolean isHazardFogEnabled() {
         return HAZARD_FOG_ENABLED;
@@ -158,6 +173,7 @@ public class RedWoolDamageSystem extends EntityTickingSystem<EntityStore> {
 
     public static void setHazardFogEnabled(boolean enabled) {
         HAZARD_FOG_ENABLED = enabled;
+        RunEnvironmentPainter.setCrimsonZoneEnvironmentEnabled(enabled);
     }
 
     private void applyDamage(
@@ -177,6 +193,7 @@ public class RedWoolDamageSystem extends EntityTickingSystem<EntityStore> {
         this.elapsedOnHazard.put(entityId, elapsed);
     }
 
+<<<<<<< HEAD
     private void applyHazardWeather(
             @Nonnull PlayerRef playerRef,
             @Nonnull WeatherTracker weatherTracker,
@@ -224,6 +241,8 @@ public class RedWoolDamageSystem extends EntityTickingSystem<EntityStore> {
         return weatherIndex == Integer.MIN_VALUE ? 0 : weatherIndex;
     }
 
+=======
+>>>>>>> fe9202e (Crimson Update)
     public static int resolveHazardCauseIndexSafe() {
         int environment = DamageCause.getAssetMap().getIndex("Environment");
         if (environment != Integer.MIN_VALUE) {
@@ -273,6 +292,7 @@ public class RedWoolDamageSystem extends EntityTickingSystem<EntityStore> {
         return RedWaveConfig.CRIMSON_BLOCK_ID.equals(id) || RedWaveConfig.OPTIONAL_CRIMSON_VOID_DAMAGE_BLOCK_ID.equals(id);
     }
 
+<<<<<<< HEAD
     private static int resolveWeatherIndexSafe(@Nonnull String preferredId, @Nonnull String fallbackId) {
         int preferred = Weather.getAssetMap().getIndex(preferredId);
         if (preferred != Integer.MIN_VALUE) {
@@ -360,3 +380,6 @@ public class RedWoolDamageSystem extends EntityTickingSystem<EntityStore> {
         private int lastNaturalWeatherIndex = Integer.MIN_VALUE;
     }
 }
+=======
+}
+>>>>>>> fe9202e (Crimson Update)

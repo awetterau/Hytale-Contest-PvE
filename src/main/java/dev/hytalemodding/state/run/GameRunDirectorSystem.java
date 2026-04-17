@@ -190,6 +190,7 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
         Vector3i target = anchors.get(ThreadLocalRandom.current().nextInt(anchors.size()));
         String blockId = "weak".equalsIgnoreCase(action.coreTier()) ? WEAK_RUNTIME_CORE_BLOCK_ID : RedWaveConfig.CORE_BLOCK_ID;
         world.setBlock(target.x, target.y, target.z, blockId);
+        RunEnvironmentPainter.paintColumnForRunBlock(world, target.x, target.y, target.z);
         RedCoreRegistry.register(worldId, target);
         if (RedWaveManager.isUndoRecordingEnabled()) {
             RedWaveManager.beginUndoSession(worldId, target);
@@ -224,6 +225,7 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
             target = anchors.get(ThreadLocalRandom.current().nextInt(anchors.size()));
             String coreBlockId = "weak".equalsIgnoreCase(action.coreTier()) ? WEAK_RUNTIME_CORE_BLOCK_ID : RedWaveConfig.CORE_BLOCK_ID;
             world.setBlock(target.x, target.y, target.z, coreBlockId);
+            RunEnvironmentPainter.paintColumnForRunBlock(world, target.x, target.y, target.z);
             RedCoreRegistry.register(worldId, target);
         } else {
             target = cores.get(ThreadLocalRandom.current().nextInt(cores.size()));
@@ -236,6 +238,7 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
         String coreBlockId = "weak".equalsIgnoreCase(action.coreTier()) ? WEAK_RUNTIME_CORE_BLOCK_ID : RedWaveConfig.CORE_BLOCK_ID;
         RedWaveManager.clearWave(worldId, target);
         world.setBlock(target.x, target.y, target.z, coreBlockId);
+        RunEnvironmentPainter.paintColumnForRunBlock(world, target.x, target.y, target.z);
         RedCoreRegistry.register(worldId, target);
         ConcurrentHashMap<String, CoreGrowthQueue> pendingByCore = this.pendingGrowthByWorld.get(worldId);
         if (pendingByCore != null) {

@@ -7,9 +7,12 @@ import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.Rotation;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.RotationTuple;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import dev.hytalemodding.state.run.RunEnvironmentPainter;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.ThreadLocalRandom;
@@ -28,6 +31,7 @@ public class RedWaveBlockSweepSystem extends TickingSystem<EntityStore> {
 
             int stepsThisTick = wave.takeBlocksForTick(dt);
             Vector3i corePos = wave.corePos();
+            int convertedThisTick = 0;
 
             for (int i = 0; i < stepsThisTick && !wave.done(); i++) {
                 Vector3i pos = wave.consumeGrowthStep();
@@ -55,17 +59,33 @@ public class RedWaveBlockSweepSystem extends TickingSystem<EntityStore> {
                 }
                 RedWaveManager.recordOriginalBlock(worldId, corePos, pos.x, pos.y, pos.z, existing.getId());
                 world.setBlock(pos.x, pos.y, pos.z, RedWaveConfig.CRIMSON_LAYER_BLOCK_ID);
+                RunEnvironmentPainter.paintColumnForRunBlock(world, pos.x, pos.y, pos.z);
                 wave.markConverted(pos);
                 tryPlaceCrimsonDecor(world, pos, corePos, wave.radiusBlocks());
                 wave.onConverted(pos);
+                convertedThisTick++;
             }
 
             if (wave.shouldEmitRadiusSample()) {
+                String coreType = resolveCoreType(world, corePos);
+                if ("weak".equalsIgnoreCase(coreType)) {
+                    continue;
+                }
+                float speedBlocksPerSecond = dt <= 0.0001f ? convertedThisTick : (convertedThisTick / dt);
                 System.out.println(
                         "[RedWave] core="
                                 + corePos.x + "," + corePos.y + "," + corePos.z
+                                + " type=" + coreType
                                 + " avgRadius=" + String.format("%.2f", wave.averageConvertedRadius())
                                 + " areaRadius=" + String.format("%.2f", wave.areaEquivalentRadius())
+                                + " speed=" + String.format("%.2f", speedBlocksPerSecond) + " blocks/s"
+                );
+                sendRunWorldProgressMessage(
+                        worldId,
+                        "[InfectionProgress] Core " + coreType
+                                + " | radius(avg)=" + String.format("%.2f", wave.averageConvertedRadius())
+                                + " | radius(area)=" + String.format("%.2f", wave.areaEquivalentRadius())
+                                + " | speed=" + String.format("%.2f", speedBlocksPerSecond) + " blocks/s"
                 );
             }
 
@@ -90,14 +110,17 @@ public class RedWaveBlockSweepSystem extends TickingSystem<EntityStore> {
             float roll = ThreadLocalRandom.current().nextFloat();
             if (roll < scaledDecorChance(0.030f)) {
                 world.setBlock(top.x, top.y, top.z, "Crimson_Mushroom_Poison");
+                RunEnvironmentPainter.paintColumnForRunBlock(world, top.x, top.y, top.z);
                 return;
             }
             if (roll < scaledDecorChance(0.050f)) {
                 world.setBlock(top.x, top.y, top.z, "Crimson_Mushroom_Fox");
+                RunEnvironmentPainter.paintColumnForRunBlock(world, top.x, top.y, top.z);
                 return;
             }
             if (roll < scaledDecorChance(0.065f)) {
                 world.setBlock(top.x, top.y, top.z, "Plant_Crop_Mushroom_Glowing_Orange");
+                RunEnvironmentPainter.paintColumnForRunBlock(world, top.x, top.y, top.z);
                 return;
             }
         }
@@ -107,7 +130,7 @@ public class RedWaveBlockSweepSystem extends TickingSystem<EntityStore> {
     }
 
     private static void maybePlaceCrimsonMushroomWall(@Nonnull World world, @Nonnull Vector3i origin) {
-        if (!rollDecor(1.3f)) {
+        if (!rollDecor(1.0f)) {
             return;
         }
 
@@ -159,6 +182,7 @@ public class RedWaveBlockSweepSystem extends TickingSystem<EntityStore> {
         }
 
         world.setBlock(placePos.x, placePos.y, placePos.z, "Crimson_Roots");
+        RunEnvironmentPainter.paintColumnForRunBlock(world, placePos.x, placePos.y, placePos.z);
     }
 
     private static boolean rollDecor(float baseChance) {
@@ -188,10 +212,12 @@ public class RedWaveBlockSweepSystem extends TickingSystem<EntityStore> {
         if (worldChunk != null) {
             boolean placed = worldChunk.placeBlock(placePos.x, placePos.y, placePos.z, "Crimson_Mushroom", rotation, 0, true);
             if (placed) {
+                RunEnvironmentPainter.paintColumnForRunBlock(world, placePos.x, placePos.y, placePos.z);
                 return;
             }
         }
         world.setBlock(placePos.x, placePos.y, placePos.z, "Crimson_Mushroom", rotationIndexForFacing(facing));
+        RunEnvironmentPainter.paintColumnForRunBlock(world, placePos.x, placePos.y, placePos.z);
     }
 
     @Nonnull
@@ -218,6 +244,30 @@ public class RedWaveBlockSweepSystem extends TickingSystem<EntityStore> {
         int dz = pos.z - corePos.z;
         double distance = Math.sqrt((dx * dx) + (dz * dz));
         return distance <= maxDecorRadius;
+    }
+
+    @Nonnull
+    private static String resolveCoreType(@Nonnull World world, @Nonnull Vector3i corePos) {
+        BlockType coreType = world.getBlockType(corePos.x, corePos.y, corePos.z);
+        if (coreType == null || coreType.getId() == null) {
+            return "unknown";
+        }
+        if (RedWaveConfig.CORE_BLOCK_ID.equals(coreType.getId())) {
+            return "core";
+        }
+        if ("Crimson_Core_Weak".equals(coreType.getId())) {
+            return "weak";
+        }
+        return coreType.getId();
+    }
+
+    private static void sendRunWorldProgressMessage(@Nonnull UUID worldId, @Nonnull String message) {
+        for (PlayerRef playerRef : Universe.get().getPlayers()) {
+            if (playerRef == null || playerRef.getWorldUuid() == null || !worldId.equals(playerRef.getWorldUuid())) {
+                continue;
+            }
+            playerRef.sendMessage(com.hypixel.hytale.server.core.Message.raw(message));
+        }
     }
 
 }

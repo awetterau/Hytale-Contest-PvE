@@ -15,7 +15,6 @@ import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.Message;
-import com.hypixel.hytale.builtin.weather.resources.WeatherResource;
 import com.hypixel.hytale.server.core.modules.time.WorldTimeResource;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
@@ -703,6 +702,17 @@ public final class GameSessionManager {
                 && this.activeSession.runWorldUuid.equals(worldUuid);
     }
 
+    public synchronized boolean isActiveRunWorldCandidate(@Nonnull UUID worldUuid, @Nonnull String worldName) {
+        if (this.activeSession == null) {
+            return false;
+        }
+        if (this.activeSession.runWorldUuid != null && this.activeSession.runWorldUuid.equals(worldUuid)) {
+            return true;
+        }
+        return this.activeSession.phase == RunPhase.PREPARING
+                && this.activeSession.runWorldName.equals(worldName);
+    }
+
     private void handlePlayerReconnect(@Nonnull PlayerRef playerRef) {
         final ActiveSession session;
         final UUID runWorldUuid;
@@ -989,6 +999,9 @@ public final class GameSessionManager {
         for (long chunkIndex : chunksToLoad) {
             CompletableFuture<Ref<ChunkStore>> chunkFuture = world.getChunkStore().getChunkReferenceAsync(chunkIndex);
             futures.add(chunkFuture.thenAcceptAsync(chunkRef -> {
+                if (chunkRef != null && chunkRef.isValid()) {
+                    RunEnvironmentPainter.paintRunDefaultEnvironmentOnChunk(world, chunkRef);
+                }
                 if (chunkRef != null && pinnedChunkIndices.contains(chunkIndex)) {
                     PINNED_CHUNK_REFS_BY_WORLD.computeIfAbsent(worldId, ignored -> Collections.synchronizedList(new ArrayList<>()))
                             .add(chunkRef);
@@ -1292,12 +1305,10 @@ public final class GameSessionManager {
 
     private static void customizeRunWorld(@Nonnull World runWorld, @Nonnull ActiveSession session) {
         runWorld.getWorldConfig().setIsAllNPCFrozen(false);
-        runWorld.getWorldConfig().setForcedWeather("Run_Fog");
         runWorld.getWorldConfig().markChanged();
         int selectedHour = chooseRunHour();
         session.appliedRunHour = selectedHour;
         applyRunWorldTimeSet(runWorld, selectedHour);
-        applyRunWorldWeatherSet(runWorld, "Run_Fog");
         configureQuestChest(runWorld, session.templateWorldName);
         replaceRandomBlightBeastWithRooter(runWorld);
     }
@@ -1378,15 +1389,6 @@ public final class GameSessionManager {
         }
         double dayFraction = clampedHour / (double) WorldTimeResource.HOURS_PER_DAY;
         worldTime.setDayTime(dayFraction, runWorld, store);
-    }
-
-    private static void applyRunWorldWeatherSet(@Nonnull World runWorld, @Nonnull String weatherId) {
-        Store<EntityStore> store = runWorld.getEntityStore().getStore();
-        WeatherResource weatherResource = store.getResource(WeatherResource.getResourceType());
-        if (weatherResource == null) {
-            return;
-        }
-        weatherResource.setForcedWeather(weatherId);
     }
 
     private static void replaceRandomBlightBeastWithRooter(@Nonnull World runWorld) {

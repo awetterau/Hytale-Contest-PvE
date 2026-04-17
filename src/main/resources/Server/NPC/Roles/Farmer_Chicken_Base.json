@@ -1,7 +1,0 @@
-{
-  "Type": "Variant",
-  "Reference": "Tamed_Chicken",
-  "Modify": {
-    "NameTranslationKey": "server.npcRoles.Farmer_Chicken_Base.name"
-  }
-}
