@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
     private static final ComponentType<EntityStore, NPCEntity> NPC = NPCEntity.getComponentType();
@@ -98,6 +99,7 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
     private static final long SHADOW_BUFF_DURATION_MS = 6500L;
     private static final long SHADOW_ASSASSIN_DURATION_MS = 6500L;
     private static final long SHADOW_ASSASSIN_APPROACH_DELAY_MS = 1000L;
+    private static final boolean ENABLE_SHADOW_ASSASSIN_APPROACH = false;
     private static final double SHADOW_ASSASSIN_APPROACH_DISTANCE = 0.8d;
     private static final double SELF_POISON_TRIGGER_RANGE = 5.0d;
     private static final double SHADOW_STUN_RANGE = 16.0d;
@@ -116,6 +118,8 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
     private static final Map<UUID, Map<UUID, Phase>> PHASES_BY_WORLD = new HashMap<>();
     private static final Map<UUID, Map<UUID, PendingSuppression>> PENDING_SUPPRESSIONS_BY_WORLD = new HashMap<>();
     private static final Map<UUID, Map<UUID, HudSnapshot>> HUD_SNAPSHOTS_BY_WORLD = new HashMap<>();
+    private static final Map<UUID, Long> LAST_DUPLICATE_WITCH_LOG_BY_WORLD = new HashMap<>();
+    private static final Set<UUID> PENDING_DUPLICATE_WITCH_DESPAWNS = ConcurrentHashMap.newKeySet();
 
     private final Map<UUID, Map<UUID, Runtime>> runtimesByWorld = new HashMap<>();
 
@@ -151,6 +155,11 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
         }
 
         synchronized (runtimes) {
+            UUID activeBossId = findPreferredWitchBossId(store);
+            int duplicateWitches = countDuplicateWitches(store, activeBossId);
+            if (duplicateWitches > 0) {
+                logDuplicateWitchSummary(world, worldId, activeBossId, duplicateWitches);
+            }
             store.forEachChunk(NPC, (chunk, ignored) -> {
                 for (int i = 0; i < chunk.size(); i++) {
                     NPCEntity npc = chunk.getComponent(i, NPC);
@@ -166,13 +175,21 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
                     if (bossRef == null || !bossRef.isValid() || bossId == null) {
                         continue;
                     }
+                    String roleState = getNpcStateName(npc);
+                    if (activeBossId != null && !bossId.equals(activeBossId)) {
+                        clearLoadout(worldId, bossId);
+                        clearPhase(worldId, bossId);
+                        clearPendingSuppressions(worldId, bossId);
+                        clearHudSnapshot(worldId, bossId);
+                        queueDuplicateWitchDespawn(world, bossRef, bossId, roleState, activeBossId);
+                        continue;
+                    }
 
                     seen.add(bossId);
                     TransformComponent initialTransform = transform;
                     Runtime runtime = runtimes.computeIfAbsent(bossId, id -> createRuntime(world, initialTransform, stats, id, bossRef));
                     runtime.bossRef = bossRef;
                     runtime.currentPosition = new Vector3d(transform.getPosition());
-                    String roleState = getNpcStateName(npc);
                     syncShadowStealth(world, store, npc, runtime, players, System.currentTimeMillis(), stealthCmds, teleportCmds, stateCmds);
                     updateHudSnapshot(worldId, runtime, roleState, stats);
                     syncBrewingPose(bossRef, transform, roleState, runtime, rotationCmds);
@@ -620,6 +637,103 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
         }
     }
 
+    @Nullable
+    private static UUID findPreferredWitchBossId(@Nonnull Store<EntityStore> store) {
+        final UUID[] fallback = {null};
+        final UUID[] combat = {null};
+        store.forEachChunk(NPC, (chunk, ignored) -> {
+            for (int i = 0; i < chunk.size(); i++) {
+                NPCEntity npc = chunk.getComponent(i, NPC);
+                TransformComponent transform = chunk.getComponent(i, TRANSFORM);
+                EntityStatMap stats = chunk.getComponent(i, STATS);
+                if (npc == null || transform == null || stats == null || !ROLE_NAME.equals(npc.getRoleName())) {
+                    continue;
+                }
+                Ref<EntityStore> ref = chunk.getReferenceTo(i);
+                UUID bossId = getEntityUuid(store, ref);
+                if (ref == null || !ref.isValid() || bossId == null || npc.isDespawning()) {
+                    continue;
+                }
+                if (fallback[0] == null) {
+                    fallback[0] = bossId;
+                }
+                String state = getNpcStateName(npc);
+                if (combat[0] == null && state != null && state.startsWith(COMBAT_PREFIX)) {
+                    combat[0] = bossId;
+                }
+            }
+        });
+        return combat[0] == null ? fallback[0] : combat[0];
+    }
+
+    private static int countDuplicateWitches(@Nonnull Store<EntityStore> store, @Nullable UUID activeBossId) {
+        if (activeBossId == null) {
+            return 0;
+        }
+        final int[] count = {0};
+        store.forEachChunk(NPC, (chunk, ignored) -> {
+            for (int i = 0; i < chunk.size(); i++) {
+                NPCEntity npc = chunk.getComponent(i, NPC);
+                if (npc == null || !ROLE_NAME.equals(npc.getRoleName())) {
+                    continue;
+                }
+                Ref<EntityStore> ref = chunk.getReferenceTo(i);
+                UUID bossId = getEntityUuid(store, ref);
+                if (ref != null && ref.isValid() && bossId != null && !activeBossId.equals(bossId) && !npc.isDespawning()) {
+                    count[0]++;
+                }
+            }
+        });
+        return count[0];
+    }
+
+    private static void logDuplicateWitchSummary(
+            @Nonnull World world,
+            @Nonnull UUID worldId,
+            @Nullable UUID activeBossId,
+            int duplicateWitches
+    ) {
+        long now = System.currentTimeMillis();
+        synchronized (LAST_DUPLICATE_WITCH_LOG_BY_WORLD) {
+            long last = LAST_DUPLICATE_WITCH_LOG_BY_WORLD.getOrDefault(worldId, 0L);
+            if (now - last < 1000L) {
+                return;
+            }
+            LAST_DUPLICATE_WITCH_LOG_BY_WORLD.put(worldId, now);
+        }
+        System.out.println("[PotionWitch][" + world.getName() + "] duplicateWitches=" + duplicateWitches + " activeBoss=" + activeBossId);
+    }
+
+    private static void queueDuplicateWitchDespawn(
+            @Nonnull World world,
+            @Nonnull Ref<EntityStore> bossRef,
+            @Nonnull UUID bossId,
+            @Nullable String roleState,
+            @Nullable UUID activeBossId
+    ) {
+        if (!PENDING_DUPLICATE_WITCH_DESPAWNS.add(bossId)) {
+            return;
+        }
+        System.out.println("[PotionWitch][" + world.getName() + "][" + bossId + "] queueDuplicateDespawn activeBoss=" + activeBossId + " roleState=" + roleState);
+        world.execute(() -> {
+            try {
+                if (!bossRef.isValid()) {
+                    return;
+                }
+                Store<EntityStore> store = world.getEntityStore().getStore();
+                NPCEntity npc = store.getComponent(bossRef, NPC);
+                if (npc == null || npc.isDespawning() || !ROLE_NAME.equals(npc.getRoleName())) {
+                    return;
+                }
+                npc.setToDespawn();
+                store.putComponent(bossRef, NPC, npc);
+                System.out.println("[PotionWitch][" + world.getName() + "][" + bossId + "] duplicateDespawnMarked");
+            } finally {
+                PENDING_DUPLICATE_WITCH_DESPAWNS.remove(bossId);
+            }
+        });
+    }
+
     private void logRoleStateChange(@Nonnull World world, @Nonnull UUID bossId, @Nonnull Runtime runtime, @Nullable String roleState) {
         if (sameState(runtime.lastRoleState, roleState)) {
             return;
@@ -987,19 +1101,26 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
             PotionBrewerWitchHolySystem.clearSelfHolyShield(worldId, runtime.bossId);
 
             runtime.shadowBuffUntil = now + SHADOW_ASSASSIN_DURATION_MS;
-            runtime.shadowAssassinActive = true;
-            runtime.shadowAssassinApproachAt = now + SHADOW_ASSASSIN_APPROACH_DELAY_MS;
+            runtime.shadowAssassinActive = ENABLE_SHADOW_ASSASSIN_APPROACH;
+            runtime.shadowAssassinApproachAt = ENABLE_SHADOW_ASSASSIN_APPROACH ? now + SHADOW_ASSASSIN_APPROACH_DELAY_MS : 0L;
             runtime.shadowRepositionPending = false;
             runtime.cycleSelfBuffAbility = brewedAbility;
             if (runtime.bossRef != null && runtime.bossRef.isValid()) {
                 effectCmds.add(new EffectCmd(runtime.bossRef, runtime.bossId, SHADOW_HASTE_EFFECT_ID));
             }
-            broadcastToWorld(world, "Potion Brewer Witch drinks a shadow brew and vanishes!");
-            System.out.println("[PotionWitch][ASSASSIN] TRIGGERED for bossId=" + runtime.bossId + ", duration=" + SHADOW_ASSASSIN_DURATION_MS + "ms, approachAt=" + runtime.shadowAssassinApproachAt);
-            debug(world, runtime.bossId, "selfUse shadowAssassin until=" + runtime.shadowBuffUntil);
+            if (ENABLE_SHADOW_ASSASSIN_APPROACH) {
+                broadcastToWorld(world, "Potion Brewer Witch drinks a shadow brew and vanishes!");
+                System.out.println("[PotionWitch][ASSASSIN] TRIGGERED for bossId=" + runtime.bossId + ", duration=" + SHADOW_ASSASSIN_DURATION_MS + "ms, approachAt=" + runtime.shadowAssassinApproachAt);
+                debug(world, runtime.bossId, "selfUse shadowAssassin until=" + runtime.shadowBuffUntil);
+            } else {
+                broadcastToWorld(world, "Potion Brewer Witch drinks a shadow brew and surges with speed.");
+                System.out.println("[PotionWitch][ASSASSIN] DISABLED approach/stealth for bossId=" + runtime.bossId + " hasteUntil=" + runtime.shadowBuffUntil);
+                debug(world, runtime.bossId, "selfUse shadowHasteOnly until=" + runtime.shadowBuffUntil);
+            }
             return;
         }
         if (BLOOD_POTION.equals(brewedAbility)) {
+            queueProjectileSuppression(worldId, runtime.bossId, brewedAbility);
             Vector3d origin = runtime.currentPosition == null ? runtime.spawnPosition : runtime.currentPosition;
             PlayerSnapshot target = findNearestPlayer(origin, players, 24.0d);
             PotionBrewerWitchBloodSystem.triggerSelfBloodBurst(
@@ -1019,6 +1140,7 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
             return;
         }
         if (BINDING_POTION.equals(brewedAbility)) {
+            queueProjectileSuppression(worldId, runtime.bossId, brewedAbility);
             PotionBrewerWitchBindingSystem.triggerSelfBindingZone(
                     world,
                     runtime.bossId,
@@ -1165,8 +1287,10 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
         runtime.cauldronZ = z;
         runtime.cauldronPlaced = true;
         world.setBlock(x, y, z, CAULDRON_BLOCK_ID);
-        PotionBrewerWitchShockwaveSystem.triggerRipple(world, runtime.bossId, new Vector3d(x + 0.5d, y, z + 0.5d));
         debug(world, runtime.bossId, "placeBrewingCauldron pos=(" + x + ", " + y + ", " + z + ")");
+        Vector3d shockwaveOrigin = new Vector3d(x + 0.5d, y, z + 0.5d);
+        PotionBrewerWitchShockwaveSystem.triggerRipple(world, runtime.bossId, shockwaveOrigin);
+        debug(world, runtime.bossId, "cauldronShockwave pos=(" + x + ", " + y + ", " + z + ")");
     }
 
     private static void removeActiveCauldron(@Nonnull World world, @Nonnull Runtime runtime) {
@@ -1691,12 +1815,18 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
     private static final class PendingSuppression {
         private int poisonCount;
         private int shadowCount;
+        private int bloodCount;
+        private int bindingCount;
 
         private void add(@Nonnull String brewedAbility) {
             if (POISON_POTION.equals(brewedAbility)) {
                 this.poisonCount++;
             } else if (SHADOW_BOLT.equals(brewedAbility)) {
                 this.shadowCount++;
+            } else if (BLOOD_POTION.equals(brewedAbility)) {
+                this.bloodCount++;
+            } else if (BINDING_POTION.equals(brewedAbility)) {
+                this.bindingCount++;
             }
         }
 
@@ -1709,11 +1839,22 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
                 this.shadowCount--;
                 return true;
             }
+            if (BLOOD_POTION.equals(brewedAbility) && this.bloodCount > 0) {
+                this.bloodCount--;
+                return true;
+            }
+            if (BINDING_POTION.equals(brewedAbility) && this.bindingCount > 0) {
+                this.bindingCount--;
+                return true;
+            }
             return false;
         }
 
         private boolean isEmpty() {
-            return this.poisonCount <= 0 && this.shadowCount <= 0;
+            return this.poisonCount <= 0
+                    && this.shadowCount <= 0
+                    && this.bloodCount <= 0
+                    && this.bindingCount <= 0;
         }
     }
 }

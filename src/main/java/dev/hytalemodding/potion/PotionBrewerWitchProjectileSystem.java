@@ -46,6 +46,8 @@ public final class PotionBrewerWitchProjectileSystem extends TickingSystem<Entit
     private static final String ROLE_NAME = "Potion_Brewer_Witch";
     private static final String POISON_MODEL_ID = "Bomb_Potion_Poison";
     private static final String HEAL_POTION_MODEL_ID = "Bomb_Potion_Heal";
+    private static final String BLOOD_POTION_MODEL_ID = "Bomb_Potion_Blood";
+    private static final String BINDING_POTION_MODEL_ID = "Bomb_Potion_Binding";
     private static final String SHADOW_BOLT_MODEL_ID = "Skeleton_Mage_Corruption_Orb";
     private static final String HEAL_ZONE_BLOCK_ID = "Cloth_Block_Wool_Green_Light";
     private static final String HEAL_THROWN_ROOT_INTERACTION = "Potion_Brewer_Witch_Heal_Thrown_Attack";
@@ -202,7 +204,7 @@ public final class PotionBrewerWitchProjectileSystem extends TickingSystem<Entit
 
                 // Announce projectile only once
                 if (this.announcedProjectiles.add(projectileRef)) {
-                    if (projectileId != null && PotionBrewerWitchBloodSystem.isBloodProjectile(worldId, projectileId)) {
+                    if (projectileId != null && (PotionBrewerWitchBloodSystem.isBloodProjectile(worldId, projectileId) || PotionBrewerWitchBindingSystem.isBindingProjectile(worldId, projectileId))) {
                         continue;
                     }
                     if (healProjectile) {
@@ -232,6 +234,26 @@ public final class PotionBrewerWitchProjectileSystem extends TickingSystem<Entit
                             System.out.println("[PotionWitch][BOLT] Projectile SPAWNED for bossId=" + creatorUuid + ", projectileId=" + projectileId + ", pos=" + fmt(transform.getPosition()));
                         }
                         broadcastToWorld(world, "Potion Brewer Witch fires a shadow bolt.");
+                    } else if (BLOOD_POTION_MODEL_ID.equals(modelId)) {
+                        if (creatorUuid != null
+                                && PotionBrewerWitchSystem.consumePendingProjectileSuppression(worldId, creatorUuid, "blood potion")) {
+                            System.out.println("[PotionWitch][" + creatorUuid + "] suppressProjectile blood self-use fallback");
+                            spentProjectiles.add(projectileRef);
+                            continue;
+                        }
+                        if (creatorUuid != null) {
+                            System.out.println("[PotionWitch][" + creatorUuid + "] projectileSpawn blood fallbackWatch projectile=" + projectileId);
+                        }
+                    } else if (BINDING_POTION_MODEL_ID.equals(modelId)) {
+                        if (creatorUuid != null
+                                && PotionBrewerWitchSystem.consumePendingProjectileSuppression(worldId, creatorUuid, "binding potion")) {
+                            System.out.println("[PotionWitch][" + creatorUuid + "] suppressProjectile binding self-use fallback");
+                            spentProjectiles.add(projectileRef);
+                            continue;
+                        }
+                        if (creatorUuid != null) {
+                            System.out.println("[PotionWitch][" + creatorUuid + "] projectileSpawn binding fallbackWatch projectile=" + projectileId);
+                        }
                     }
                 }
 
@@ -246,7 +268,7 @@ public final class PotionBrewerWitchProjectileSystem extends TickingSystem<Entit
                         }
                         spentProjectiles.add(projectileRef);
                     } else if (POISON_MODEL_ID.equals(modelId)
-                            && (projectileId == null || !PotionBrewerWitchBloodSystem.isBloodProjectile(worldId, projectileId))) {
+                            && (projectileId == null || (!PotionBrewerWitchBloodSystem.isBloodProjectile(worldId, projectileId) && !PotionBrewerWitchBindingSystem.isBindingProjectile(worldId, projectileId)))) {
                         Vector3d impact = transform.getPosition();
                         placeCrimsonPatch(world, worldId, impact, now);
                         PotionBrewerWitchPoisonRuntime.addPatch(new PotionBrewerWitchPoisonRuntime.Patch(
@@ -259,6 +281,28 @@ public final class PotionBrewerWitchProjectileSystem extends TickingSystem<Entit
                                 now + POISON_DURATION_MS
                         ));
                         broadcastToWorld(world, "A toxic puddle spreads where the potion shatters.");
+                        spentProjectiles.add(projectileRef);
+                    } else if (BLOOD_POTION_MODEL_ID.equals(modelId)
+                            && (projectileId == null || !PotionBrewerWitchBloodSystem.isBloodProjectile(worldId, projectileId))) {
+                        PotionBrewerWitchBloodSystem.triggerThrownBloodImpact(
+                                world,
+                                creatorUuid,
+                                new Vector3d(transform.getPosition())
+                        );
+                        if (creatorUuid != null) {
+                            System.out.println("[PotionWitch][" + creatorUuid + "] projectileBreak blood fallback reason=ground projectile=" + projectileId + " impact=true");
+                        }
+                        spentProjectiles.add(projectileRef);
+                    } else if (BINDING_POTION_MODEL_ID.equals(modelId)
+                            && (projectileId == null || !PotionBrewerWitchBindingSystem.isBindingProjectile(worldId, projectileId))) {
+                        PotionBrewerWitchBindingSystem.triggerThrownBindingImpact(
+                                world,
+                                creatorUuid,
+                                new Vector3d(transform.getPosition())
+                        );
+                        if (creatorUuid != null) {
+                            System.out.println("[PotionWitch][" + creatorUuid + "] projectileBreak binding fallback reason=ground projectile=" + projectileId + " impact=true");
+                        }
                         spentProjectiles.add(projectileRef);
                     }
                 }

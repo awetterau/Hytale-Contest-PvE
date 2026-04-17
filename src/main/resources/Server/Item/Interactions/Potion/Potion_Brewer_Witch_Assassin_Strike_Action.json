@@ -7,11 +7,36 @@
   },
   "RunTime": 0.5,
   "Next": {
-    "Type": "Chain",
-    "ChainedInteractions": [
-      {
-        "Reference": "Potion_Brewer_Witch_Assassin_Damage"
-      }
-    ]
+    "Type": "Selector",
+    "RunTime": 0.15,
+    "Selector": {
+      "Id": "Horizontal",
+      "Direction": "ToLeft",
+      "TestLineOfSight": true,
+      "ExtendTop": 0.6,
+      "ExtendBottom": 1.8,
+      "StartDistance": 0.1,
+      "EndDistance": 3.6,
+      "Length": 95,
+      "RollOffset": -45,
+      "YawStartOffset": -47.5
+    },
+    "HitEntity": {
+      "Interactions": [
+        {
+          "Type": "Replace",
+          "DefaultValue": {
+            "Interactions": [
+              "Potion_Brewer_Witch_Assassin_Damage"
+            ]
+          },
+          "Var": ""
+        }
+      ]
+    },
+    "Next": {
+      "Type": "Simple",
+      "RunTime": 0.1
+    }
   }
 }

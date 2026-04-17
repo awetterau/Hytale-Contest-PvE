@@ -43,11 +43,17 @@ public final class PotionBrewerWitchShockwaveSystem extends TickingSystem<Entity
     private static final float RIPPLE_HIDDEN_SCALE = 0.05f;
     private static final double RIPPLE_POOL_HIDE_OFFSET_Y = -3.0d;
     private static final double RIPPLE_EVENT_SPEED_BLOCKS_PER_SECOND = 13.85d;
+    private static final boolean ENABLE_RIPPLE_MOVERS = true;
 
     @Override
     public void tick(float dt, int systemIndex, @Nonnull Store<EntityStore> store) {
         World world = store.getExternalData().getWorld();
-        processRippleMovers(store, world, world.getWorldConfig().getUuid(), System.currentTimeMillis());
+        UUID worldId = world.getWorldConfig().getUuid();
+        if (!ENABLE_RIPPLE_MOVERS) {
+            PotionBrewerWitchShockwaveRuntime.clearWorld(worldId);
+            return;
+        }
+        processRippleMovers(store, world, worldId, System.currentTimeMillis());
     }
 
     public static void triggerRipple(
@@ -55,6 +61,9 @@ public final class PotionBrewerWitchShockwaveSystem extends TickingSystem<Entity
             @Nullable UUID ownerBossId,
             @Nonnull Vector3d origin
     ) {
+        if (!ENABLE_RIPPLE_MOVERS) {
+            return;
+        }
         UUID worldId = world.getWorldConfig().getUuid();
         long now = System.currentTimeMillis();
         double maxDistance = RIPPLE_RINGS * RIPPLE_RING_STEP;

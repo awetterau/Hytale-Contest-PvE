@@ -39,6 +39,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -54,6 +55,7 @@ public final class FarmerAnimalRescueManager {
     private final LinkedHashMap<String, AnimalDefinition> definitions = new LinkedHashMap<>();
     private final ConcurrentHashMap<UUID, ActiveAnimalState> activeByWorld = new ConcurrentHashMap<>();
     private final LinkedHashSet<String> pendingAnimalKeys = new LinkedHashSet<>();
+    private static final Set<Ref<EntityStore>> PENDING_NPC_DESPAWNS = ConcurrentHashMap.newKeySet();
     private volatile boolean loaded;
 
     private FarmerAnimalRescueManager() {
@@ -324,7 +326,7 @@ public final class FarmerAnimalRescueManager {
         Store<EntityStore> store = world.getEntityStore().getStore();
         for (AnimalDefinition definition : this.definitions.values()) {
             for (Ref<EntityStore> ref : findAllNpcRefsByRole(store, definition.hubRole)) {
-                despawnNpc(ref);
+                queueNpcDespawn(world, ref, definition.hubRole, "remove-hub-animals");
             }
         }
     }
@@ -377,6 +379,7 @@ public final class FarmerAnimalRescueManager {
     private void ensureHubAnimalPresentOrReset(@Nonnull World world, @Nonnull AnimalDefinition definition) {
         Collection<Ref<EntityStore>> existingRefs = findAllNpcRefsByRole(world.getEntityStore().getStore(), definition.hubRole);
         Ref<EntityStore> survivor = null;
+        List<Ref<EntityStore>> duplicates = new ArrayList<>();
         for (Ref<EntityStore> ref : existingRefs) {
             if (!isUsableNpcRef(ref, definition.hubRole)) {
                 continue;
@@ -385,7 +388,13 @@ public final class FarmerAnimalRescueManager {
                 survivor = ref;
                 continue;
             }
-            despawnNpc(ref);
+            duplicates.add(ref);
+        }
+        if (!duplicates.isEmpty()) {
+            for (Ref<EntityStore> duplicate : duplicates) {
+                queueNpcDespawn(world, duplicate, definition.hubRole, "duplicate-hub-animal");
+            }
+            return;
         }
         if (survivor != null && survivor.isValid()) {
             resetHubAnimalTransformIfNeeded(survivor, definition.hubSpawn, HUB_HOME_RESET_DISTANCE_SQUARED);
@@ -434,7 +443,11 @@ public final class FarmerAnimalRescueManager {
             if (world == null) {
                 continue;
             }
-            world.execute(() -> despawnNpc(ref));
+            world.execute(() -> {
+                NPCEntity npc = ref.isValid() ? ref.getStore().getComponent(ref, NPCEntity.getComponentType()) : null;
+                String roleName = npc == null || npc.getRoleName() == null ? "<unknown>" : npc.getRoleName();
+                queueNpcDespawn(world, ref, roleName, "clear-active-world");
+            });
         }
     }
 
@@ -448,6 +461,7 @@ public final class FarmerAnimalRescueManager {
         }
         Collection<Ref<EntityStore>> refs = findAllNpcRefsByRole(store, definition.objectiveRole);
         Ref<EntityStore> survivor = null;
+        List<Ref<EntityStore>> duplicates = new ArrayList<>();
         for (Ref<EntityStore> ref : refs) {
             if (!isUsableNpcRef(ref, definition.objectiveRole)) {
                 continue;
@@ -456,7 +470,16 @@ public final class FarmerAnimalRescueManager {
                 survivor = ref;
                 continue;
             }
-            despawnNpc(ref);
+            duplicates.add(ref);
+        }
+        if (!duplicates.isEmpty()) {
+            World world = store.getExternalData() == null ? null : store.getExternalData().getWorld();
+            if (world != null) {
+                for (Ref<EntityStore> duplicate : duplicates) {
+                    queueNpcDespawn(world, duplicate, definition.objectiveRole, "duplicate-objective-animal");
+                }
+            }
+            return;
         }
         active.npcRef = survivor;
     }
@@ -549,10 +572,13 @@ public final class FarmerAnimalRescueManager {
     }
 
     private static boolean isUsableNpcRef(@Nullable Ref<EntityStore> ref, @Nonnull String roleName) {
-        if (ref == null || !ref.isValid()) {
+        if (ref == null || PENDING_NPC_DESPAWNS.contains(ref) || !ref.isValid()) {
             return false;
         }
         Store<EntityStore> store = ref.getStore();
+        if (store == null) {
+            return false;
+        }
         NPCEntity npc = store.getComponent(ref, NPCEntity.getComponentType());
         if (npc == null || npc.isDespawning() || npc.getRoleName() == null || !roleName.equalsIgnoreCase(npc.getRoleName())) {
             return false;
@@ -561,17 +587,29 @@ public final class FarmerAnimalRescueManager {
         return transform != null;
     }
 
-    private static void despawnNpc(@Nullable Ref<EntityStore> ref) {
-        if (ref == null || !ref.isValid()) {
-            return;
+    private static boolean queueNpcDespawn(@Nonnull World world, @Nullable Ref<EntityStore> ref, @Nonnull String roleName, @Nonnull String reason) {
+        if (!isUsableNpcRef(ref, roleName) || !PENDING_NPC_DESPAWNS.add(ref)) {
+            return false;
         }
-        Store<EntityStore> store = ref.getStore();
-        NPCEntity npc = store.getComponent(ref, NPCEntity.getComponentType());
-        if (npc == null || npc.isDespawning()) {
-            return;
-        }
-        npc.setToDespawn();
-        store.putComponent(ref, NPCEntity.getComponentType(), npc);
+        System.out.println("[FarmerAnimals] Queued despawn role=" + roleName + " reason=" + reason);
+        world.execute(() -> {
+            try {
+                Store<EntityStore> store = ref.getStore();
+                if (store == null || !ref.isValid()) {
+                    return;
+                }
+                NPCEntity npc = store.getComponent(ref, NPCEntity.getComponentType());
+                if (npc == null || npc.isDespawning() || npc.getRoleName() == null || !roleName.equalsIgnoreCase(npc.getRoleName())) {
+                    return;
+                }
+                npc.setToDespawn();
+                store.putComponent(ref, NPCEntity.getComponentType(), npc);
+                System.out.println("[FarmerAnimals] Despawned role=" + roleName + " reason=" + reason);
+            } finally {
+                PENDING_NPC_DESPAWNS.remove(ref);
+            }
+        });
+        return true;
     }
 
     private static boolean isFollowingState(@Nullable String stateName) {
@@ -670,7 +708,7 @@ public final class FarmerAnimalRescueManager {
                     continue;
                 }
                 Ref<EntityStore> ref = chunk.getReferenceTo(i);
-                if (ref != null && ref.isValid()) {
+                if (isUsableNpcRef(ref, roleName)) {
                     found.add(ref);
                 }
             }

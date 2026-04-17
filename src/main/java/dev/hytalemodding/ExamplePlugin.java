@@ -26,6 +26,7 @@ import dev.hytalemodding.commands.hub.GameConfigCommand;
 import dev.hytalemodding.commands.hub.SetBaseSpawnCommand;
 import dev.hytalemodding.commands.hub.SetRescueSpawnCommand;
 import dev.hytalemodding.commands.npc.NpcAdminCommand;
+import dev.hytalemodding.commands.npc.DespawnWitchCommand;
 import dev.hytalemodding.commands.npc.NpcRolesCommand;
 import dev.hytalemodding.commands.npc.NpcSpawnCommand;
 import dev.hytalemodding.commands.npc.SpawnRooterCommand;
@@ -175,6 +176,7 @@ public class ExamplePlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new GameConfigCommand());
         this.getCommandRegistry().registerCommand(new NpcRolesCommand());
         this.getCommandRegistry().registerCommand(new NpcSpawnCommand());
+        this.getCommandRegistry().registerCommand(new DespawnWitchCommand());
         this.getCommandRegistry().registerCommand(new SpawnRooterCommand());
         this.getCommandRegistry().registerCommand(new NpcAdminCommand());
         this.getCommandRegistry().registerCommand(new QuestDevCommand());

@@ -1,5 +1,5 @@
 {
-  "Model": "Bomb_Potion_Poison",
+  "Model": "Bomb_Potion_Binding",
   "SpawnRotationOffset": {
     "Pitch": 10.0,
     "Yaw": 1,
@@ -26,6 +26,14 @@
   },
   "Interactions": {
     "ProjectileHit": {
+      "Interactions": [
+        {
+          "Type": "RemoveEntity",
+          "Entity": "User"
+        }
+      ]
+    },
+    "ProjectileMiss": {
       "Interactions": [
         {
           "Type": "RemoveEntity",

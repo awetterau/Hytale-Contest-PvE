@@ -49,10 +49,6 @@
         {
           "Hour": 21,
           "Color": "#3c3b0bad"
-        },
-        {
-          "Hour": 15,
-          "Color": "#e9a4a4ff"
         }
       ],
       "Speeds": [
@@ -102,10 +98,6 @@
     {
       "Hour": 7,
       "Color": "#00000000"
-    },
-    {
-      "Hour": 15,
-      "Color": "#6d33149a"
     }
   ],
   "SkySunsetColors": [
@@ -117,16 +109,52 @@
   "FogColors": [
     {
       "Hour": 7,
-      "Color": "#734545"
+      "Color": "#8c3838"
     },
     {
       "Hour": 15,
-      "Color": "#6e0404"
+      "Color": "#b01f1f"
     }
   ],
   "FogDistance": [
-    -67,
-    22
+    -36,
+    24
+  ],
+  "FogDensities": [
+    {
+      "Hour": 0,
+      "Value": 0.95
+    },
+    {
+      "Hour": 7,
+      "Value": 0.98
+    },
+    {
+      "Hour": 15,
+      "Value": 0.98
+    },
+    {
+      "Hour": 23,
+      "Value": 0.95
+    }
+  ],
+  "FogHeightFalloffs": [
+    {
+      "Hour": 0,
+      "Value": 4
+    },
+    {
+      "Hour": 7,
+      "Value": 4
+    },
+    {
+      "Hour": 15,
+      "Value": 4
+    },
+    {
+      "Hour": 23,
+      "Value": 4
+    }
   ],
   "SunlightColors": [
     {
@@ -403,7 +431,7 @@
     }
   ],
   "Particle": {
-    "SystemId": "Fog",
+    "SystemId": "Crimson_Fog",
     "Color": "#b12323",
     "OvergroundOnly": false
   }

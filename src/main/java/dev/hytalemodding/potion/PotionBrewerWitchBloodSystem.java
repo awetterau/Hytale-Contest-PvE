@@ -8,6 +8,7 @@ import com.hypixel.hytale.component.RemoveReason;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.math.shape.Box;
+import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.server.core.Message;
@@ -41,7 +42,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,7 +58,7 @@ public final class PotionBrewerWitchBloodSystem extends TickingSystem<EntityStor
 
     private static final String ROLE_NAME = "Potion_Brewer_Witch";
     private static final String BLOOD_POTION = "blood potion";
-    private static final String BLOOD_PROJECTILE_MODEL_ID = "Bomb_Potion_Poison";
+    private static final String BLOOD_PROJECTILE_MODEL_ID = "Bomb_Potion_Blood";
     private static final String BLOOD_SPIKE_BLOCK_ID = RedWaveConfig.CRIMSON_BLOCK_ID;
     private static final int HEALTH_STAT_INDEX = DefaultEntityStatTypes.getHealth();
 
@@ -75,8 +75,6 @@ public final class PotionBrewerWitchBloodSystem extends TickingSystem<EntityStor
     private static final double BLOOD_SPIKE_BODY_OFFSET = 0.52d;
     private static final float BLOOD_SPIKE_BASE_SCALE = 1.70f;
     private static final float BLOOD_SPIKE_TIP_SCALE = 0.68f;
-    private static final double BLOOD_SPIKE_POOL_HIDE_Y = -16.0d;
-    private static final float BLOOD_SPIKE_HIDDEN_SCALE = 0.05f;
     private static final int BLOOD_SPIKE_COUNT = 8;
     private static final long BLOOD_SPIKE_LIFETIME_MS = 2400L;
     private static final long BLOOD_SPIKE_HONING_DELAY_MS = 650L;
@@ -85,7 +83,6 @@ public final class PotionBrewerWitchBloodSystem extends TickingSystem<EntityStor
     private static final Map<UUID, Map<UUID, Integer>> PENDING_THROWN_BLOOD_BY_WORLD = new HashMap<>();
     private static final Map<UUID, Map<UUID, BloodProjectile>> BLOOD_PROJECTILES_BY_WORLD = new HashMap<>();
     private static final Map<UUID, List<BloodSpike>> BLOOD_SPIKES_BY_WORLD = new HashMap<>();
-    private static final Map<UUID, LinkedList<Ref<EntityStore>>> BLOOD_SPIKE_POOL_BY_WORLD = new HashMap<>();
 
     @Override
     public void tick(float dt, int systemIndex, @Nonnull Store<EntityStore> store) {
@@ -125,11 +122,22 @@ public final class PotionBrewerWitchBloodSystem extends TickingSystem<EntityStor
             applyDamage(store, ownerRef, BLOOD_SELF_COST, true);
         }
         spawnBloodSpikes(world, ownerBossId, origin, targetPosition);
+        System.out.println("[PotionWitch][" + ownerBossId + "] bloodImpact self spikes=" + BLOOD_SPIKE_COUNT + " origin=" + fmtVec(origin.getX(), origin.getY(), origin.getZ()));
         broadcastToWorld(world, "Potion Brewer Witch tears into its own blood and sends spikes racing across the ground.");
     }
 
     public static void spawnDebugBloodSpikes(@Nonnull World world, @Nonnull Vector3d origin) {
         spawnBloodSpikes(world, null, origin, null);
+    }
+
+    public static void triggerThrownBloodImpact(
+            @Nonnull World world,
+            @Nullable UUID ownerBossId,
+            @Nonnull Vector3d impact
+    ) {
+        spawnBloodSpikes(world, ownerBossId, impact, null);
+        System.out.println("[PotionWitch][" + ownerBossId + "] bloodImpact thrown spikes=" + BLOOD_SPIKE_COUNT + " impact=" + fmtVec(impact.getX(), impact.getY(), impact.getZ()));
+        broadcastToWorld(world, "Potion Brewer Witch's blood potion bursts into racing spikes.");
     }
 
     public static void clearWorld(@Nonnull UUID worldId) {
@@ -141,9 +149,6 @@ public final class PotionBrewerWitchBloodSystem extends TickingSystem<EntityStor
         }
         synchronized (BLOOD_SPIKES_BY_WORLD) {
             BLOOD_SPIKES_BY_WORLD.remove(worldId);
-        }
-        synchronized (BLOOD_SPIKE_POOL_BY_WORLD) {
-            BLOOD_SPIKE_POOL_BY_WORLD.remove(worldId);
         }
     }
 
@@ -214,6 +219,7 @@ public final class PotionBrewerWitchBloodSystem extends TickingSystem<EntityStor
             @Nonnull World world,
             @Nonnull UUID worldId
     ) {
+        ArrayList<Ref<EntityStore>> suppressedProjectiles = new ArrayList<>();
         store.forEachChunk(PROJECTILE, (chunk, ignored) -> {
             for (int i = 0; i < chunk.size(); i++) {
                 StandardPhysicsProvider physics = chunk.getComponent(i, STANDARD_PHYSICS);
@@ -237,16 +243,29 @@ public final class PotionBrewerWitchBloodSystem extends TickingSystem<EntityStor
                     continue;
                 }
 
+                if (PotionBrewerWitchSystem.consumePendingProjectileSuppression(worldId, creatorUuid, BLOOD_POTION)) {
+                    suppressedProjectiles.add(projectileRef);
+                    System.out.println("[PotionWitch][" + creatorUuid + "] suppressProjectile blood self-use projectile=" + projectileId);
+                    continue;
+                }
+
                 if (consumePendingThrownBloodProjectile(worldId, creatorUuid)) {
                     synchronized (BLOOD_PROJECTILES_BY_WORLD) {
                         BLOOD_PROJECTILES_BY_WORLD
                                 .computeIfAbsent(worldId, ignoredWorld -> new HashMap<>())
                                 .put(projectileId, new BloodProjectile(projectileId, creatorUuid));
                     }
+                    System.out.println("[PotionWitch][" + creatorUuid + "] projectileClaim blood projectile=" + projectileId);
                     broadcastToWorld(world, "Potion Brewer Witch hurls a blood potion.");
                 }
             }
         });
+
+        for (Ref<EntityStore> projectileRef : suppressedProjectiles) {
+            if (projectileRef != null && projectileRef.isValid()) {
+                store.removeEntity(projectileRef, RemoveReason.REMOVE);
+            }
+        }
     }
 
     private void processThrownBloodProjectiles(
@@ -295,12 +314,14 @@ public final class PotionBrewerWitchBloodSystem extends TickingSystem<EntityStor
                         healBoss(store, bloodProjectile.ownerBossId, dealt * BLOOD_HEAL_RATIO);
                     }
                     broadcastToWorld(world, "Potion Brewer Witch's blood potion bursts and siphons life back to the boss.");
+                    System.out.println("[PotionWitch][" + bloodProjectile.ownerBossId + "] projectileBreak blood projectile=" + projectileId + " reason=hit");
                     toRemove.add(projectileRef);
                     consumedProjectiles.add(projectileId);
                     continue;
                 }
 
                 if (physics.getState() == StandardPhysicsProvider.STATE.RESTING && physics.isOnGround()) {
+                    System.out.println("[PotionWitch][" + bloodProjectile.ownerBossId + "] projectileBreak blood projectile=" + projectileId + " reason=ground");
                     toRemove.add(projectileRef);
                     consumedProjectiles.add(projectileId);
                 }
@@ -395,8 +416,13 @@ public final class PotionBrewerWitchBloodSystem extends TickingSystem<EntityStor
                 continue;
             }
 
-            teleportSpike(spike.baseRef, store, spike.currentX, spike.baseY, spike.currentZ);
-            teleportSpike(spike.tipRef, store, spike.currentX, spike.baseY + BLOOD_SPIKE_BODY_OFFSET, spike.currentZ);
+            boolean baseMoved = teleportSpike(spike.baseRef, store, spike.currentX, spike.baseY, spike.currentZ);
+            boolean tipMoved = teleportSpike(spike.tipRef, store, spike.currentX, spike.baseY + BLOOD_SPIKE_BODY_OFFSET, spike.currentZ);
+            if (!baseMoved || !tipMoved) {
+                releaseSpikeVisuals(store, worldId, spike);
+                expired.add(spike);
+                continue;
+            }
 
             boolean spikeRemoved = false;
             for (PlayerSnapshot player : players) {
@@ -487,13 +513,13 @@ public final class PotionBrewerWitchBloodSystem extends TickingSystem<EntityStor
             @Nonnull UUID worldId,
             @Nonnull BloodSpike spike
     ) {
-        releaseSpikeRef(store, worldId, spike.baseRef);
-        releaseSpikeRef(store, worldId, spike.tipRef);
+        removeSpikeRef(store, spike.baseRef);
+        removeSpikeRef(store, spike.tipRef);
         spike.baseRef = null;
         spike.tipRef = null;
     }
 
-    private static void teleportSpike(
+    private static boolean teleportSpike(
             @Nullable Ref<EntityStore> ref,
             @Nonnull Store<EntityStore> store,
             double x,
@@ -501,16 +527,22 @@ public final class PotionBrewerWitchBloodSystem extends TickingSystem<EntityStor
             double z
     ) {
         if (ref == null || !ref.isValid()) {
-            return;
+            return false;
+        }
+        World world = store.getExternalData().getWorld();
+        if (!isChunkLoaded(world, x, z)) {
+            System.out.println("[PotionWitch][bloodSpike] skipMove unloadedChunk pos=" + fmtVec(x, y, z));
+            return false;
         }
         TransformComponent transform = store.getComponent(ref, TRANSFORM);
         if (transform == null) {
-            return;
+            return false;
         }
         TransformComponent updated = transform.clone();
         updated.teleportPosition(new Vector3d(x, y, z));
         updated.markChunkDirty(store);
         store.putComponent(ref, TRANSFORM, updated);
+        return true;
     }
 
     @Nullable
@@ -522,69 +554,23 @@ public final class PotionBrewerWitchBloodSystem extends TickingSystem<EntityStor
             double z,
             float scale
     ) {
-        Ref<EntityStore> pooled = takePooledSpikeBlock(worldId);
-        if (pooled != null && pooled.isValid()) {
-            setSpikeTransform(store, pooled, x, y, z, scale);
-            return pooled;
+        World world = store.getExternalData().getWorld();
+        if (!isChunkLoaded(world, x, z)) {
+            System.out.println("[PotionWitch][bloodSpike] skipSpawn unloadedChunk pos=" + fmtVec(x, y, z));
+            return null;
         }
         return spawnSpikeBlock(store, x, y, z, scale);
     }
 
-    private static void releaseSpikeRef(
+    private static void removeSpikeRef(
             @Nonnull Store<EntityStore> store,
-            @Nonnull UUID worldId,
             @Nullable Ref<EntityStore> spikeRef
     ) {
         if (spikeRef == null || !spikeRef.isValid()) {
             return;
         }
-        setSpikeTransform(store, spikeRef, 0.0d, BLOOD_SPIKE_POOL_HIDE_Y, 0.0d, BLOOD_SPIKE_HIDDEN_SCALE);
-        synchronized (BLOOD_SPIKE_POOL_BY_WORLD) {
-            BLOOD_SPIKE_POOL_BY_WORLD
-                    .computeIfAbsent(worldId, ignored -> new LinkedList<>())
-                    .addLast(spikeRef);
-        }
-    }
-
-    @Nullable
-    private static Ref<EntityStore> takePooledSpikeBlock(@Nonnull UUID worldId) {
-        synchronized (BLOOD_SPIKE_POOL_BY_WORLD) {
-            LinkedList<Ref<EntityStore>> pool = BLOOD_SPIKE_POOL_BY_WORLD.get(worldId);
-            if (pool == null) {
-                return null;
-            }
-            while (!pool.isEmpty()) {
-                Ref<EntityStore> ref = pool.removeFirst();
-                if (ref != null && ref.isValid()) {
-                    if (pool.isEmpty()) {
-                        BLOOD_SPIKE_POOL_BY_WORLD.remove(worldId);
-                    }
-                    return ref;
-                }
-            }
-            BLOOD_SPIKE_POOL_BY_WORLD.remove(worldId);
-            return null;
-        }
-    }
-
-    private static void setSpikeTransform(
-            @Nonnull Store<EntityStore> store,
-            @Nonnull Ref<EntityStore> ref,
-            double x,
-            double y,
-            double z,
-            float scale
-    ) {
-        TransformComponent transform = store.getComponent(ref, TRANSFORM);
-        if (transform != null) {
-            TransformComponent updatedTransform = transform.clone();
-            updatedTransform.teleportPosition(new Vector3d(x, y, z));
-            updatedTransform.markChunkDirty(store);
-            store.putComponent(ref, TRANSFORM, updatedTransform);
-        }
-
-        store.putComponent(ref, EntityScaleComponent.getComponentType(), new EntityScaleComponent(scale));
-        store.putComponent(ref, Velocity.getComponentType(), new Velocity());
+        store.putComponent(spikeRef, EntityScaleComponent.getComponentType(), new EntityScaleComponent(0.01f));
+        store.putComponent(spikeRef, Velocity.getComponentType(), new Velocity());
     }
 
     @Nullable
@@ -615,6 +601,16 @@ public final class PotionBrewerWitchBloodSystem extends TickingSystem<EntityStor
             blockEntity.getSimplePhysicsProvider().setResting(true);
         }
         return ref;
+    }
+
+    private static boolean isChunkLoaded(@Nonnull World world, double x, double z) {
+        long chunkIndex = ChunkUtil.indexChunkFromBlock((int) Math.floor(x), (int) Math.floor(z));
+        return world.getChunk(chunkIndex) != null;
+    }
+
+    @Nonnull
+    private static String fmtVec(double x, double y, double z) {
+        return String.format(java.util.Locale.ROOT, "(%.2f, %.2f, %.2f)", x, y, z);
     }
 
     private static boolean consumePendingThrownBloodProjectile(@Nonnull UUID worldId, @Nonnull UUID bossId) {

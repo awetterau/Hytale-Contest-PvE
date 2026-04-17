@@ -26,6 +26,7 @@ import java.util.ArrayDeque;
 import java.util.concurrent.ThreadLocalRandom;
 import com.hypixel.hytale.server.npc.NPCPlugin;
 import com.hypixel.hytale.server.npc.asset.builder.BuilderInfo;
+import com.hypixel.hytale.server.npc.entities.NPCEntity;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
 
@@ -60,6 +61,7 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
             this.executedAutomationByWorld.clear();
             this.failedAutomationByWorld.clear();
             this.pendingGrowthByWorld.clear();
+            this.witchSpawnedInWorld.clear();
             return;
         }
         if (snapshot.phase() != GameSessionManager.RunPhase.EXPLORATION
@@ -68,6 +70,7 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
             this.executedAutomationByWorld.clear();
             this.failedAutomationByWorld.clear();
             this.pendingGrowthByWorld.clear();
+            this.witchSpawnedInWorld.remove(snapshot.runWorldUuid());
             return;
         }
 
@@ -586,6 +589,15 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
 
     private void trySpawnWitch(@Nonnull World world, @Nonnull UUID worldId) {
         try {
+            int existingWitches = countExistingWitches(world);
+            if (existingWitches > 0) {
+                this.witchSpawnedInWorld.put(worldId, true);
+                if (existingWitches > 1) {
+                    System.out.println("[GameRunDirector] Found " + existingWitches + " Potion Brewer Witches in world " + world.getName() + "; suppressing additional spawn.");
+                }
+                return;
+            }
+
             NPCPlugin npcPlugin = NPCPlugin.get();
             if (npcPlugin == null) {
                 return;
@@ -612,6 +624,26 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
         } catch (Exception e) {
             System.err.println("[ERROR] Failed to spawn witch: " + e.getMessage());
         }
+    }
+
+    private static int countExistingWitches(@Nonnull World world) {
+        Store<EntityStore> store = world.getEntityStore().getStore();
+        final int[] count = {0};
+        store.forEachChunk(NPCEntity.getComponentType(), (chunk, ignored) -> {
+            int size = chunk.size();
+            for (int i = 0; i < size; i++) {
+                NPCEntity npc = chunk.getComponent(i, NPCEntity.getComponentType());
+                Ref<EntityStore> ref = chunk.getReferenceTo(i);
+                if (npc != null
+                        && POTION_BREWER_WITCH_ROLE.equals(npc.getRoleName())
+                        && ref != null
+                        && ref.isValid()
+                        && !npc.isDespawning()) {
+                    count[0]++;
+                }
+            }
+        });
+        return count[0];
     }
 
 }

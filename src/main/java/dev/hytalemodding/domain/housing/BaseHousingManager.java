@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class BaseHousingManager {
@@ -80,12 +81,14 @@ public final class BaseHousingManager {
     );
     private static final double FARMER_WAITING_RADIUS_SQUARED = 16.0D;
     private static final double FARMER_HOME_RADIUS_SQUARED = 16.0D;
+    private static final boolean DISABLE_FARMER_BASE_NPC = true;
     private static final BaseHousingManager INSTANCE = new BaseHousingManager();
 
     private final ConcurrentHashMap<String, PlotData> plots = new ConcurrentHashMap<>();
     private final HubNpcManager hubNpcManager = HubNpcManager.get();
     private boolean loaded;
     private final ConcurrentHashMap<String, Long> lastSpawnAttemptByRole = new ConcurrentHashMap<>();
+    private static final Set<Ref<EntityStore>> PENDING_NPC_DESPAWNS = ConcurrentHashMap.newKeySet();
 
     private BaseHousingManager() {
     }
@@ -718,6 +721,13 @@ public final class BaseHousingManager {
         if (world == null || !GameFlowConfigManager.get().getHubWorldName().equalsIgnoreCase(world.getName())) {
             return;
         }
+        if (DISABLE_FARMER_BASE_NPC) {
+            int queued = removeAllBaseFarmersInWorld(world);
+            if (queued > 0) {
+                System.out.println("[BaseHousing] Farmer_Base temporarily disabled; queued despawn count=" + queued);
+            }
+            return;
+        }
         syncFarmerRescueStateFromHub(world);
         ensureFarmerHubFlow(world);
     }
@@ -791,10 +801,7 @@ public final class BaseHousingManager {
         Store<EntityStore> store = world.getEntityStore().getStore();
         Collection<Ref<EntityStore>> refs = findAllNpcByRole(store, roleName);
         for (Ref<EntityStore> ref : refs) {
-            NPCEntity npc = ref == null || !ref.isValid() ? null : store.getComponent(ref, NPCEntity.getComponentType());
-            if (npc != null) {
-                npc.setToDespawn();
-                store.putComponent(ref, NPCEntity.getComponentType(), npc);
+            if (queueNpcDespawn(world, ref, roleName, "remove-all")) {
                 removed++;
             }
         }
@@ -831,23 +838,24 @@ public final class BaseHousingManager {
         Store<EntityStore> store = world.getEntityStore().getStore();
         Collection<Ref<EntityStore>> all = findAllNpcByRole(store, roleName);
         Ref<EntityStore> existing = null;
+        List<Ref<EntityStore>> duplicates = new ArrayList<>();
         for (Ref<EntityStore> ref : all) {
-            if (ref == null || !ref.isValid()) {
-                continue;
-            }
-            NPCEntity candidate = store.getComponent(ref, NPCEntity.getComponentType());
-            if (candidate == null || candidate.isDespawning()) {
+            if (!isUsableNpcRef(ref, roleName)) {
                 continue;
             }
             if (existing == null) {
                 existing = ref;
                 continue;
             }
-            NPCEntity duplicate = store.getComponent(ref, NPCEntity.getComponentType());
-            if (duplicate != null && !duplicate.isDespawning()) {
-                duplicate.setToDespawn();
-                store.putComponent(ref, NPCEntity.getComponentType(), duplicate);
+            duplicates.add(ref);
+        }
+
+        if (!duplicates.isEmpty()) {
+            for (Ref<EntityStore> duplicate : duplicates) {
+                queueNpcDespawn(world, duplicate, roleName, "duplicate");
             }
+            // Give the engine a tick to process queued removals before spawning or moving this role again.
+            return;
         }
 
         if (existing == null || !existing.isValid()) {
@@ -1124,16 +1132,44 @@ public final class BaseHousingManager {
     }
 
     private static boolean isUsableNpcRef(@Nullable Ref<EntityStore> ref, @Nonnull String roleName) {
-        if (ref == null || !ref.isValid()) {
+        if (ref == null || PENDING_NPC_DESPAWNS.contains(ref) || !ref.isValid()) {
             return false;
         }
         Store<EntityStore> store = ref.getStore();
+        if (store == null) {
+            return false;
+        }
         NPCEntity npc = store.getComponent(ref, NPCEntity.getComponentType());
         if (npc == null || npc.isDespawning() || npc.getRoleName() == null || !roleName.equals(npc.getRoleName())) {
             return false;
         }
         TransformComponent transform = store.getComponent(ref, TransformComponent.getComponentType());
         return transform != null;
+    }
+
+    private static boolean queueNpcDespawn(@Nonnull World world, @Nullable Ref<EntityStore> ref, @Nonnull String roleName, @Nonnull String reason) {
+        if (!isUsableNpcRef(ref, roleName) || !PENDING_NPC_DESPAWNS.add(ref)) {
+            return false;
+        }
+        System.out.println("[BaseHousing] Queued despawn role=" + roleName + " reason=" + reason);
+        world.execute(() -> {
+            try {
+                Store<EntityStore> store = ref.getStore();
+                if (store == null || !ref.isValid()) {
+                    return;
+                }
+                NPCEntity npc = store.getComponent(ref, NPCEntity.getComponentType());
+                if (npc == null || npc.isDespawning() || npc.getRoleName() == null || !roleName.equals(npc.getRoleName())) {
+                    return;
+                }
+                npc.setToDespawn();
+                store.putComponent(ref, NPCEntity.getComponentType(), npc);
+                System.out.println("[BaseHousing] Despawned role=" + roleName + " reason=" + reason);
+            } finally {
+                PENDING_NPC_DESPAWNS.remove(ref);
+            }
+        });
+        return true;
     }
 
     private static boolean isNpcCloseTo(

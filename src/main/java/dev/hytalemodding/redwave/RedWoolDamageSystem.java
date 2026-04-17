@@ -26,16 +26,18 @@ import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import javax.annotation.Nonnull;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RedWoolDamageSystem extends EntityTickingSystem<EntityStore> {
     private static final float DAMAGE_INTERVAL_SECONDS = 0.5f;
     private static final float DAMAGE_PER_TICK = 5.0f;
-    private static final float HAZARD_TRANSITION_SECONDS = 0.6f;
-    private static final float NATURAL_TRANSITION_SECONDS = 0.8f;
-    private static final float WEATHER_APPLY_INTERVAL_SECONDS = 0.6f;
     private static final float EXIT_CONFIRM_SECONDS = 2.0f;
+    private static final float WORLD_FORCE_PLAYER_TRANSITION_SECONDS = 0.6f;
+    private static final float WORLD_RESTORE_PLAYER_TRANSITION_SECONDS = 0.6f;
+    private static final boolean DEBUG_HAZARD_WEATHER = false;
     private static volatile boolean HAZARD_FOG_ENABLED = true;
+    private static volatile boolean loggedWeatherIndexResolution = false;
 
     private static final ComponentType<EntityStore, Player> PLAYER = Player.getComponentType();
     private static final ComponentType<EntityStore, TransformComponent> TRANSFORM = TransformComponent.getComponentType();
@@ -45,6 +47,10 @@ public class RedWoolDamageSystem extends EntityTickingSystem<EntityStore> {
     private final Query<EntityStore> query = Query.and(PLAYER, TRANSFORM, PLAYER_REF, WEATHER_TRACKER);
     private final ConcurrentHashMap<Ref<EntityStore>, Float> elapsedOnHazard = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<java.util.UUID, HazardWeatherState> hazardWeatherStateByPlayer = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<java.util.UUID, Boolean> lastHazardPresenceByPlayer = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Set<java.util.UUID>> hazardFogPlayersByWorld = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, String> previousForcedWeatherByWorld = new ConcurrentHashMap<>();
+    private final Set<String> worldsWithNullPreviousForcedWeather = ConcurrentHashMap.newKeySet();
 
     @Nonnull
     @Override
@@ -72,14 +78,15 @@ public class RedWoolDamageSystem extends EntityTickingSystem<EntityStore> {
         World world = store.getExternalData().getWorld();
         java.util.UUID playerId = playerRef.getUuid();
         boolean onHazard = isStandingOnHazardBlockSafe(transform, world);
+        logHazardPresenceChange(playerId, transform, weatherTracker, onHazard);
         if (onHazard) {
             applyDamage(dt, index, archetypeChunk, commandBuffer, entityId);
             if (HAZARD_FOG_ENABLED) {
                 HazardWeatherState state = this.hazardWeatherStateByPlayer.computeIfAbsent(playerId, ignored -> new HazardWeatherState());
                 state.secondsOutsideHazard = 0.0f;
-                applyHazardWeather(playerRef, weatherTracker, state, dt, store);
+                applyHazardWeather(playerRef, weatherTracker, state, store);
             } else {
-                clearHazardWeatherForPlayer(playerRef, weatherTracker, playerId);
+                clearHazardWeatherForPlayer(playerRef, weatherTracker, playerId, world, store);
             }
             return;
         }
@@ -91,21 +98,57 @@ public class RedWoolDamageSystem extends EntityTickingSystem<EntityStore> {
         }
         state.secondsOutsideHazard += dt;
         if (state.secondsOutsideHazard >= EXIT_CONFIRM_SECONDS) {
-            clearHazardWeatherForPlayer(playerRef, weatherTracker, playerId);
+            clearHazardWeatherForPlayer(playerRef, weatherTracker, playerId, world, store);
         }
     }
 
     private void clearHazardWeatherForPlayer(
             @Nonnull PlayerRef playerRef,
             @Nonnull WeatherTracker weatherTracker,
-            @Nonnull java.util.UUID playerId
+            @Nonnull java.util.UUID playerId,
+            @Nonnull World world,
+            @Nonnull Store<EntityStore> store
     ) {
         HazardWeatherState state = this.hazardWeatherStateByPlayer.remove(playerId);
         if (state == null) {
             return;
         }
-        if (state.lastNaturalWeatherIndex != Integer.MIN_VALUE && weatherTracker.getWeatherIndex() != state.lastNaturalWeatherIndex) {
-            weatherTracker.sendWeatherIndex(playerRef, state.lastNaturalWeatherIndex, NATURAL_TRANSITION_SECONDS);
+        debugHazardWeather(
+                "CLEAR_REQUEST player=" + playerId
+                        + " currentWeather=" + weatherTracker.getWeatherIndex()
+                        + " restoringWeather=" + state.lastNaturalWeatherIndex
+                        + " applied=" + state.appliedAtLeastOnce
+                        + " outsideSeconds=" + state.secondsOutsideHazard
+                        + " env=" + weatherTracker.getEnvironmentId()
+        );
+        String worldName = world.getName();
+        Set<java.util.UUID> playersInHazard = this.hazardFogPlayersByWorld.get(worldName);
+        boolean lastHazardPlayer = false;
+        if (playersInHazard != null) {
+            playersInHazard.remove(playerId);
+            lastHazardPlayer = playersInHazard.isEmpty();
+            if (lastHazardPlayer) {
+                this.hazardFogPlayersByWorld.remove(worldName);
+            }
+        }
+        if (lastHazardPlayer) {
+            String previousForcedWeather = consumePreviousForcedWeather(worldName);
+            debugHazardWeather(
+                    "WORLD_FORCE_RESTORE player=" + playerId
+                            + " world=" + worldName
+                            + " restoringForcedWeather=" + previousForcedWeather
+            );
+            if (state.lastNaturalWeatherIndex != Integer.MIN_VALUE) {
+                weatherTracker.sendWeatherIndex(playerRef, state.lastNaturalWeatherIndex, WORLD_RESTORE_PLAYER_TRANSITION_SECONDS);
+            }
+            setWorldForcedWeather(world, store, previousForcedWeather);
+        } else {
+            debugHazardWeather(
+                    "WORLD_FORCE_KEEP player=" + playerId
+                            + " world=" + worldName
+                            + " currentWeather=" + weatherTracker.getWeatherIndex()
+                            + " remainingHazardPlayers=" + (playersInHazard == null ? 0 : playersInHazard.size())
+            );
         }
     }
 
@@ -138,24 +181,37 @@ public class RedWoolDamageSystem extends EntityTickingSystem<EntityStore> {
             @Nonnull PlayerRef playerRef,
             @Nonnull WeatherTracker weatherTracker,
             @Nonnull HazardWeatherState state,
-            float dt,
             @Nonnull Store<EntityStore> store
     ) {
         int naturalWeatherIndex = resolveNaturalWeatherIndex(weatherTracker, store);
         if (naturalWeatherIndex != Integer.MIN_VALUE) {
             state.lastNaturalWeatherIndex = naturalWeatherIndex;
         }
-        state.secondsUntilNextApply -= dt;
-        if (state.appliedAtLeastOnce && state.secondsUntilNextApply > 0.0f) {
-            return;
-        }
-
+        World world = store.getExternalData().getWorld();
+        String worldName = world.getName();
         int hazardWeatherIndex = resolveWeatherIndexSafe(RedWaveConfig.CRIMSON_HAZARD_WEATHER_ID, RedWaveConfig.RUN_DEFAULT_WEATHER_ID);
-        if (!state.appliedAtLeastOnce || weatherTracker.getWeatherIndex() != hazardWeatherIndex) {
-            weatherTracker.sendWeatherIndex(playerRef, hazardWeatherIndex, HAZARD_TRANSITION_SECONDS);
+        logWeatherIndexResolutionOnce(hazardWeatherIndex);
+        Set<java.util.UUID> playersInHazard = this.hazardFogPlayersByWorld.computeIfAbsent(worldName, ignored -> ConcurrentHashMap.newKeySet());
+        boolean wasEmpty = playersInHazard.isEmpty();
+        boolean added = playersInHazard.add(playerRef.getUuid());
+        if (wasEmpty && added) {
+            rememberPreviousForcedWeather(worldName, world.getWorldConfig().getForcedWeather());
+            debugHazardWeather(
+                    "WORLD_FORCE_SEND player=" + playerRef.getUuid()
+                            + " world=" + worldName
+                            + " currentWeather=" + weatherTracker.getWeatherIndex()
+                            + " hazardWeather=" + hazardWeatherIndex
+                            + " hazardWeatherId=" + RedWaveConfig.CRIMSON_HAZARD_WEATHER_ID
+                            + " naturalWeather=" + state.lastNaturalWeatherIndex
+                            + " env=" + weatherTracker.getEnvironmentId()
+                            + " reason=first_world_hazard_player"
+            );
+            setWorldForcedWeather(world, store, RedWaveConfig.CRIMSON_HAZARD_WEATHER_ID);
+            weatherTracker.sendWeatherIndex(playerRef, hazardWeatherIndex, WORLD_FORCE_PLAYER_TRANSITION_SECONDS);
+        } else {
+            debugHazardWeather("WORLD_FORCE_SKIP player=" + playerRef.getUuid() + " world=" + worldName);
         }
         state.appliedAtLeastOnce = true;
-        state.secondsUntilNextApply = WEATHER_APPLY_INTERVAL_SECONDS;
     }
 
     private static int resolveNaturalWeatherIndex(@Nonnull WeatherTracker weatherTracker, @Nonnull Store<EntityStore> store) {
@@ -229,9 +285,77 @@ public class RedWoolDamageSystem extends EntityTickingSystem<EntityStore> {
         return 0;
     }
 
+    private void rememberPreviousForcedWeather(@Nonnull String worldName, String previousForcedWeather) {
+        if (previousForcedWeather == null || previousForcedWeather.isBlank()) {
+            this.previousForcedWeatherByWorld.remove(worldName);
+            this.worldsWithNullPreviousForcedWeather.add(worldName);
+            return;
+        }
+        this.worldsWithNullPreviousForcedWeather.remove(worldName);
+        this.previousForcedWeatherByWorld.put(worldName, previousForcedWeather);
+    }
+
+    private String consumePreviousForcedWeather(@Nonnull String worldName) {
+        String previousForcedWeather = this.previousForcedWeatherByWorld.remove(worldName);
+        if (previousForcedWeather != null) {
+            return previousForcedWeather;
+        }
+        this.worldsWithNullPreviousForcedWeather.remove(worldName);
+        return null;
+    }
+
+    private static void setWorldForcedWeather(@Nonnull World world, @Nonnull Store<EntityStore> store, String weatherId) {
+        WeatherResource weatherResource = store.getResource(WeatherResource.getResourceType());
+        if (weatherResource != null) {
+            weatherResource.setForcedWeather(weatherId);
+        }
+        world.getWorldConfig().setForcedWeather(weatherId);
+        world.getWorldConfig().markChanged();
+    }
+
+    private void logHazardPresenceChange(
+            @Nonnull java.util.UUID playerId,
+            @Nonnull TransformComponent transform,
+            @Nonnull WeatherTracker weatherTracker,
+            boolean onHazard
+    ) {
+        Boolean previous = this.lastHazardPresenceByPlayer.put(playerId, onHazard);
+        if (previous != null && previous == onHazard) {
+            return;
+        }
+        Vector3d pos = transform.getPosition();
+        debugHazardWeather(
+                "PRESENCE player=" + playerId
+                        + " onHazard=" + onHazard
+                        + " pos=" + MathUtil.floor(pos.getX()) + "," + MathUtil.floor(pos.getY()) + "," + MathUtil.floor(pos.getZ())
+                        + " currentWeather=" + weatherTracker.getWeatherIndex()
+                        + " env=" + weatherTracker.getEnvironmentId()
+        );
+    }
+
+    private static void logWeatherIndexResolutionOnce(int resolvedHazardWeatherIndex) {
+        if (loggedWeatherIndexResolution) {
+            return;
+        }
+        loggedWeatherIndexResolution = true;
+        debugHazardWeather(
+                "INDEXES "
+                        + RedWaveConfig.RUN_DEFAULT_WEATHER_ID + "=" + Weather.getAssetMap().getIndex(RedWaveConfig.RUN_DEFAULT_WEATHER_ID)
+                        + " "
+                        + RedWaveConfig.CRIMSON_HAZARD_WEATHER_ID + "=" + Weather.getAssetMap().getIndex(RedWaveConfig.CRIMSON_HAZARD_WEATHER_ID)
+                        + " resolvedHazard=" + resolvedHazardWeatherIndex
+        );
+    }
+
+    private static void debugHazardWeather(@Nonnull String message) {
+        if (!DEBUG_HAZARD_WEATHER) {
+            return;
+        }
+        System.out.println("[HazardFogDebug] " + message);
+    }
+
     private static final class HazardWeatherState {
         private boolean appliedAtLeastOnce = false;
-        private float secondsUntilNextApply = 0.0f;
         private float secondsOutsideHazard = 0.0f;
         private int lastNaturalWeatherIndex = Integer.MIN_VALUE;
     }
