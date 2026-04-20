@@ -66,7 +66,7 @@ public final class OrangeBlobExtractionConfigManager {
                 readDouble(properties, prefix + "defendRadiusBlocks", 12.0d),
                 readLong(properties, prefix + "defenseDurationMs", 30000L),
                 readLong(properties, prefix + "readyExtractWindowMs", 60000L),
-                readBoolean(properties, prefix + "enemySpawnsEnabled", false),
+                readBoolean(properties, prefix + "enemySpawnsEnabled", true),
                 readLong(properties, prefix + "waveIntervalMs", 10000L),
                 readInt(properties, prefix + "mobsPerWave", 2),
                 readInt(properties, prefix + "maxWaves", 2),

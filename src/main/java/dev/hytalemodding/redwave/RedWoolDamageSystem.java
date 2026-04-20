@@ -144,4 +144,8 @@ public class RedWoolDamageSystem extends EntityTickingSystem<EntityStore> {
         return RedWaveConfig.CRIMSON_BLOCK_ID.equals(id) || RedWaveConfig.OPTIONAL_CRIMSON_VOID_DAMAGE_BLOCK_ID.equals(id);
     }
 
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 8bc37ea (Extraction push)

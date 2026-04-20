@@ -1,0 +1,56 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.Blob_Corner_Block.name"
+  },
+  "Icon": "Icons/ItemsGenerated/Blob_Corner_Block.png",
+  "Categories": [
+    "Blocks.Cloth"
+  ],
+  "BlockType": {
+    "Material": "Solid",
+    "DrawType": "Model",
+    "Group": "Cloth",
+    "Flags": {},
+    "Gathering": {
+      "Breaking": {
+        "GatherType": "SoftBlocks"
+      }
+    },
+    "BlockParticleSetId": "Dust",
+    "BlockSoundSetId": "Cloth",
+    "ParticleColor": "#55524f",
+    "State": {
+      "Property": "state",
+      "Default": "On",
+      "Definitions": {
+        "On": {}
+      }
+    },
+    "CustomModel": "Blocks/d97's/Extraction/Blob_Corner_Block.blockymodel",
+    "CustomModelTexture": [
+      {
+        "Texture": "Blocks/d97's/Extraction/Blob_Corner_Block.png"
+      }
+    ],
+    "VariantRotation": "UpDownNESW"
+  },
+  "PlayerAnimationsId": "Block",
+  "Tags": {
+    "Type": [
+      "Cloth"
+    ]
+  },
+  "ItemSoundSetId": "ISS_Items_Cloth",
+  "IconProperties": {
+    "Scale": 0.7,
+    "Rotation": [
+      359,
+      347,
+      349
+    ],
+    "Translation": [
+      -2,
+      -19
+    ]
+  }
+}

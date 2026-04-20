@@ -6,7 +6,15 @@
       "PositionOffset": {
         "Y": -2
       }
+    },
+    {
+      "SpawnerId": "Crimson_Fog_B",
+      "FixedRotation": true,
+      "PositionOffset": {
+        "Y": -2
+      }
     }
   ],
-  "CullDistance": 30
+  "CullDistance": 30,
+  "IsImportant": false
 }

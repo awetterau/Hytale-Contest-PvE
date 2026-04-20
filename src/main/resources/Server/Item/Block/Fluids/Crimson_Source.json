@@ -1,7 +1,7 @@
 {
   "MaxFluidLevel": 1,
   "Effect": [
-    "Slime"
+    "Lava"
   ],
   "Opacity": "Transparent",
   "Textures": [

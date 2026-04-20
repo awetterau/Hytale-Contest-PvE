@@ -29,8 +29,14 @@ Group {
       Background: (Color: #441010(0.92));
     }
 
-    TextButton #NavChunksButton {
+    TextButton #NavExtractionButton {
       Anchor: (Left: 10, Top: 156, Right: 10, Height: 36);
+      Text: "Extractions";
+      Background: (Color: #441010(0.92));
+    }
+
+    TextButton #NavChunksButton {
+      Anchor: (Left: 10, Top: 198, Right: 10, Height: 36);
       Text: "Chunk Tools";
       Background: (Color: #441010(0.92));
     }
@@ -112,6 +118,56 @@ Group {
       Style: (HorizontalAlignment: Start, VerticalAlignment: Start);
     }
 
+    Group #ExtractionConfigSection {
+      Anchor: (Left: 8, Top: 176, Right: 8, Height: 418);
+      Background: (Color: #2f0b0b(0.72));
+      Visible: false;
+
+      Label {
+        Anchor: (Left: 8, Top: 8, Width: 220, Height: 18);
+        Text: "Extraction config";
+        Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
+      }
+
+      Label { Anchor: (Left: 8, Top: 36, Width: 200, Height: 18); Text: "Run enable from second"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+      NumberField #ExtractionRunFromInput { Anchor: (Left: 210, Top: 32, Right: 8, Height: 24); Value: 0; Background: (Color: #6a2b8e(0.35)); }
+
+      Label { Anchor: (Left: 8, Top: 66, Width: 200, Height: 18); Text: "Run disable after second"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+      NumberField #ExtractionRunUntilInput { Anchor: (Left: 210, Top: 62, Right: 8, Height: 24); Value: 1200; Background: (Color: #6a2b8e(0.35)); }
+
+      Label { Anchor: (Left: 8, Top: 96, Width: 200, Height: 18); Text: "Extraction wait (seconds)"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+      NumberField #ExtractionWaitInput { Anchor: (Left: 210, Top: 92, Right: 8, Height: 24); Value: 20; Background: (Color: #6a2b8e(0.35)); }
+      Label { Anchor: (Left: 8, Top: 126, Width: 200, Height: 18); Text: "Extraction window (seconds)"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+      NumberField #ExtractionWindowInput { Anchor: (Left: 210, Top: 122, Right: 8, Height: 24); Value: 1; Background: (Color: #6a2b8e(0.35)); }
+
+      Label { Anchor: (Left: 8, Top: 156, Width: 200, Height: 18); Text: "Enemy waves enabled"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+      TextField #ExtractionEnemyWavesInput { Anchor: (Left: 210, Top: 152, Right: 8, Height: 24); Value: "true"; Background: (Color: #6a2b8e(0.35)); }
+
+      Label { Anchor: (Left: 8, Top: 186, Width: 200, Height: 18); Text: "Enemies per wave"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+      NumberField #ExtractionEnemyMobsPerWaveInput { Anchor: (Left: 210, Top: 182, Right: 8, Height: 24); Value: 2; Background: (Color: #6a2b8e(0.35)); }
+
+      Label { Anchor: (Left: 8, Top: 216, Width: 200, Height: 18); Text: "Core max health"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+      NumberField #ExtractionCoreMaxHealthInput { Anchor: (Left: 210, Top: 212, Right: 8, Height: 24); Value: 300; Background: (Color: #6a2b8e(0.35)); }
+
+      Label { Anchor: (Left: 8, Top: 246, Width: 200, Height: 18); Text: "Extraction radius blocks"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+      NumberField #ExtractionRadiusInput { Anchor: (Left: 210, Top: 242, Right: 8, Height: 24); Value: 6; Background: (Color: #6a2b8e(0.35)); }
+
+      Label { Anchor: (Left: 8, Top: 276, Width: 110, Height: 18); Text: "Extract min H"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+      NumberField #ExtractionMinHeightInput { Anchor: (Left: 122, Top: 272, Width: 120, Height: 24); Value: -1; Background: (Color: #6a2b8e(0.35)); }
+      Label { Anchor: (Left: 248, Top: 276, Width: 84, Height: 18); Text: "Extract max H"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+      NumberField #ExtractionMaxHeightInput { Anchor: (Left: 334, Top: 272, Right: 8, Height: 24); Value: 3; Background: (Color: #6a2b8e(0.35)); }
+
+      Label { Anchor: (Left: 8, Top: 306, Width: 180, Height: 18); Text: "Enemy spawn min/max R"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+      NumberField #ExtractionEnemySpawnMinRadiusInput { Anchor: (Left: 190, Top: 302, Width: 90, Height: 24); Value: 7; Background: (Color: #6a2b8e(0.35)); }
+      NumberField #ExtractionEnemySpawnMaxRadiusInput { Anchor: (Left: 286, Top: 302, Right: 8, Height: 24); Value: 16; Background: (Color: #6a2b8e(0.35)); }
+
+      Label { Anchor: (Left: 8, Top: 336, Width: 180, Height: 18); Text: "Enemy spawn min/max H"; Style: (HorizontalAlignment: Start, VerticalAlignment: Center); }
+      NumberField #ExtractionEnemySpawnMinHeightInput { Anchor: (Left: 190, Top: 332, Width: 90, Height: 24); Value: -8; Background: (Color: #6a2b8e(0.35)); }
+      NumberField #ExtractionEnemySpawnMaxHeightInput { Anchor: (Left: 286, Top: 332, Right: 8, Height: 24); Value: 4; Background: (Color: #6a2b8e(0.35)); }
+
+      TextButton #ExtractionApplyButton { Anchor: (Right: 8, Top: 378, Width: 140, Height: 24); Text: "Apply extraction"; Background: (Color: #441010(0.92)); }
+    }
+
     Group #ChunkToolsSection {
       Anchor: (Left: 8, Top: 176, Width: 470, Height: 140);
       Background: (Color: #2f0b0b(0.72));
@@ -182,6 +238,12 @@ Group {
     TextButton #ToggleFogWeatherCenterButton {
       Anchor: (Right: 24, Top: 292, Width: 220, Height: 28);
       Text: "Hazard fog: ON";
+      Background: (Color: #441010(0.92));
+      Visible: false;
+    }
+    TextButton #ToggleCoreRadiusChatButton {
+      Anchor: (Right: 24, Top: 324, Width: 220, Height: 28);
+      Text: "Core radius chat: ON";
       Background: (Color: #441010(0.92));
       Visible: false;
     }
@@ -353,6 +415,21 @@ Group {
         Text: "Apply Action";
         Background: (Color: #441010(0.92));
       }
+    }
+
+    Group #ExtractionSection {
+      Anchor: (Left: 10, Top: 142, Right: 10, Bottom: 10);
+      Background: (Color: #5f1a31(0.64));
+      Visible: false;
+
+      Label #ExtractionSubsectionLabel {
+        Anchor: (Left: 8, Top: 8, Right: 8, Height: 20);
+        Text: "Subsection: Runa de plataforma";
+        Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
+      }
+
+      TextButton #ExtractionPlatformButton { Anchor: (Left: 8, Top: 40, Right: 8, Height: 32); Text: "Runa de plataforma"; Background: (Color: #441010(0.92)); }
+      TextButton #ExtractionRopeButton { Anchor: (Left: 8, Top: 78, Right: 8, Height: 32); Text: "Cuerda de escape"; Background: (Color: #441010(0.92)); }
     }
   }
 }

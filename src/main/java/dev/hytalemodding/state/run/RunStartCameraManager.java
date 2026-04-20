@@ -139,6 +139,7 @@ public final class RunStartCameraManager {
             if (!session.cameraApplied) {
                 hideIntroHud(playerRef);
                 applyTrackingCamera(playerRef, session.cameraOffset);
+                RunStartMovementLockManager.get().lockPlayerForIntro(playerRef);
                 applyIntroPresentation(world, playerRef, session);
                 session.cameraApplied = true;
                 session.cameraAppliedAtMs = now;

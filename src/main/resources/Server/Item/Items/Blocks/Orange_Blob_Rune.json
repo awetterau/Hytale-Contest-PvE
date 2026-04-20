@@ -3,13 +3,13 @@
     "Name": "server.items.Orange_Blob_Rune.name",
     "Description": "server.items.Orange_Blob_Rune.description"
   },
-  "Icon": "Icons/ItemsGenerated/Soil_Clay_Brick.png",
+  "Icon": "Icons/ItemsGenerated/Blob_Rune.png",
   "Categories": [
     "Blocks.Soils"
   ],
   "BlockType": {
     "Material": "Solid",
-    "DrawType": "Cube",
+    "DrawType": "Model",
     "Group": "Dirt",
     "Flags": {
       "IsUsable": true
@@ -20,14 +20,8 @@
       }
     },
     "BlockParticleSetId": "Stone",
-    "Textures": [
-      {
-        "Weight": 1,
-        "All": "BlockTextures/Soil_Clay_Brick.png"
-      }
-    ],
     "BlockSoundSetId": "Stone",
-    "ParticleColor": "#ffae42",
+    "ParticleColor": "#5b5753",
     "State": {
       "Property": "state",
       "Default": "On",
@@ -41,11 +35,32 @@
       "Use": {
         "Interactions": [
           {
-            "Type": "orange_blob_block_use_interaction"
+            "Type": "orange_blob_block_use_interaction",
+            "Effects": {
+              "Particles": [
+                {
+                  "Scale": 2,
+                  "PositionOffset": {
+                    "Y": -2
+                  },
+                  "SystemId": "Rune_Activated_Spawn"
+                }
+              ]
+            }
           }
         ]
       }
-    }
+    },
+    "CustomModel": "Blocks/d97's/Extraction/Blob_Rune.blockymodel",
+    "CustomModelTexture": [
+      {
+        "Texture": "Blocks/d97's/Extraction/Blob_Rune.png"
+      }
+    ],
+    "CustomModelAnimation": "Blocks/d97's/Extraction/Blob_Rune.blockyanim",
+    "Looping": true,
+    "HitboxType": "Blob_Rune",
+    "VariantRotation": "NESW"
   },
   "PlayerAnimationsId": "Block",
   "Tags": {
@@ -53,5 +68,17 @@
       "Soil"
     ]
   },
-  "ItemSoundSetId": "ISS_Blocks_Soft"
+  "ItemSoundSetId": "ISS_Blocks_Soft",
+  "IconProperties": {
+    "Scale": 0.35,
+    "Rotation": [
+      6,
+      23,
+      4
+    ],
+    "Translation": [
+      4,
+      -22
+    ]
+  }
 }

@@ -1,0 +1,72 @@
+{
+  "formatVersion": 1,
+  "duration": 600,
+  "holdLastKeyframe": false,
+  "nodeAnimations": {
+    "Block": {
+      "position": [
+        {
+          "time": 0,
+          "delta": {"x": 0, "y": 0, "z": 0},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 153,
+          "delta": {"x": -3.26, "y": 1.14, "z": -0.64},
+          "interpolationType": "smooth"
+        },
+        {
+          "time": 300,
+          "delta": {"x": -2, "y": -0.97, "z": 3},
+          "interpolationType": "smooth"
+        },
+        {
+          "time": 423,
+          "delta": {"x": 0.88, "y": 2.46, "z": -0.32},
+          "interpolationType": "smooth"
+        },
+        {
+          "time": 533,
+          "delta": {"x": 0.42, "y": -1.83, "z": -0.15},
+          "interpolationType": "smooth"
+        }
+      ],
+      "orientation": [
+        {
+          "time": 0,
+          "delta": {"x": 0, "y": 0, "z": 0, "w": 1},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 280,
+          "delta": {"x": -0.02617, "y": -0.02617, "z": -0.00069, "w": 0.99931},
+          "interpolationType": "linear"
+        }
+      ],
+      "shapeStretch": [
+        {
+          "time": 0,
+          "delta": {"x": 1, "y": 1, "z": 1},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 78,
+          "delta": {"x": 1.03, "y": 1.04, "z": 1.03},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 278,
+          "delta": {"x": 1.05, "y": 1.1, "z": 1.08},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 540,
+          "delta": {"x": 1.03, "y": 1.04, "z": 1.03},
+          "interpolationType": "linear"
+        }
+      ],
+      "shapeVisible": [],
+      "shapeUvOffset": []
+    }
+  }
+}

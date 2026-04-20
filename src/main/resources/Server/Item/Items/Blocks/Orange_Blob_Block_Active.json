@@ -21,11 +21,13 @@
     "Textures": [
       {
         "Weight": 1,
-        "All": "BlockTextures/Cloth_Orange.png"
+        "All": "BlockTextures/Blob_Block.png"
       }
     ],
     "BlockSoundSetId": "Cloth",
-    "ParticleColor": "#996720"
+    "ParticleColor": "#996720",
+    "CustomModelAnimation": "Blocks/d97's/Extraction/Block_Rebound.blockyanim",
+    "Looping": true
   },
   "PlayerAnimationsId": "Block",
   "Tags": {

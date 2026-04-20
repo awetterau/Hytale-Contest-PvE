@@ -1,0 +1,52 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.Blob_Rocks_Active.name"
+  },
+  "Icon": "Icons/ItemsGenerated/Blob_Rocks.png",
+  "Categories": [
+    "Blocks.Cloth"
+  ],
+  "BlockType": {
+    "Material": "Solid",
+    "DrawType": "Model",
+    "Group": "Cloth",
+    "Flags": {},
+    "CustomModel": "Blocks/d97's/Extraction/Blob_Rock.blockymodel",
+    "CustomModelTexture": [
+      {
+        "Texture": "Blocks/d97's/Extraction/Blob_Rock_00.png"
+      },
+      {
+        "Texture": "Blocks/d97's/Extraction/Blob_Rock_01.png"
+      },
+      {
+        "Texture": "Blocks/d97's/Extraction/Blob_Rock_02.png"
+      },
+      {
+        "Texture": "Blocks/d97's/Extraction/Blob_Rock_03.png"
+      },
+      {
+        "Texture": "Blocks/d97's/Extraction/Blob_Rock_04.png"
+      }
+    ],
+    "VariantRotation": "NESW",
+    "CustomModelAnimation": "Blocks/d97's/Extraction/Blob_Rocks.blockyanim",
+    "Looping": true,
+    "Gathering": {
+      "Breaking": {
+        "GatherType": "SoftBlocks"
+      }
+    },
+    "BlockParticleSetId": "Dust",
+    "BlockSoundSetId": "Cloth",
+    "ParticleColor": "#4c4740",
+    "HitboxType": "Blob_Rocks"
+  },
+  "PlayerAnimationsId": "Block",
+  "Tags": {
+    "Type": [
+      "Cloth"
+    ]
+  },
+  "ItemSoundSetId": "ISS_Items_Cloth"
+}

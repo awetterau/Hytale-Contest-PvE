@@ -1,15 +1,29 @@
 // GameTimerHud.ui - Custom UI for displaying the game timer and witch marker
 
 Group #GameTimerHud {
-  Anchor: (Top: 35, Width: 150, Height: 30);
+  Anchor: (Top: 20, Width: 320, Height: 92);
   Padding: (Full: 8);
   LayoutMode: Middle;
 
   Label #TimerLabel {
+    Anchor: (Top: 0, Width: 180, Height: 34);
     Text: "05:00";
     Style: (
       FontSize: 24,
       TextColor: #ffffff,
+      HorizontalAlignment: Center,
+      VerticalAlignment: Center,
+      RenderBold: true
+    );
+  }
+
+  Label #ExtractionTimerLabel {
+    Anchor: (Top: 40, Width: 320, Height: 42);
+    Text: "";
+    Visible: false;
+    Style: (
+      FontSize: 34,
+      TextColor: #ffae42,
       HorizontalAlignment: Center,
       VerticalAlignment: Center,
       RenderBold: true

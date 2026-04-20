@@ -13,6 +13,7 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.state.run.RunEnvironmentPainter;
+import dev.hytalemodding.state.transition.GameFlowConfigManager;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.ThreadLocalRandom;
@@ -262,6 +263,10 @@ public class RedWaveBlockSweepSystem extends TickingSystem<EntityStore> {
     }
 
     private static void sendRunWorldProgressMessage(@Nonnull UUID worldId, @Nonnull String message) {
+        GameFlowConfigManager config = GameFlowConfigManager.get();
+        if (!config.isStatusMessagesEnabled() || !config.isCoreRadiusChatMessagesEnabled()) {
+            return;
+        }
         for (PlayerRef playerRef : Universe.get().getPlayers()) {
             if (playerRef == null || playerRef.getWorldUuid() == null || !worldId.equals(playerRef.getWorldUuid())) {
                 continue;

@@ -3,13 +3,13 @@
     "Name": "server.items.Orange_Blob_Rune_Active.name",
     "Description": "server.items.Orange_Blob_Rune_Active.description"
   },
-  "Icon": "Icons/ItemsGenerated/Soil_Clay_Brick.png",
+  "Icon": "Icons/ItemsGenerated/Blob_Rune.png",
   "Categories": [
     "Blocks.Soils"
   ],
   "BlockType": {
     "Material": "Solid",
-    "DrawType": "Cube",
+    "DrawType": "Model",
     "Group": "Dirt",
     "Flags": {},
     "Gathering": {
@@ -18,14 +18,18 @@
       }
     },
     "BlockParticleSetId": "Stone",
-    "Textures": [
+    "CustomModel": "Blocks/d97's/Extraction/Blob_Rune.blockymodel",
+    "CustomModelTexture": [
       {
-        "Weight": 1,
-        "All": "BlockTextures/Soil_Clay_Brick.png"
+        "Texture": "Blocks/d97's/Extraction/Blob_Rune.png"
       }
     ],
+    "CustomModelAnimation": "Blocks/d97's/Extraction/Blob_Rune.blockyanim",
+    "Looping": true,
+    "HitboxType": "Blob_Rune",
     "BlockSoundSetId": "Stone",
-    "ParticleColor": "#ff7a00"
+    "ParticleColor": "#ff7a00",
+    "VariantRotation": "NESW"
   },
   "PlayerAnimationsId": "Block",
   "Tags": {

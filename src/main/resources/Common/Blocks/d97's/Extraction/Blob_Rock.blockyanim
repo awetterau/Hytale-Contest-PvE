@@ -1,0 +1,200 @@
+{
+  "formatVersion": 1,
+  "duration": 338,
+  "holdLastKeyframe": false,
+  "nodeAnimations": {
+    "Block": {
+      "position": [
+        {
+          "time": 0,
+          "delta": {"x": 0, "y": 0, "z": 0},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 55,
+          "delta": {"x": 0.1, "y": -7.4, "z": 0},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 105,
+          "delta": {"x": 0.2, "y": 2.65, "z": 0},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 248,
+          "delta": {"x": -0.2, "y": -7.16, "z": 0},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 323,
+          "delta": {"x": 0, "y": 0.1, "z": 0},
+          "interpolationType": "linear"
+        }
+      ],
+      "orientation": [],
+      "shapeStretch": [],
+      "shapeVisible": [],
+      "shapeUvOffset": []
+    },
+    "Pebbles": {
+      "position": [],
+      "orientation": [
+        {
+          "time": 0,
+          "delta": {"x": 0, "y": 0, "z": 0, "w": 1},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 68,
+          "delta": {"x": 0, "y": 0.57279, "z": 0.03002, "w": 0.81915},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 150,
+          "delta": {"x": 0, "y": 0.90434, "z": 0.04739, "w": 0.42417},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 228,
+          "delta": {"x": 0, "y": 0.95961, "z": 0.05029, "w": -0.27681},
+          "interpolationType": "linear"
+        }
+      ],
+      "shapeStretch": [],
+      "shapeVisible": [],
+      "shapeUvOffset": []
+    },
+    "Pebble_0": {
+      "position": [
+        {
+          "time": 0,
+          "delta": {"x": 0, "y": 0, "z": 0},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 85,
+          "delta": {"x": -1.12243, "y": 7.29179, "z": 6.02966},
+          "interpolationType": "smooth"
+        },
+        {
+          "time": 190,
+          "delta": {"x": 2.7621, "y": 6.01813, "z": 1.90618},
+          "interpolationType": "linear"
+        }
+      ],
+      "orientation": [
+        {
+          "time": 0,
+          "delta": {"x": 0, "y": 0, "z": 0, "w": 1},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 80,
+          "delta": {"x": 0.16102, "y": 0.58354, "z": 0.07306, "w": 0.7926},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 175,
+          "delta": {"x": 0.21069, "y": 0.97269, "z": 0.07485, "w": 0.06229},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 243,
+          "delta": {"x": 0.12365, "y": 0.73849, "z": 0.09482, "w": -0.65601},
+          "interpolationType": "linear"
+        }
+      ],
+      "shapeStretch": [],
+      "shapeVisible": [],
+      "shapeUvOffset": []
+    },
+    "Pebble_1": {
+      "position": [
+        {
+          "time": 0,
+          "delta": {"x": 0, "y": 0, "z": 0},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 93,
+          "delta": {"x": -4.02829, "y": 10.94744, "z": -15.10163},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 207,
+          "delta": {"x": -14.84441, "y": -0.27734, "z": 4.37242},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 275,
+          "delta": {"x": 5.0498, "y": -0.19152, "z": 2.8987},
+          "interpolationType": "linear"
+        }
+      ],
+      "orientation": [
+        {
+          "time": 0,
+          "delta": {"x": 0, "y": 0, "z": 0, "w": 1},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 93,
+          "delta": {"x": -0.0985, "y": 0.68445, "z": -0.01012, "w": 0.7223},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 207,
+          "delta": {"x": -0.09903, "y": 0.91147, "z": -0.07025, "w": -0.39305},
+          "interpolationType": "linear"
+        }
+      ],
+      "shapeStretch": [],
+      "shapeVisible": [],
+      "shapeUvOffset": []
+    },
+    "Pebble_2": {
+      "position": [
+        {
+          "time": 0,
+          "delta": {"x": 0, "y": 0, "z": 0},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 72,
+          "delta": {"x": 7.66148, "y": 0.47264, "z": 2.27613},
+          "interpolationType": "smooth"
+        },
+        {
+          "time": 177,
+          "delta": {"x": 4.02776, "y": -2.76376, "z": 15.36511},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 255,
+          "delta": {"x": -6.85306, "y": -2.40104, "z": -3.64689},
+          "interpolationType": "smooth"
+        }
+      ],
+      "orientation": [
+        {
+          "time": 0,
+          "delta": {"x": 0, "y": 0, "z": 0, "w": 1},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 158,
+          "delta": {"x": -0.00463, "y": -0.18562, "z": -0.05985, "w": 0.98079},
+          "interpolationType": "linear"
+        },
+        {
+          "time": 248,
+          "delta": {"x": -0.00975, "y": -0.39101, "z": -0.12608, "w": 0.91166},
+          "interpolationType": "linear"
+        }
+      ],
+      "shapeStretch": [],
+      "shapeVisible": [],
+      "shapeUvOffset": []
+    }
+  }
+}

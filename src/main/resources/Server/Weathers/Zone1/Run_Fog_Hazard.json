@@ -28,33 +28,33 @@
       "Colors": [
         {
           "Hour": 3,
-          "Color": "#3c3b0b24"
+          "Color": "#3c0b3824"
         },
         {
           "Hour": 5,
-          "Color": "#8edebf5e"
+          "Color": "#de8e935e"
         },
         {
           "Hour": 7,
-          "Color": "#e3edc5e6"
+          "Color": "#edc5d2e6"
         },
         {
           "Hour": 17,
-          "Color": "#e3edc5e6"
+          "Color": "#edc5d3e6"
         },
         {
           "Hour": 19,
-          "Color": "#cdeb696b"
+          "Color": "#eb69696b"
         },
         {
           "Hour": 21,
-          "Color": "#3c3b0bad"
+          "Color": "#3c0b0fad"
         }
       ],
       "Speeds": [
         {
           "Hour": 0,
-          "Value": 1
+          "Value": 0.5
         }
       ]
     },
@@ -63,33 +63,33 @@
       "Colors": [
         {
           "Hour": 3,
-          "Color": "#3c3b0b24"
+          "Color": "#3c0b1c24"
         },
         {
           "Hour": 5,
-          "Color": "#8edebb5e"
+          "Color": "#de8ea55e"
         },
         {
           "Hour": 7,
-          "Color": "#e9fdb2e6"
+          "Color": "#fdb2c3e6"
         },
         {
           "Hour": 17,
-          "Color": "#b6ce71e6"
+          "Color": "#ce7184e6"
         },
         {
           "Hour": 19,
-          "Color": "#d9eb696b"
+          "Color": "#eb69696b"
         },
         {
           "Hour": 21,
-          "Color": "#3c3c0b1c"
+          "Color": "#3c0b1d1c"
         }
       ],
       "Speeds": [
         {
           "Hour": 0,
-          "Value": 1
+          "Value": 0.5
         }
       ]
     }
@@ -109,11 +109,11 @@
   "FogColors": [
     {
       "Hour": 7,
-      "Color": "#8c3838"
+      "Color": "#874a4a"
     },
     {
       "Hour": 15,
-      "Color": "#b01f1f"
+      "Color": "#870000"
     }
   ],
   "FogDistance": [
@@ -387,7 +387,7 @@
   "MoonColors": [
     {
       "Hour": 5,
-      "Color": "#d9f9a9ff"
+      "Color": "#f9f7a9ff"
     },
     {
       "Hour": 3,
@@ -399,7 +399,7 @@
     },
     {
       "Hour": 17,
-      "Color": "#d9f9a9ff"
+      "Color": "#f6f9a9ff"
     },
     {
       "Hour": 21,

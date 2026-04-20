@@ -10,6 +10,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import dev.hytalemodding.blob.OrangeBlobBlockManager;
 import dev.hytalemodding.hud.GameTimerHud;
 import dev.hytalemodding.quest.QuestProgressManager;
 import dev.hytalemodding.redwave.RedWaveManager;
@@ -462,16 +463,35 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
     }
 
     private void sendStatusIfEnabled(@Nonnull UUID worldId, @Nonnull String text) {
-        if (!GameFlowConfigManager.get().isStatusMessagesEnabled()) {
+        GameFlowConfigManager config = GameFlowConfigManager.get();
+        if (!config.isStatusMessagesEnabled()) {
+            return;
+        }
+        if (!config.isCoreRadiusChatMessagesEnabled() && isCoreRadiusStatusMessage(text)) {
             return;
         }
         sendRunWorldMessage(worldId, text);
+    }
+
+    private static boolean isCoreRadiusStatusMessage(@Nonnull String text) {
+        String normalized = text.toLowerCase(java.util.Locale.ROOT);
+        if (!normalized.contains("[infectionaction]")) {
+            return false;
+        }
+        return normalized.contains("core")
+                || normalized.contains("radius")
+                || normalized.contains("growth")
+                || normalized.contains("requestedradius")
+                || normalized.contains("activeradiusbeforereset");
     }
 
     private void updateRunWorldTimerHud(@Nonnull UUID runWorldId, long remainingMs) {
         GameSessionManager.ActiveSessionSnapshot snapshot = GameSessionManager.get().getActiveSession();
         long secondsLeft = remainingMs / 1000L;
         String formatted = formatTime(secondsLeft);
+        long extractionCountdownMs = OrangeBlobBlockManager.getExtractionCountdownMillis(runWorldId);
+        boolean extractionVisible = extractionCountdownMs > 0L;
+        String extractionFormatted = extractionVisible ? formatTime(extractionCountdownMs / 1000L) : "";
         boolean witchSpawned = this.witchSpawnedInWorld.getOrDefault(runWorldId, false);
         for (PlayerRef playerRef : Universe.get().getPlayers()) {
             UUID playerWorld = playerRef.getWorldUuid();
@@ -505,7 +525,7 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
                 continue;
             }
             this.lastShownSecond.put(playerId, secondsLeft);
-            showTimerHud(playerRef, formatted, witchSpawned);
+            showTimerHud(playerRef, formatted, witchSpawned, extractionFormatted, extractionVisible);
         }
     }
 
@@ -517,7 +537,13 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
         return System.currentTimeMillis() < introEndsAt;
     }
 
-    private void showTimerHud(@Nonnull PlayerRef playerRef, @Nonnull String timeString, boolean witchSpawned) {
+    private void showTimerHud(
+            @Nonnull PlayerRef playerRef,
+            @Nonnull String timeString,
+            boolean witchSpawned,
+            @Nonnull String extractionTimeString,
+            boolean extractionVisible
+    ) {
         Ref<EntityStore> ref = playerRef.getReference();
         if (ref == null || !ref.isValid()) {
             return;
@@ -533,6 +559,7 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
             }
             GameTimerHud hud = this.timerHuds.computeIfAbsent(playerRef.getUuid(), ignored -> new GameTimerHud(playerRef));
             hud.setTime(timeString);
+            hud.setExtractionTimer(extractionTimeString, extractionVisible);
             hud.setVisible(true);
             player.getHudManager().setCustomHud(playerRef, hud);
             hud.show();

@@ -35,9 +35,9 @@
     "BlockSoundSetId": "Mushroom",
     "Particles": [
       {
-        "SystemId": "Crimson_Fog",
-        "Color": "#c5e4ee",
-        "Scale": 0.3,
+        "SystemId": "Dust_Sparkles_Fine",
+        "Color": "#822121",
+        "Scale": 1,
         "TargetEntityPart": "Self"
       }
     ]

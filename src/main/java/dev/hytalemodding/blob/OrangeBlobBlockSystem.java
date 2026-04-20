@@ -7,6 +7,7 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.RemoveReason;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
+import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.server.core.Message;
@@ -15,6 +16,9 @@ import com.hypixel.hytale.server.core.asset.type.blocktype.config.RotationTuple;
 import com.hypixel.hytale.server.core.entity.UUIDComponent;
 import com.hypixel.hytale.server.core.entity.entities.BlockEntity;
 import com.hypixel.hytale.server.core.modules.entity.damage.DeathComponent;
+import com.hypixel.hytale.server.core.modules.entity.damage.Damage;
+import com.hypixel.hytale.server.core.modules.entity.damage.DamageCause;
+import com.hypixel.hytale.server.core.modules.entity.damage.DamageSystems;
 import com.hypixel.hytale.server.core.modules.entity.component.BoundingBox;
 import com.hypixel.hytale.server.core.modules.entity.component.EntityScaleComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.HeadRotation;
@@ -29,6 +33,7 @@ import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
+import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.npc.NPCPlugin;
 import com.hypixel.hytale.server.npc.asset.builder.BuilderInfo;
@@ -46,21 +51,30 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
     private static final ComponentType<EntityStore, TransformComponent> TRANSFORM = TransformComponent.getComponentType();
     private static final ComponentType<EntityStore, NPCEntity> NPC = NPCEntity.getComponentType();
     private static final String EMPTY_BLOCK_ID = "Empty";
-    private static final String MOB_ROLE = "Blight_Beast";
+    private static final String MOB_ROLE = "Crimson_OBrute_Ext";
+    private static final String WOLF_BLACK_ROLE = "Crimson_Wolf_Ext";
     private static final String RUNE_OBJECTIVE_ROLE = "Extraction_Rune_Objective";
+    private static final boolean FORCE_TEST_ROTATION_ENABLED = false;
+    private static final int FORCE_TEST_ROTATION_INDEX = 3;
     private static final long DEBUG_INTERVAL_MS = 1000L;
-    private static final Vector3d[] MOB_OFFSETS = new Vector3d[]{
-            new Vector3d(20.0d, 0.0d, 0.0d),
-            new Vector3d(-20.0d, 0.0d, 0.0d),
-            new Vector3d(0.0d, 0.0d, 20.0d),
-            new Vector3d(0.0d, 0.0d, -20.0d)
-    };
+    private static final double MOB_SPAWN_MIN_GAP_BLOCKS = 3.5d;
+    private static final int MOB_SPAWN_MAX_ATTEMPTS_PER_MOB = 48;
+    private static final int MOB_SPAWN_HISTORY_LIMIT = 24;
     private static final String[] RUNE_TARGET_SLOTS = new String[]{"target", "Target", "CombatTarget"};
+    private static int extractionDamageCauseIndex = Integer.MIN_VALUE;
+    private static final List<SpawnRoleProfile> SPAWN_ROLE_PROFILES = List.of(
+            new SpawnRoleProfile(MOB_ROLE, 75, 0.90d),
+            new SpawnRoleProfile(WOLF_BLACK_ROLE, 25, 0.45d)
+    );
 
     @Override
     public void tick(float dt, int systemIndex, @Nonnull Store<EntityStore> store) {
@@ -86,13 +100,17 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
     ) {
         if (session.phase() == OrangeBlobBlockRuntime.Phase.MOVING_DOWN) {
             ensureDownMovers(session);
+            if (!session.rockDownSignalPending() && session.rockPhase() == OrangeBlobBlockRuntime.RockPhase.IDLE_UP) {
+                session.signalRockMoveDown(session.downStartAt());
+            }
             updateMovers(store, session.movers(), now);
+            tickIndependentRockMovement(store, world, session, now);
             if (now >= session.downEndAt()) {
-                removeMovers(store, session.movers());
                 if (!session.loweredPlaced()) {
-                    placeBlocks(world, session.loweredBlocks());
+                    placeBlocksFromMovers(world, session.movers(), session.loweredBlocks());
                     session.loweredPlaced(true);
                 }
+                removeMovers(store, session.movers());
                 ensureRuneTargetEntity(store, session);
                 session.phase(OrangeBlobBlockRuntime.Phase.HOLDING_DOWN);
                 broadcastToRunWorld(session.worldId(), "The extraction rune is exposed. Defend it until it stabilizes.");
@@ -112,14 +130,23 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
 
         if (session.phase() == OrangeBlobBlockRuntime.Phase.MOVING_UP) {
             updateMovers(store, session.movers(), now);
+            tickIndependentRockMovement(store, world, session, now);
             if (now >= session.upEndAt()) {
-                removeMovers(store, session.movers());
                 if (!session.sourcePlaced()) {
-                    placeBlocks(world, session.sourceBlocks());
-                    placeBlock(world, session.sourceRuneBlock());
+                    placeBlocksFromMovers(world, session.movers(), session.sourceBlocks());
+                    placeBlock(world, new OrangeBlobBlockRuntime.ClusterBlock(
+                            session.sourceRuneBlock().x(),
+                            session.sourceRuneBlock().y(),
+                            session.sourceRuneBlock().z(),
+                            session.sourceRuneBlock().blockId(),
+                            session.sourceRuneInitialRotation()
+                    ));
                     session.sourcePlaced(true);
                 }
-                session.phase(OrangeBlobBlockRuntime.Phase.COMPLETE);
+                removeMovers(store, session.movers());
+                if (!rocksStillInMotion(session)) {
+                    session.phase(OrangeBlobBlockRuntime.Phase.COMPLETE);
+                }
             }
         }
     }
@@ -130,6 +157,8 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
             @Nonnull OrangeBlobBlockRuntime.Session session,
             long now
     ) {
+        tickIndependentRockMovement(store, world, session, now);
+
         NearbyPlayersResult nearbyPlayers = measureNearbyPlayers(session);
         if (nearbyPlayers.count() > 0) {
             session.lastNearbyPlayerAt(now);
@@ -210,9 +239,12 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
         if (!session.extractionReady() && now >= session.holdEndAt()) {
             session.extractionReady(true);
             session.extractionAutoLaunchAt(now + session.config().readyExtractWindowMs());
+            long autoExtractSeconds = Math.max(0L, Math.round(session.config().readyExtractWindowMs() / 1000.0d));
             broadcastToRunWorld(
                     session.worldId(),
-                    "The extraction rune is ready. Interact with it again to extract, or it will auto-extract in 60 seconds."
+                    autoExtractSeconds <= 0L
+                            ? "The extraction rune is ready. Extraction is launching now."
+                            : "The extraction rune is ready. Interact with it again to extract, or it will auto-extract in " + autoExtractSeconds + " seconds."
             );
             return;
         }
@@ -231,14 +263,18 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
             long now
     ) {
         updateMovers(store, session.movers(), now);
+        tickIndependentRockMovement(store, world, session, now);
         if (now < session.upEndAt()) {
             return;
         }
-        removeMovers(store, session.movers());
         if (!session.sourcePlaced()) {
-            placeBlocks(world, session.sourceBlocks());
+            placeBlocksFromMovers(world, session.movers(), session.sourceBlocks());
             placeBlock(world, session.sourceRuneBlock());
             session.sourcePlaced(true);
+        }
+        removeMovers(store, session.movers());
+        if (rocksStillInMotion(session)) {
+            return;
         }
         if (session.extractionDispatchStarted()) {
             if (session.extractionDispatchSucceeded()) {
@@ -253,45 +289,123 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
             }
             return;
         }
-        dispatchExtractionCompletion(session, false);
+        dispatchExtractionCompletion(session);
     }
 
     private static void dispatchExtractionCompletion(
-            @Nonnull OrangeBlobBlockRuntime.Session session,
-            boolean requirePlayerStandingOnIsland
+            @Nonnull OrangeBlobBlockRuntime.Session session
     ) {
-        PlayerRef playerRef = findPlayerRef(session.activatingPlayerId());
-        if (playerRef == null) {
-            logSessionState("dispatch-no-player", session, "activating player ref unavailable");
-            session.extractionDispatchStarted(true);
-            session.extractionDispatchFailure("activating player is no longer available");
+        long now = System.currentTimeMillis();
+        if (!session.extractionWindowActive()) {
+            session.extractionWindowActive(true);
+            session.extractionWindowEndsAt(now + session.extractionWindowDurationMs());
+            session.extractionWindowPlayerIds().clear();
+            long durationSeconds = Math.max(1L, Math.round(session.extractionWindowDurationMs() / 1000.0d));
+            broadcastToRunWorld(session.worldId(), "Extraction area active for " + durationSeconds + " second(s). Enter the zone now.");
+        }
+
+        for (PlayerRef playerRef : collectPlayersInsideExtractionCylinder(session)) {
+            session.extractionWindowPlayerIds().add(playerRef.getUuid());
+        }
+
+        if (now < session.extractionWindowEndsAt()) {
             return;
         }
-        if (requirePlayerStandingOnIsland && !isPlayerStandingOnExtractionIsland(playerRef, session)) {
-            logSessionState("dispatch-waiting-for-stand", session,
-                    "playerPos=" + formatVector(playerRef.getTransform().getPosition()));
+
+        List<PlayerRef> playersToExtract = resolvePlayersByIds(session.extractionWindowPlayerIds(), session.worldId());
+        session.extractionWindowActive(false);
+        session.extractionWindowPlayerIds().clear();
+
+        if (playersToExtract.isEmpty()) {
+            logSessionState("dispatch-no-candidates", session, "playersInCylinder=0");
+            broadcastToRunWorld(session.worldId(), "No players in extraction zone. The rune goes dormant.");
+            session.phase(OrangeBlobBlockRuntime.Phase.COMPLETE);
             return;
         }
+
         session.extractionDispatchStarted(true);
-        logSessionState("dispatch-start", session,
-                "playerPos=" + formatVector(playerRef.getTransform().getPosition()));
-        broadcastToRunWorld(session.worldId(), "Extraction complete. Returning to base.");
-        GameDoorInteractionHandler.completeActiveRunExtraction(playerRef).whenComplete((result, throwable) -> {
+        logSessionState("dispatch-start", session, "playersInCylinder=" + playersToExtract.size());
+        broadcastToRunWorld(session.worldId(), "Extracting all players in the cylinder zone.");
+
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicReference<String> failureReason = new AtomicReference<>(null);
+        CompletableFuture<?>[] futures = playersToExtract.stream()
+                .map(playerRef -> GameDoorInteractionHandler.completeActiveRunExtraction(playerRef)
+                        .handle((result, throwable) -> {
+                            if (throwable != null) {
+                                String reason = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
+                                logSessionState("dispatch-throwable", session, reason == null ? "unknown throwable" : reason);
+                                failureReason.compareAndSet(null, reason == null ? "unknown extraction error" : reason);
+                                return null;
+                            }
+                            if (result == null || !result.success()) {
+                                String reason = result == null ? "extraction result unavailable" : result.message();
+                                logSessionState("dispatch-result-failure", session, reason);
+                                failureReason.compareAndSet(null, reason);
+                                return null;
+                            }
+                            logSessionState("dispatch-result-success", session, result.message());
+                            successCount.incrementAndGet();
+                            return null;
+                        }))
+                .toArray(CompletableFuture[]::new);
+
+        CompletableFuture.allOf(futures).whenComplete((ignored, throwable) -> {
             if (throwable != null) {
                 String reason = throwable.getCause() != null ? throwable.getCause().getMessage() : throwable.getMessage();
-                logSessionState("dispatch-throwable", session, reason == null ? "unknown throwable" : reason);
                 session.extractionDispatchFailure(reason == null ? "unknown extraction error" : reason);
                 return;
             }
-            if (result == null || !result.success()) {
-                logSessionState("dispatch-result-failure", session,
-                        result == null ? "result unavailable" : result.message());
-                session.extractionDispatchFailure(result == null ? "extraction result unavailable" : result.message());
+            if (successCount.get() > 0) {
+                session.extractionDispatchSucceeded(true);
                 return;
             }
-            logSessionState("dispatch-result-success", session, result.message());
-            session.extractionDispatchSucceeded(true);
+            String reason = failureReason.get();
+            session.extractionDispatchFailure(reason == null ? "no player on the island could be extracted" : reason);
         });
+    }
+
+    @Nonnull
+    private static List<PlayerRef> collectPlayersInsideExtractionCylinder(@Nonnull OrangeBlobBlockRuntime.Session session) {
+        ArrayList<PlayerRef> insidePlayers = new ArrayList<>();
+        double centerX = session.loweredRuneBlock().x() + 0.5d;
+        double centerY = session.loweredRuneBlock().y() + 0.5d;
+        double centerZ = session.loweredRuneBlock().z() + 0.5d;
+        double radiusSq = session.extractionRadiusBlocks() * session.extractionRadiusBlocks();
+        for (PlayerRef playerRef : Universe.get().getPlayers()) {
+            if (playerRef == null || playerRef.getWorldUuid() == null || !playerRef.getWorldUuid().equals(session.worldId())) {
+                continue;
+            }
+            Vector3d position = playerRef.getTransform().getPosition();
+            double dx = position.getX() - centerX;
+            double dz = position.getZ() - centerZ;
+            double horizontalSq = (dx * dx) + (dz * dz);
+            if (horizontalSq > radiusSq) {
+                continue;
+            }
+            double dy = position.getY() - centerY;
+            if (dy < session.extractionMinHeightOffset() || dy > session.extractionMaxHeightOffset()) {
+                continue;
+            }
+            insidePlayers.add(playerRef);
+        }
+        return List.copyOf(insidePlayers);
+    }
+
+    @Nonnull
+    private static List<PlayerRef> resolvePlayersByIds(@Nonnull java.util.Set<UUID> playerIds, @Nonnull UUID worldId) {
+        ArrayList<PlayerRef> players = new ArrayList<>(playerIds.size());
+        for (UUID playerId : playerIds) {
+            if (playerId == null) {
+                continue;
+            }
+            PlayerRef playerRef = Universe.get().getPlayer(playerId);
+            if (playerRef == null || playerRef.getWorldUuid() == null || !worldId.equals(playerRef.getWorldUuid())) {
+                continue;
+            }
+            players.add(playerRef);
+        }
+        return List.copyOf(players);
     }
 
     private static void beginMoveUp(
@@ -307,7 +421,12 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
             clearBlocks(world, session.loweredBlocks());
             session.loweredPlaced(false);
         }
+        if (session.loweredRocksPlaced()) {
+            removeMovers(store, session.rockMovers());
+            session.loweredRocksPlaced(false);
+        }
         session.beginMoveUp(now);
+        session.signalRockMoveUp(now);
         ensureUpMovers(session);
         session.phase(OrangeBlobBlockRuntime.Phase.MOVING_UP);
     }
@@ -325,7 +444,12 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
             clearBlocks(world, session.loweredBlocks());
             session.loweredPlaced(false);
         }
+        if (session.loweredRocksPlaced()) {
+            removeMovers(store, session.rockMovers());
+            session.loweredRocksPlaced(false);
+        }
         session.beginMoveUp(now);
+        session.signalRockMoveUp(now);
         ensureUpMovers(session);
         session.phase(OrangeBlobBlockRuntime.Phase.RETURNING_FOR_EXTRACTION);
     }
@@ -397,11 +521,7 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
                 session.loweredRuneBlock().y() + 0.5d,
                 session.loweredRuneBlock().z() + 0.5d
         );
-        PlayerRef playerRef = findPlayerRef(session.activatingPlayerId());
-        Ref<EntityStore> playerTargetRef = resolvePlayerCombatTarget(store, session, playerRef);
-        boolean splitTargets = nearbyPlayerCount > 0 && playerRef != null && playerTargetRef != null && playerTargetRef.isValid();
         int attackers = 0;
-        int livingMobIndex = 0;
 
         for (Ref<EntityStore> mobRef : session.spawnedMobRefs()) {
             if (mobRef == null || !mobRef.isValid()) {
@@ -411,15 +531,10 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
             if (npc == null) {
                 continue;
             }
-            if (splitTargets && livingMobIndex % 2 == 0) {
-                aimMobAtPlayer(store, mobRef, npc, playerTargetRef, playerRef);
-            } else {
-                aimMobAtRune(store, session, mobRef, npc, runePos);
-            }
+            aimMobAtRune(store, session, mobRef, npc, runePos);
             if (isMobLockedOnRune(store, mobRef, runeRef)) {
                 attackers++;
             }
-            livingMobIndex++;
         }
 
         float liveHealth = readCurrentHealth(store, runeRef);
@@ -442,6 +557,11 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
         Ref<EntityStore> runeAggroProxyRef = session.runeAggroProxyRef();
         if (runeAggroProxyRef != null && runeAggroProxyRef.isValid()) {
             setMobTargetHostile(store, mobRef, npc, runeAggroProxyRef);
+        } else {
+            Ref<EntityStore> runeBodyRef = session.runeBodyRef();
+            if (runeBodyRef != null && runeBodyRef.isValid()) {
+                setMobTargetHostile(store, mobRef, npc, runeBodyRef);
+            }
         }
         npc.saveLeashInformation(new Vector3d(runePos), new Vector3f(0.0f, 0.0f, 0.0f));
         store.putComponent(mobRef, NPC, npc);
@@ -490,6 +610,7 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
         role.setMarkedTarget(MarkedEntitySupport.DEFAULT_TARGET_SLOT, runeTargetRef);
         WorldSupport support = role.getWorldSupport();
         if (support != null) {
+            applyHighDetectionRangeIfAvailable(support);
             try {
                 support.overrideAttitude(runeTargetRef, Attitude.HOSTILE, 60.0 * 60.0);
             } catch (Throwable ignored) {
@@ -599,6 +720,12 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
         for (int i = 0; i < session.sourceBlocks().size(); i++) {
             OrangeBlobBlockRuntime.ClusterBlock source = session.sourceBlocks().get(i);
             OrangeBlobBlockRuntime.ClusterBlock target = session.loweredBlocks().get(i);
+            long downStartAt = session.downStartAt();
+            long downEndAt = session.downStartAt() + session.moveDurationMs();
+            if (OrangeBlobBlockManager.isDelayedRockBlockId(source.blockId())) {
+                downStartAt += 2000L;
+                downEndAt += 2000L;
+            }
             session.movers().add(new OrangeBlobBlockRuntime.Mover(
                     source.blockId(),
                     source.rotation(),
@@ -608,13 +735,13 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
                     target.x() + 0.5d,
                     target.y(),
                     target.z() + 0.5d,
-                    session.downStartAt(),
-                    session.downEndAt()
+                    downStartAt,
+                    downEndAt
             ));
         }
         session.movers().add(new OrangeBlobBlockRuntime.Mover(
                 session.sourceRuneBlock().blockId(),
-                session.sourceRuneBlock().rotation(),
+                session.sourceRuneInitialRotation(),
                 session.sourceRuneBlock().x() + 0.5d,
                 session.sourceRuneBlock().y(),
                 session.sourceRuneBlock().z() + 0.5d,
@@ -633,6 +760,12 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
         for (int i = 0; i < session.loweredBlocks().size(); i++) {
             OrangeBlobBlockRuntime.ClusterBlock source = session.loweredBlocks().get(i);
             OrangeBlobBlockRuntime.ClusterBlock target = session.sourceBlocks().get(i);
+            long upStartAt = session.upStartAt();
+            long upEndAt = session.upStartAt() + session.moveDurationMs();
+            if (OrangeBlobBlockManager.isDelayedRockBlockId(source.blockId())) {
+                upStartAt += 2000L;
+                upEndAt += 2000L;
+            }
             session.movers().add(new OrangeBlobBlockRuntime.Mover(
                     source.blockId(),
                     source.rotation(),
@@ -642,13 +775,13 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
                     target.x() + 0.5d,
                     target.y(),
                     target.z() + 0.5d,
-                    session.upStartAt(),
-                    session.upEndAt()
+                    upStartAt,
+                    upEndAt
             ));
         }
         session.movers().add(new OrangeBlobBlockRuntime.Mover(
                 session.loweredRuneBlock().blockId(),
-                session.loweredRuneBlock().rotation(),
+                session.sourceRuneInitialRotation(),
                 session.loweredRuneBlock().x() + 0.5d,
                 session.loweredRuneBlock().y(),
                 session.loweredRuneBlock().z() + 0.5d,
@@ -660,14 +793,157 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
         ));
     }
 
+    private static void ensureDownRockMovers(@Nonnull OrangeBlobBlockRuntime.Session session, long downStartAt) {
+        if (!session.rockMovers().isEmpty()) {
+            return;
+        }
+        if (session.sourceDetachedRocks().isEmpty()) {
+            session.rockPhase(OrangeBlobBlockRuntime.RockPhase.IDLE_DOWN);
+            return;
+        }
+        for (int i = 0; i < session.sourceDetachedRocks().size(); i++) {
+            OrangeBlobBlockRuntime.ClusterBlock source = session.sourceDetachedRocks().get(i);
+            OrangeBlobBlockRuntime.ClusterBlock target = session.loweredDetachedRocks().get(i);
+            long delayedStartAt = downStartAt + session.rockTailDelayMs();
+            long downEndAt = delayedStartAt + session.moveDurationMs();
+            session.rockMovers().add(new OrangeBlobBlockRuntime.Mover(
+                    source.blockId(),
+                    source.rotation(),
+                    source.x() + 0.5d,
+                    source.y(),
+                    source.z() + 0.5d,
+                    target.x() + 0.5d,
+                    target.y(),
+                    target.z() + 0.5d,
+                    delayedStartAt,
+                    downEndAt
+            ));
+            session.rockDownEndAt(downEndAt);
+        }
+        session.rockPhase(OrangeBlobBlockRuntime.RockPhase.MOVING_DOWN);
+    }
+
+    private static void ensureUpRockMovers(@Nonnull OrangeBlobBlockRuntime.Session session, long upStartAt) {
+        if (!session.rockMovers().isEmpty()) {
+            return;
+        }
+        if (session.loweredDetachedRocks().isEmpty()) {
+            session.rockPhase(OrangeBlobBlockRuntime.RockPhase.IDLE_UP);
+            return;
+        }
+        for (int i = 0; i < session.loweredDetachedRocks().size(); i++) {
+            OrangeBlobBlockRuntime.ClusterBlock source = session.loweredDetachedRocks().get(i);
+            OrangeBlobBlockRuntime.ClusterBlock target = session.sourceDetachedRocks().get(i);
+            long delayedStartAt = upStartAt + session.rockTailDelayMs();
+            long upEndAt = delayedStartAt + session.moveDurationMs();
+            session.rockMovers().add(new OrangeBlobBlockRuntime.Mover(
+                    source.blockId(),
+                    source.rotation(),
+                    source.x() + 0.5d,
+                    source.y(),
+                    source.z() + 0.5d,
+                    target.x() + 0.5d,
+                    target.y(),
+                    target.z() + 0.5d,
+                    delayedStartAt,
+                    upEndAt
+            ));
+            session.rockUpEndAt(upEndAt);
+        }
+        session.rockPhase(OrangeBlobBlockRuntime.RockPhase.MOVING_UP);
+    }
+
+    private static void tickIndependentRockMovement(
+            @Nonnull Store<EntityStore> store,
+            @Nonnull World world,
+            @Nonnull OrangeBlobBlockRuntime.Session session,
+            long now
+    ) {
+        if (session.rockDownSignalPending() && now >= session.rockDownSignalAt()) {
+            if (session.rockMovers().isEmpty() && session.rockPhase() != OrangeBlobBlockRuntime.RockPhase.MOVING_UP) {
+                session.rockDownSignalPending(false);
+                ensureDownRockMovers(session, now);
+            }
+        }
+        if (session.rockUpSignalPending() && now >= session.rockUpSignalAt()) {
+            if (session.rockMovers().isEmpty() && session.rockPhase() != OrangeBlobBlockRuntime.RockPhase.MOVING_DOWN) {
+                session.rockUpSignalPending(false);
+                ensureUpRockMovers(session, now);
+            }
+        }
+
+        updateMovers(store, session.rockMovers(), now);
+
+        if (session.rockPhase() == OrangeBlobBlockRuntime.RockPhase.MOVING_DOWN && now >= session.rockDownEndAt()) {
+            placeBlocksFromMovers(world, session.rockMovers(), session.loweredDetachedRocks());
+            removeMovers(store, session.rockMovers());
+            session.loweredRocksPlaced(true);
+            session.sourceRocksPlaced(false);
+            session.rockPhase(OrangeBlobBlockRuntime.RockPhase.IDLE_DOWN);
+        } else if (session.rockPhase() == OrangeBlobBlockRuntime.RockPhase.MOVING_UP && now >= session.rockUpEndAt()) {
+            placeBlocksFromMovers(world, session.rockMovers(), session.sourceDetachedRocks());
+            removeMovers(store, session.rockMovers());
+            session.sourceRocksPlaced(true);
+            session.loweredRocksPlaced(false);
+            session.rockPhase(OrangeBlobBlockRuntime.RockPhase.IDLE_UP);
+        }
+    }
+
+    private static boolean rocksStillInMotion(@Nonnull OrangeBlobBlockRuntime.Session session) {
+        return session.rockDownSignalPending()
+                || session.rockUpSignalPending()
+                || !session.rockMovers().isEmpty()
+                || session.rockPhase() == OrangeBlobBlockRuntime.RockPhase.MOVING_DOWN
+                || session.rockPhase() == OrangeBlobBlockRuntime.RockPhase.MOVING_UP;
+    }
+
+    private static void placeBlocksFromMovers(
+            @Nonnull World world,
+            @Nonnull List<OrangeBlobBlockRuntime.Mover> movers,
+            @Nonnull List<OrangeBlobBlockRuntime.ClusterBlock> targetBlocks
+    ) {
+        int count = Math.min(movers.size(), targetBlocks.size());
+        for (int i = 0; i < count; i++) {
+            OrangeBlobBlockRuntime.Mover mover = movers.get(i);
+            OrangeBlobBlockRuntime.ClusterBlock target = targetBlocks.get(i);
+            int finalRotation = forcedRotation(mover.rotation());
+            placeRotatedBlock(world, target.x(), target.y(), target.z(), target.blockId(), finalRotation);
+        }
+        for (int i = count; i < targetBlocks.size(); i++) {
+            OrangeBlobBlockRuntime.ClusterBlock target = targetBlocks.get(i);
+            placeRotatedBlock(world, target.x(), target.y(), target.z(), target.blockId(), target.rotation());
+        }
+    }
+
+    private static int forcedRotation(int rotation) {
+        return FORCE_TEST_ROTATION_ENABLED ? FORCE_TEST_ROTATION_INDEX : rotation;
+    }
+
+    private static boolean skipRotationForBlock(@Nullable String blockId) {
+        return OrangeBlobBlockManager.BLOCK_ID.equals(blockId)
+                || OrangeBlobBlockManager.ACTIVE_BLOCK_ID.equals(blockId);
+    }
+
+    private static int effectiveRotation(@Nullable String blockId, int rotationIndex) {
+        if (skipRotationForBlock(blockId)) {
+            return 0;
+        }
+        return forcedRotation(rotationIndex);
+    }
+
     private static void updateMovers(
             @Nonnull Store<EntityStore> store,
             @Nonnull List<OrangeBlobBlockRuntime.Mover> movers,
             long now
     ) {
         for (OrangeBlobBlockRuntime.Mover mover : movers) {
+            if (now < mover.startAt()) {
+                continue;
+            }
             Ref<EntityStore> moverRef = mover.moverRef();
             if (moverRef == null || !moverRef.isValid()) {
+                World world = store.getExternalData().getWorld();
+                world.setBlock((int) Math.floor(mover.startX()), (int) Math.floor(mover.startY()), (int) Math.floor(mover.startZ()), EMPTY_BLOCK_ID);
                 moverRef = spawnStaticBlockEntity(
                         store,
                         mover.blockId(),
@@ -726,12 +1002,33 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
 
     private static void placeBlocks(@Nonnull World world, @Nonnull List<OrangeBlobBlockRuntime.ClusterBlock> blocks) {
         for (OrangeBlobBlockRuntime.ClusterBlock block : blocks) {
-            world.setBlock(block.x(), block.y(), block.z(), block.blockId());
+            placeRotatedBlock(world, block.x(), block.y(), block.z(), block.blockId(), forcedRotation(block.rotation()));
         }
     }
 
     private static void placeBlock(@Nonnull World world, @Nonnull OrangeBlobBlockRuntime.ClusterBlock block) {
-        world.setBlock(block.x(), block.y(), block.z(), block.blockId());
+        placeRotatedBlock(world, block.x(), block.y(), block.z(), block.blockId(), forcedRotation(block.rotation()));
+    }
+
+    private static void placeRotatedBlock(
+            @Nonnull World world,
+            int x,
+            int y,
+            int z,
+            @Nonnull String blockId,
+            int rotationIndex
+    ) {
+        int forcedIndex = effectiveRotation(blockId, rotationIndex);
+        RotationTuple tuple = RotationTuple.get(forcedIndex);
+        long chunkIndex = ChunkUtil.indexChunkFromBlock(x, z);
+        WorldChunk worldChunk = world.getChunk(chunkIndex);
+        if (worldChunk != null) {
+            boolean placed = worldChunk.placeBlock(x, y, z, blockId, tuple, 0, true);
+            if (placed) {
+                return;
+            }
+        }
+        world.setBlock(x, y, z, blockId, forcedIndex);
     }
 
     private static void spawnMobWave(
@@ -740,15 +1037,11 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
             long now
     ) {
         NPCPlugin npcPlugin = NPCPlugin.get();
-        int roleIndex = npcPlugin.getIndex(MOB_ROLE);
-        BuilderInfo roleInfo = npcPlugin.getRoleBuilderInfo(roleIndex);
-        if (roleInfo == null || !roleInfo.getBuilder().isSpawnable()) {
-            return;
-        }
 
-        OrangeBlobBlockRuntime.ClusterBlock center = session.loweredCenterBlock();
+        World world = store.getExternalData().getWorld();
+        OrangeBlobBlockRuntime.ClusterBlock center = session.loweredRuneBlock();
         double centerX = center.x() + 0.5d;
-        double centerY = session.loweredRuneBlock().y() - 1.0d;
+        double centerY = center.y();
         double centerZ = center.z() + 0.5d;
         Vector3d runePos = new Vector3d(
                 session.loweredRuneBlock().x() + 0.5d,
@@ -758,20 +1051,24 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
         Random random = new Random(session.id().getLeastSignificantBits() ^ now);
         List<Vector3d> spawnPositions = new ArrayList<>(session.config().mobsPerWave());
         for (int i = 0; i < session.config().mobsPerWave(); i++) {
-            Vector3d baseOffset = MOB_OFFSETS[i % MOB_OFFSETS.length];
-            double jitterX = (random.nextDouble() - 0.5d) * 1.5d;
-            double jitterZ = (random.nextDouble() - 0.5d) * 1.5d;
-            spawnPositions.add(new Vector3d(
-                    centerX + baseOffset.getX() + jitterX,
-                    centerY + baseOffset.getY(),
-                    centerZ + baseOffset.getZ() + jitterZ
-            ));
+            Vector3d candidate = findDynamicSpawnPosition(world, session, centerX, centerY, centerZ, random);
+            if (candidate == null) {
+                continue;
+            }
+            spawnPositions.add(candidate);
+            session.recentMobSpawnPositions().add(candidate);
+            while (session.recentMobSpawnPositions().size() > MOB_SPAWN_HISTORY_LIMIT) {
+                session.recentMobSpawnPositions().remove(0);
+            }
         }
 
-        PlayerRef playerRef = findPlayerRef(session.activatingPlayerId());
-        Ref<EntityStore> playerTargetRef = resolvePlayerCombatTarget(store, session, playerRef);
-        int spawnIndex = 0;
         for (Vector3d spawnPos : spawnPositions) {
+            SpawnRoleProfile profile = chooseSpawnRoleProfile(random);
+            int roleIndex = npcPlugin.getIndex(profile.roleName());
+            BuilderInfo roleInfo = npcPlugin.getRoleBuilderInfo(roleIndex);
+            if (roleInfo == null || !roleInfo.getBuilder().isSpawnable()) {
+                roleIndex = npcPlugin.getIndex(MOB_ROLE);
+            }
             Pair<Ref<EntityStore>, NPCEntity> spawned = npcPlugin.spawnEntity(
                     store,
                     roleIndex,
@@ -785,14 +1082,82 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
             }
             session.spawnedMobRefs().add(spawned.first());
             if (spawned.second() != null) {
-                if (playerRef != null && playerTargetRef != null && playerTargetRef.isValid() && spawnIndex % 2 == 0) {
-                    aimMobAtPlayer(store, spawned.first(), spawned.second(), playerTargetRef, playerRef);
-                } else {
-                    aimMobAtRune(store, session, spawned.first(), spawned.second(), runePos);
-                }
+                aimMobAtRune(store, session, spawned.first(), spawned.second(), runePos);
             }
-            spawnIndex++;
         }
+    }
+
+    @Nullable
+    private static Vector3d findDynamicSpawnPosition(
+            @Nonnull World world,
+            @Nonnull OrangeBlobBlockRuntime.Session session,
+            double centerX,
+            double centerY,
+            double centerZ,
+            @Nonnull Random random
+    ) {
+        SpawnRoleProfile profile = chooseSpawnRoleProfile(random);
+        for (int attempt = 0; attempt < MOB_SPAWN_MAX_ATTEMPTS_PER_MOB; attempt++) {
+            double angle = random.nextDouble() * (Math.PI * 2.0d);
+            double minRadius = session.enemySpawnMinRadiusBlocks();
+            double maxRadius = session.enemySpawnMaxRadiusBlocks();
+            double range = Math.max(0.0d, maxRadius - minRadius);
+            double rolePercent = Math.max(0.0d, Math.min(1.0d, profile.distanceRangePercent()));
+            double jitter = (random.nextDouble() * 0.20d) - 0.10d;
+            double effectivePercent = Math.max(0.0d, Math.min(1.0d, rolePercent + jitter));
+            double radius = minRadius + (range * effectivePercent);
+            int minYOffset = (int) Math.floor(session.enemySpawnMinHeightOffset());
+            int maxYOffset = (int) Math.ceil(session.enemySpawnMaxHeightOffset());
+            int yOffset = minYOffset + random.nextInt(Math.max(1, (maxYOffset - minYOffset) + 1));
+            double x = centerX + (Math.cos(angle) * radius);
+            double y = centerY + yOffset;
+            double z = centerZ + (Math.sin(angle) * radius);
+            if (isTooCloseToRecentSpawns(session, x, y, z)) {
+                continue;
+            }
+            if (!isSpawnVolumeClear(world, (int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z))) {
+                continue;
+            }
+            return new Vector3d(x, y, z);
+        }
+        return null;
+    }
+
+    private static boolean isTooCloseToRecentSpawns(
+            @Nonnull OrangeBlobBlockRuntime.Session session,
+            double x,
+            double y,
+            double z
+    ) {
+        double minGapSq = MOB_SPAWN_MIN_GAP_BLOCKS * MOB_SPAWN_MIN_GAP_BLOCKS;
+        for (Vector3d recent : session.recentMobSpawnPositions()) {
+            double dx = recent.getX() - x;
+            double dy = recent.getY() - y;
+            double dz = recent.getZ() - z;
+            if ((dx * dx) + (dy * dy) + (dz * dz) < minGapSq) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isSpawnVolumeClear(@Nonnull World world, int x, int y, int z) {
+        if (OrangeBlobBlockManager.isEmpty(world.getBlockType(x, y - 1, z))) {
+            return false;
+        }
+        for (int dy = 0; dy <= 2; dy++) {
+            int checkY = y + dy;
+            if (!OrangeBlobBlockManager.isEmpty(world.getBlockType(x, checkY, z))) {
+                return false;
+            }
+            if (!OrangeBlobBlockManager.isEmpty(world.getBlockType(x + 1, checkY, z))
+                    || !OrangeBlobBlockManager.isEmpty(world.getBlockType(x - 1, checkY, z))
+                    || !OrangeBlobBlockManager.isEmpty(world.getBlockType(x, checkY, z + 1))
+                    || !OrangeBlobBlockManager.isEmpty(world.getBlockType(x, checkY, z - 1))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static void ensureRuneTargetEntity(
@@ -808,11 +1173,11 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
             Ref<EntityStore> spawnedBody = spawnStaticBlockEntity(
                     store,
                     session.loweredRuneBlock().blockId(),
-                    session.loweredRuneBlock().rotation(),
+                    session.sourceRuneInitialRotation(),
                     runePos.getX(),
                     runePos.getY(),
                     runePos.getZ(),
-                    0.85f,
+                    2.0f,
                     true
             );
             if (spawnedBody != null && spawnedBody.isValid()) {
@@ -847,11 +1212,100 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
             if (mobRef != null && mobRef.isValid()) {
                 Store<EntityStore> mobStore = mobRef.getStore();
                 if (mobStore != null) {
-                    mobStore.removeEntity(mobRef, RemoveReason.REMOVE);
+                    applyExtractionEndDamage(mobStore, mobRef);
                 }
             }
         }
         session.spawnedMobRefs().clear();
+    }
+
+    private static void applyExtractionEndDamage(
+            @Nonnull Store<EntityStore> store,
+            @Nonnull Ref<EntityStore> mobRef
+    ) {
+        final float extractionEndDamage = 200.0f;
+        AtomicBoolean appliedViaDamageSystem = new AtomicBoolean(false);
+        store.forEachChunk(NPC, (chunk, buffer) -> {
+            if (appliedViaDamageSystem.get()) {
+                return;
+            }
+            int size = chunk.size();
+            for (int i = 0; i < size; i++) {
+                Ref<EntityStore> ref = chunk.getReferenceTo(i);
+                if (ref == null || !ref.isValid() || !ref.equals(mobRef)) {
+                    continue;
+                }
+                Damage damage = new Damage(
+                        Damage.NULL_SOURCE,
+                        resolveExtractionDamageCauseIndexSafe(),
+                        extractionEndDamage
+                );
+                DamageSystems.executeDamage(i, chunk, buffer, damage);
+                appliedViaDamageSystem.set(true);
+                return;
+            }
+        });
+        if (appliedViaDamageSystem.get()) {
+            return;
+        }
+        EntityStatMap stats = store.getComponent(mobRef, EntityStatMap.getComponentType());
+        if (stats == null) {
+            return;
+        }
+        int healthIndex = DefaultEntityStatTypes.getHealth();
+        if (healthIndex < 0 || stats.get(healthIndex) == null) {
+            return;
+        }
+        float current = stats.get(healthIndex).get();
+        if (current <= 0.0f) {
+            return;
+        }
+        EntityStatMap updated = stats.clone();
+        updated.addStatValue(healthIndex, -extractionEndDamage);
+        store.putComponent(mobRef, EntityStatMap.getComponentType(), updated);
+    }
+
+    private static int resolveExtractionDamageCauseIndexSafe() {
+        if (extractionDamageCauseIndex != Integer.MIN_VALUE) {
+            return extractionDamageCauseIndex;
+        }
+        try {
+            extractionDamageCauseIndex = DamageCause.getAssetMap().getIndex("Command");
+        } catch (Throwable ignored) {
+            extractionDamageCauseIndex = 0;
+        }
+        return extractionDamageCauseIndex;
+    }
+
+    private static void applyHighDetectionRangeIfAvailable(@Nonnull WorldSupport support) {
+        invokeDetectionSetter(support, "setDetectionRange", 50.0d);
+        invokeDetectionSetter(support, "setAggroRange", 50.0d);
+        invokeDetectionSetter(support, "setDetectionRadius", 50.0d);
+        invokeDetectionSetter(support, "setChaseRange", 50.0d);
+    }
+
+    private static void invokeDetectionSetter(
+            @Nonnull Object target,
+            @Nonnull String methodName,
+            double value
+    ) {
+        try {
+            java.lang.reflect.Method method = target.getClass().getMethod(methodName, double.class);
+            method.invoke(target, value);
+            return;
+        } catch (Throwable ignored) {
+        }
+        try {
+            java.lang.reflect.Method method = target.getClass().getMethod(methodName, float.class);
+            method.invoke(target, (float) value);
+            return;
+        } catch (Throwable ignored) {
+        }
+        try {
+            java.lang.reflect.Method method = target.getClass().getMethod(methodName, int.class);
+            method.invoke(target, (int) Math.round(value));
+        } catch (Throwable ignored) {
+        }
     }
 
     @Nullable
@@ -946,11 +1400,16 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
             }
         }
 
-        applyRotation(holder, rotation);
+        Vector3f appliedRotation = applyRotation(holder, blockId, effectiveRotation(blockId, rotation));
         holder.ensureComponent(UUIDComponent.getComponentType());
         Ref<EntityStore> ref = store.addEntity(holder, AddReason.SPAWN);
         if (ref == null || !ref.isValid()) {
             return null;
+        }
+        TransformComponent transform = store.getComponent(ref, TRANSFORM);
+        if (transform != null) {
+            transform.teleportRotation(new Vector3f(appliedRotation));
+            transform.markChunkDirty(store);
         }
 
         BlockEntity blockEntity = store.getComponent(ref, BlockEntity.getComponentType());
@@ -963,19 +1422,53 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
         return ref;
     }
 
-    private static void applyRotation(@Nonnull Holder<EntityStore> holder, int rotation) {
+    @Nonnull
+    private static boolean isRuneBlockId(@Nullable String blockId) {
+        return OrangeBlobBlockManager.RUNE_BLOCK_ID.equals(blockId)
+                || OrangeBlobBlockManager.ACTIVE_RUNE_BLOCK_ID.equals(blockId);
+    }
+
+    private static Vector3f applyRotation(@Nonnull Holder<EntityStore> holder, @Nullable String blockId, int rotation) {
+        Vector3f rot = new Vector3f(0.0f, 0.0f, 0.0f);
         try {
-            RotationTuple tuple = RotationTuple.get(rotation);
+            RotationTuple tuple = RotationTuple.get(forcedRotation(rotation));
             Rotation yaw = tuple.yaw();
             Rotation pitch = tuple.pitch();
             Rotation roll = tuple.roll();
-            Vector3f rot = new Vector3f(0.0f, 0.0f, 0.0f);
-            rot.setYaw((float) (-yaw.getRadians()));
-            rot.setPitch((float) (-pitch.getRadians()));
-            rot.setRoll((float) (-roll.getRadians()));
+            float sign = isRuneBlockId(blockId) ? 1.0f : -1.0f;
+            rot.setYaw((float) (sign * yaw.getRadians()));
+            rot.setPitch((float) (sign * pitch.getRadians()));
+            rot.setRoll((float) (sign * roll.getRadians()));
             holder.addComponent(HeadRotation.getComponentType(), new HeadRotation(rot));
         } catch (Exception ignored) {
         }
+        return rot;
+    }
+
+    private static SpawnRoleProfile chooseSpawnRoleProfile(@Nonnull Random random) {
+        int totalWeight = 0;
+        for (SpawnRoleProfile profile : SPAWN_ROLE_PROFILES) {
+            totalWeight += Math.max(0, profile.weight());
+        }
+        if (totalWeight <= 0) {
+            return SPAWN_ROLE_PROFILES.get(0);
+        }
+        int roll = random.nextInt(totalWeight);
+        int cursor = 0;
+        for (SpawnRoleProfile profile : SPAWN_ROLE_PROFILES) {
+            cursor += Math.max(0, profile.weight());
+            if (roll < cursor) {
+                return profile;
+            }
+        }
+        return SPAWN_ROLE_PROFILES.get(0);
+    }
+
+    private record SpawnRoleProfile(
+            @Nonnull String roleName,
+            int weight,
+            double distanceRangePercent
+    ) {
     }
 
     private static double normalizedProgress(long now, long startAt, long endAt) {

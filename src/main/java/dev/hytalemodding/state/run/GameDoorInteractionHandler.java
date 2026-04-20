@@ -216,15 +216,6 @@ public final class GameDoorInteractionHandler {
         }
 
         Transform baseSpawn = config.getBaseSpawn();
-        List<UUID> lockedPlayerIds = collectRunStartPlayerIds(playerRef, participantIds);
-        RunStartMovementLockManager.get().unlockPlayers(lockedPlayerIds);
-        for (UUID playerId : participantIds) {
-            PlayerRef memberRef = Universe.get().getPlayer(playerId);
-            if (memberRef != null) {
-                RunStartMovementLockManager.get().lockPlayerForIntro(memberRef);
-            }
-        }
-
         GameSessionManager.get().startSession(
                 playerRef,
                 runTemplateWorld,
@@ -238,7 +229,6 @@ public final class GameDoorInteractionHandler {
                 for (UUID participantId : participantIds) {
                     SpawnPointZoneManager.releaseReservedSpawn(participantId);
                 }
-                RunStartMovementLockManager.get().unlockPlayers(lockedPlayerIds);
                 sendStatusMessage(playerRef, "Failed to start run: " + reason);
                 return;
             }
@@ -417,14 +407,6 @@ public final class GameDoorInteractionHandler {
 
         statMap.maximizeStatValue(DefaultEntityStatTypes.getHealth());
         store.putComponent(ref, EntityStatMap.getComponentType(), statMap);
-    }
-
-    @Nonnull
-    private static List<UUID> collectRunStartPlayerIds(@Nonnull PlayerRef playerRef, @Nonnull List<UUID> participantIds) {
-        if (participantIds.isEmpty()) {
-            return List.of(playerRef.getUuid());
-        }
-        return List.copyOf(participantIds);
     }
 
     @Nonnull

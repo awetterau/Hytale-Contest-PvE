@@ -1,0 +1,130 @@
+{
+  "Spawners": [
+    {
+      "StartDelay": 1.3,
+      "FixedRotation": false,
+      "SpawnerId": "Portal_Ground_Hedera_Beam"
+    },
+    {
+      "StartDelay": 1.3,
+      "SpawnerId": "Portal_Hedera_Spawn3_SmokeOut"
+    },
+    {
+      "StartDelay": 1.3,
+      "FixedRotation": false,
+      "SpawnerId": "Portal_Hedera_Spawn2_Flash_Super"
+    },
+    {
+      "StartDelay": 1.3,
+      "SpawnerId": "Portal_Hedera_Spawn3_Dist"
+    },
+    {
+      "StartDelay": 1.3,
+      "SpawnerId": "Portal_Hedera_Spawn3_Dist2"
+    },
+    {
+      "StartDelay": 1.3,
+      "FixedRotation": false,
+      "SpawnerId": "Portal_Hedera_Spawn2_Flash"
+    },
+    {
+      "StartDelay": 1.3,
+      "FixedRotation": false,
+      "SpawnerId": "Portal_Hedera_Spawn3_Sparks"
+    },
+    {
+      "PositionOffset": {
+        "Z": 0
+      },
+      "FixedRotation": false,
+      "SpawnerId": "Portal_Ground_Core"
+    },
+    {
+      "PositionOffset": {
+        "X": 0,
+        "Z": 0
+      },
+      "StartDelay": 1.25,
+      "SpawnerId": "Portal_Ground_Hedera_Wisps"
+    },
+    {
+      "SpawnerId": "Portal_Ground_Hedera_Sparks_Xonstant",
+      "PositionOffset": {
+        "Y": 0.5
+      },
+      "StartDelay": 1.25
+    },
+    {
+      "SpawnerId": "Hedera_Item_Activate_Core",
+      "PositionOffset": {
+        "X": 0,
+        "Z": 0
+      },
+      "FixedRotation": false
+    },
+    {
+      "SpawnerId": "Hedera_Item_Activate_Fireflies",
+      "PositionOffset": {
+        "Y": -1.0
+      }
+    },
+    {
+      "SpawnerId": "Hedera_Item_Activate_Core_Beam"
+    },
+    {
+      "SpawnerId": "Hedera_Item_Activate_Glow",
+      "StartDelay": 0.7
+    },
+    {
+      "SpawnerId": "Hedera_Item_Activate_GlowGround",
+      "StartDelay": 0.7,
+      "PositionOffset": {
+        "Y": -0.3
+      }
+    },
+    {
+      "SpawnerId": "Hedera_Item_Activate_Shockwave",
+      "PositionOffset": {
+        "X": 0
+      },
+      "FixedRotation": false,
+      "StartDelay": 0.7
+    },
+    {
+      "SpawnerId": "Hedera_Item_Activate_Flash",
+      "StartDelay": 0.7,
+      "PositionOffset": {
+        "X": -100.0
+      }
+    },
+    {
+      "SpawnerId": "Hedera_Item_Activate_Flash2",
+      "StartDelay": 0.7,
+      "PositionOffset": {
+        "X": -100.0
+      }
+    },
+    {
+      "SpawnerId": "Hedera_Item_Activate_Flash_Test",
+      "StartDelay": 0.6,
+      "PositionOffset": {
+        "X": -100.0
+      }
+    },
+    {
+      "SpawnerId": "Hedera_Item_Activate_Dist",
+      "PositionOffset": {
+        "X": 0
+      },
+      "FixedRotation": false,
+      "StartDelay": 0.7
+    },
+    {
+      "SpawnerId": "Portal_Ground_Hedera_Start3",
+      "FixedRotation": false,
+      "StartDelay": 0.7
+    }
+  ],
+  "CullDistance": 100,
+  "LifeSpan": 2.7
+}

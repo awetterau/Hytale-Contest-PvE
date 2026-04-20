@@ -8,11 +8,14 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 final class OrangeBlobBlockRuntime {
+    private static final int ROCK_MOVE_DISTANCE_REDUCTION = 3;
     private static final ConcurrentHashMap<UUID, List<Session>> SESSIONS_BY_WORLD = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, ConcurrentHashMap<String, UUID>> ACTIVE_POSITIONS_BY_WORLD = new ConcurrentHashMap<>();
 
@@ -23,13 +26,23 @@ final class OrangeBlobBlockRuntime {
             @Nonnull UUID worldId,
             @Nonnull UUID activatingPlayerId,
             @Nonnull List<ClusterBlock> sourceBlocks,
+            @Nonnull List<ClusterBlock> sourceDetachedRocks,
             @Nonnull ClusterBlock sourceCenterBlock,
             @Nonnull ClusterBlock sourceRuneBlock,
             long now,
             int moveDistance,
             long moveDurationMs,
             @Nonnull OrangeBlobExtractionConfigManager.ExtractionConfigState config,
-            @Nonnull List<SupportBlock> supportBlocks
+            @Nonnull List<SupportBlock> supportBlocks,
+            double extractionRadiusBlocks,
+            double extractionMinHeightOffset,
+            double extractionMaxHeightOffset,
+            double enemySpawnMinRadiusBlocks,
+            double enemySpawnMaxRadiusBlocks,
+            double enemySpawnMinHeightOffset,
+            double enemySpawnMaxHeightOffset,
+            long extractionWindowDurationMs,
+            long moverTailDelayMs
     ) {
         long downEndAt = now + moveDurationMs;
         long holdEndAt = downEndAt + config.defenseDurationMs();
@@ -41,7 +54,19 @@ final class OrangeBlobBlockRuntime {
                     block.x(),
                     block.y() - moveDistance,
                     block.z(),
-                    config.loweredIslandBlockId(),
+                    toActiveBlobBlockId(block.blockId()),
+                    block.rotation()
+            ));
+        }
+
+        int detachedRockMoveDistance = Math.max(0, moveDistance - ROCK_MOVE_DISTANCE_REDUCTION);
+        ArrayList<ClusterBlock> loweredDetachedRocks = new ArrayList<>(sourceDetachedRocks.size());
+        for (ClusterBlock block : sourceDetachedRocks) {
+            loweredDetachedRocks.add(new ClusterBlock(
+                    block.x(),
+                    block.y() - detachedRockMoveDistance,
+                    block.z(),
+                    toActiveBlobBlockId(block.blockId()),
                     block.rotation()
             ));
         }
@@ -68,21 +93,47 @@ final class OrangeBlobBlockRuntime {
                 activatingPlayerId,
                 sourceBlocks,
                 loweredBlocks,
+                sourceDetachedRocks,
+                loweredDetachedRocks,
                 sourceCenterBlock,
                 loweredCenterBlock,
                 sourceRuneBlock,
                 loweredRuneBlock,
+                sourceRuneBlock.rotation(),
                 now,
                 downEndAt,
                 holdEndAt,
                 upEndAt,
                 config,
-                supportBlocks
+                supportBlocks,
+                extractionRadiusBlocks,
+                extractionMinHeightOffset,
+                extractionMaxHeightOffset,
+                enemySpawnMinRadiusBlocks,
+                enemySpawnMaxRadiusBlocks,
+                enemySpawnMinHeightOffset,
+                enemySpawnMaxHeightOffset,
+                extractionWindowDurationMs,
+                Math.max(0L, moverTailDelayMs)
         );
     }
 
     static void addSession(@Nonnull Session session) {
         SESSIONS_BY_WORLD.computeIfAbsent(session.worldId(), ignored -> new ArrayList<>()).add(session);
+    }
+
+    @Nonnull
+    private static String toActiveBlobBlockId(@Nonnull String sourceBlockId) {
+        if (OrangeBlobBlockManager.BLOCK_ID.equals(sourceBlockId)) {
+            return OrangeBlobBlockManager.ACTIVE_BLOCK_ID;
+        }
+        if (OrangeBlobBlockManager.CORNER_BLOCK_ID.equals(sourceBlockId)) {
+            return OrangeBlobBlockManager.ACTIVE_CORNER_BLOCK_ID;
+        }
+        if (OrangeBlobBlockManager.ROCKS_BLOCK_ID.equals(sourceBlockId)) {
+            return OrangeBlobBlockManager.ACTIVE_ROCKS_BLOCK_ID;
+        }
+        return sourceBlockId;
     }
 
     static void markClusterActive(@Nonnull Session session) {
@@ -92,6 +143,12 @@ final class OrangeBlobBlockRuntime {
         }
         active.put(OrangeBlobBlockManager.posKey(session.sourceRuneBlock().x(), session.sourceRuneBlock().y(), session.sourceRuneBlock().z()), session.id());
         for (ClusterBlock block : session.loweredBlocks()) {
+            active.put(OrangeBlobBlockManager.posKey(block.x(), block.y(), block.z()), session.id());
+        }
+        for (ClusterBlock block : session.sourceDetachedRocks()) {
+            active.put(OrangeBlobBlockManager.posKey(block.x(), block.y(), block.z()), session.id());
+        }
+        for (ClusterBlock block : session.loweredDetachedRocks()) {
             active.put(OrangeBlobBlockManager.posKey(block.x(), block.y(), block.z()), session.id());
         }
         active.put(OrangeBlobBlockManager.posKey(session.loweredRuneBlock().x(), session.loweredRuneBlock().y(), session.loweredRuneBlock().z()), session.id());
@@ -191,6 +248,13 @@ final class OrangeBlobBlockRuntime {
         COMPLETE
     }
 
+    enum RockPhase {
+        IDLE_UP,
+        MOVING_DOWN,
+        IDLE_DOWN,
+        MOVING_UP
+    }
+
     record ClusterBlock(
             int x,
             int y,
@@ -223,6 +287,10 @@ final class OrangeBlobBlockRuntime {
         @Nonnull
         private final List<ClusterBlock> loweredBlocks;
         @Nonnull
+        private final List<ClusterBlock> sourceDetachedRocks;
+        @Nonnull
+        private final List<ClusterBlock> loweredDetachedRocks;
+        @Nonnull
         private final ClusterBlock sourceCenterBlock;
         @Nonnull
         private final ClusterBlock loweredCenterBlock;
@@ -230,6 +298,7 @@ final class OrangeBlobBlockRuntime {
         private final ClusterBlock sourceRuneBlock;
         @Nonnull
         private final ClusterBlock loweredRuneBlock;
+        private final int sourceRuneInitialRotation;
         private final long downStartAt;
         private final long downEndAt;
         private long holdEndAt;
@@ -240,12 +309,27 @@ final class OrangeBlobBlockRuntime {
         private final OrangeBlobExtractionConfigManager.ExtractionConfigState config;
         @Nonnull
         private final List<SupportBlock> supportBlocks;
+        private final double extractionRadiusBlocks;
+        private final double extractionMinHeightOffset;
+        private final double extractionMaxHeightOffset;
+        private final double enemySpawnMinRadiusBlocks;
+        private final double enemySpawnMaxRadiusBlocks;
+        private final double enemySpawnMinHeightOffset;
+        private final double enemySpawnMaxHeightOffset;
+        private final long extractionWindowDurationMs;
+        private final long rockTailDelayMs;
         @Nonnull
         private Phase phase = Phase.MOVING_DOWN;
         @Nonnull
+        private RockPhase rockPhase = RockPhase.IDLE_UP;
+        @Nonnull
         private final List<Mover> movers = new ArrayList<>();
         @Nonnull
+        private final List<Mover> rockMovers = new ArrayList<>();
+        @Nonnull
         private final List<Ref<EntityStore>> spawnedMobRefs = new ArrayList<>();
+        @Nonnull
+        private final List<com.hypixel.hytale.math.vector.Vector3d> recentMobSpawnPositions = new ArrayList<>();
         private Ref<EntityStore> runeBodyRef;
         private Ref<EntityStore> runeAggroProxyRef;
         private long nextMobSpawnAt;
@@ -255,6 +339,8 @@ final class OrangeBlobBlockRuntime {
         private long nextStandReminderAt;
         private boolean loweredPlaced;
         private boolean sourcePlaced;
+        private boolean loweredRocksPlaced;
+        private boolean sourceRocksPlaced;
         private boolean supportBlocksPlaced;
         private float runeHealth;
         private int wavesSpawned;
@@ -265,6 +351,16 @@ final class OrangeBlobBlockRuntime {
         private long extractionAutoLaunchAt;
         private boolean launchRequested;
         private int lastAnnouncedHealthTier = 4;
+        private boolean extractionWindowActive;
+        private long extractionWindowEndsAt;
+        @Nonnull
+        private final Set<UUID> extractionWindowPlayerIds = new LinkedHashSet<>();
+        private boolean rockDownSignalPending;
+        private long rockDownSignalAt;
+        private boolean rockUpSignalPending;
+        private long rockUpSignalAt;
+        private long rockDownEndAt;
+        private long rockUpEndAt;
 
         private Session(
                 @Nonnull UUID id,
@@ -272,26 +368,41 @@ final class OrangeBlobBlockRuntime {
                 @Nonnull UUID activatingPlayerId,
                 @Nonnull List<ClusterBlock> sourceBlocks,
                 @Nonnull List<ClusterBlock> loweredBlocks,
+                @Nonnull List<ClusterBlock> sourceDetachedRocks,
+                @Nonnull List<ClusterBlock> loweredDetachedRocks,
                 @Nonnull ClusterBlock sourceCenterBlock,
                 @Nonnull ClusterBlock loweredCenterBlock,
                 @Nonnull ClusterBlock sourceRuneBlock,
                 @Nonnull ClusterBlock loweredRuneBlock,
+                int sourceRuneInitialRotation,
                 long downStartAt,
                 long downEndAt,
                 long holdEndAt,
                 long upEndAt,
                 @Nonnull OrangeBlobExtractionConfigManager.ExtractionConfigState config,
-                @Nonnull List<SupportBlock> supportBlocks
+                @Nonnull List<SupportBlock> supportBlocks,
+                double extractionRadiusBlocks,
+                double extractionMinHeightOffset,
+                double extractionMaxHeightOffset,
+                double enemySpawnMinRadiusBlocks,
+                double enemySpawnMaxRadiusBlocks,
+                double enemySpawnMinHeightOffset,
+                double enemySpawnMaxHeightOffset,
+                long extractionWindowDurationMs,
+                long rockTailDelayMs
         ) {
             this.id = id;
             this.worldId = worldId;
             this.activatingPlayerId = activatingPlayerId;
             this.sourceBlocks = List.copyOf(sourceBlocks);
             this.loweredBlocks = List.copyOf(loweredBlocks);
+            this.sourceDetachedRocks = List.copyOf(sourceDetachedRocks);
+            this.loweredDetachedRocks = List.copyOf(loweredDetachedRocks);
             this.sourceCenterBlock = sourceCenterBlock;
             this.loweredCenterBlock = loweredCenterBlock;
             this.sourceRuneBlock = sourceRuneBlock;
             this.loweredRuneBlock = loweredRuneBlock;
+            this.sourceRuneInitialRotation = sourceRuneInitialRotation;
             this.downStartAt = downStartAt;
             this.downEndAt = downEndAt;
             this.holdEndAt = holdEndAt;
@@ -300,6 +411,15 @@ final class OrangeBlobBlockRuntime {
             this.upEndAt = upEndAt;
             this.config = config;
             this.supportBlocks = List.copyOf(supportBlocks);
+            this.extractionRadiusBlocks = extractionRadiusBlocks;
+            this.extractionMinHeightOffset = Math.min(extractionMinHeightOffset, extractionMaxHeightOffset);
+            this.extractionMaxHeightOffset = Math.max(extractionMinHeightOffset, extractionMaxHeightOffset);
+            this.enemySpawnMinRadiusBlocks = Math.min(enemySpawnMinRadiusBlocks, enemySpawnMaxRadiusBlocks);
+            this.enemySpawnMaxRadiusBlocks = Math.max(enemySpawnMinRadiusBlocks, enemySpawnMaxRadiusBlocks);
+            this.enemySpawnMinHeightOffset = Math.min(enemySpawnMinHeightOffset, enemySpawnMaxHeightOffset);
+            this.enemySpawnMaxHeightOffset = Math.max(enemySpawnMinHeightOffset, enemySpawnMaxHeightOffset);
+            this.extractionWindowDurationMs = Math.max(100L, extractionWindowDurationMs);
+            this.rockTailDelayMs = Math.max(0L, rockTailDelayMs);
             this.nextMobSpawnAt = downEndAt;
             this.nextDebugAt = downEndAt;
             this.nextRuneDamageAt = downEndAt + 1000L;
@@ -313,22 +433,39 @@ final class OrangeBlobBlockRuntime {
         @Nonnull UUID activatingPlayerId() { return this.activatingPlayerId; }
         @Nonnull List<ClusterBlock> sourceBlocks() { return this.sourceBlocks; }
         @Nonnull List<ClusterBlock> loweredBlocks() { return this.loweredBlocks; }
+        @Nonnull List<ClusterBlock> sourceDetachedRocks() { return this.sourceDetachedRocks; }
+        @Nonnull List<ClusterBlock> loweredDetachedRocks() { return this.loweredDetachedRocks; }
         @Nonnull ClusterBlock sourceCenterBlock() { return this.sourceCenterBlock; }
         @Nonnull ClusterBlock loweredCenterBlock() { return this.loweredCenterBlock; }
         @Nonnull ClusterBlock sourceRuneBlock() { return this.sourceRuneBlock; }
         @Nonnull ClusterBlock loweredRuneBlock() { return this.loweredRuneBlock; }
+        int sourceRuneInitialRotation() { return this.sourceRuneInitialRotation; }
         long downStartAt() { return this.downStartAt; }
         long downEndAt() { return this.downEndAt; }
+        long moveDurationMs() { return this.moveDurationMs; }
         long holdEndAt() { return this.holdEndAt; }
         void holdEndAt(long holdEndAt) { this.holdEndAt = holdEndAt; }
         long upEndAt() { return this.upEndAt; }
         long upStartAt() { return this.upStartAt; }
         @Nonnull OrangeBlobExtractionConfigManager.ExtractionConfigState config() { return this.config; }
         @Nonnull List<SupportBlock> supportBlocks() { return this.supportBlocks; }
+        double extractionRadiusBlocks() { return this.extractionRadiusBlocks; }
+        double extractionMinHeightOffset() { return this.extractionMinHeightOffset; }
+        double extractionMaxHeightOffset() { return this.extractionMaxHeightOffset; }
+        double enemySpawnMinRadiusBlocks() { return this.enemySpawnMinRadiusBlocks; }
+        double enemySpawnMaxRadiusBlocks() { return this.enemySpawnMaxRadiusBlocks; }
+        double enemySpawnMinHeightOffset() { return this.enemySpawnMinHeightOffset; }
+        double enemySpawnMaxHeightOffset() { return this.enemySpawnMaxHeightOffset; }
+        long extractionWindowDurationMs() { return this.extractionWindowDurationMs; }
+        long rockTailDelayMs() { return this.rockTailDelayMs; }
         @Nonnull Phase phase() { return this.phase; }
         void phase(@Nonnull Phase phase) { this.phase = phase; }
+        @Nonnull RockPhase rockPhase() { return this.rockPhase; }
+        void rockPhase(@Nonnull RockPhase rockPhase) { this.rockPhase = rockPhase; }
         @Nonnull List<Mover> movers() { return this.movers; }
+        @Nonnull List<Mover> rockMovers() { return this.rockMovers; }
         @Nonnull List<Ref<EntityStore>> spawnedMobRefs() { return this.spawnedMobRefs; }
+        @Nonnull List<com.hypixel.hytale.math.vector.Vector3d> recentMobSpawnPositions() { return this.recentMobSpawnPositions; }
         Ref<EntityStore> runeBodyRef() { return this.runeBodyRef; }
         void runeBodyRef(Ref<EntityStore> runeBodyRef) { this.runeBodyRef = runeBodyRef; }
         Ref<EntityStore> runeAggroProxyRef() { return this.runeAggroProxyRef; }
@@ -347,6 +484,10 @@ final class OrangeBlobBlockRuntime {
         void loweredPlaced(boolean loweredPlaced) { this.loweredPlaced = loweredPlaced; }
         boolean sourcePlaced() { return this.sourcePlaced; }
         void sourcePlaced(boolean sourcePlaced) { this.sourcePlaced = sourcePlaced; }
+        boolean loweredRocksPlaced() { return this.loweredRocksPlaced; }
+        void loweredRocksPlaced(boolean loweredRocksPlaced) { this.loweredRocksPlaced = loweredRocksPlaced; }
+        boolean sourceRocksPlaced() { return this.sourceRocksPlaced; }
+        void sourceRocksPlaced(boolean sourceRocksPlaced) { this.sourceRocksPlaced = sourceRocksPlaced; }
         boolean supportBlocksPlaced() { return this.supportBlocksPlaced; }
         void supportBlocksPlaced(boolean supportBlocksPlaced) { this.supportBlocksPlaced = supportBlocksPlaced; }
         float runeHealth() { return this.runeHealth; }
@@ -367,11 +508,43 @@ final class OrangeBlobBlockRuntime {
         void launchRequested(boolean launchRequested) { this.launchRequested = launchRequested; }
         int lastAnnouncedHealthTier() { return this.lastAnnouncedHealthTier; }
         void lastAnnouncedHealthTier(int lastAnnouncedHealthTier) { this.lastAnnouncedHealthTier = lastAnnouncedHealthTier; }
+        boolean extractionWindowActive() { return this.extractionWindowActive; }
+        void extractionWindowActive(boolean extractionWindowActive) { this.extractionWindowActive = extractionWindowActive; }
+        long extractionWindowEndsAt() { return this.extractionWindowEndsAt; }
+        void extractionWindowEndsAt(long extractionWindowEndsAt) { this.extractionWindowEndsAt = extractionWindowEndsAt; }
+        @Nonnull Set<UUID> extractionWindowPlayerIds() { return this.extractionWindowPlayerIds; }
+        boolean rockDownSignalPending() { return this.rockDownSignalPending; }
+        void rockDownSignalPending(boolean rockDownSignalPending) { this.rockDownSignalPending = rockDownSignalPending; }
+        long rockDownSignalAt() { return this.rockDownSignalAt; }
+        void rockDownSignalAt(long rockDownSignalAt) { this.rockDownSignalAt = rockDownSignalAt; }
+        boolean rockUpSignalPending() { return this.rockUpSignalPending; }
+        void rockUpSignalPending(boolean rockUpSignalPending) { this.rockUpSignalPending = rockUpSignalPending; }
+        long rockUpSignalAt() { return this.rockUpSignalAt; }
+        void rockUpSignalAt(long rockUpSignalAt) { this.rockUpSignalAt = rockUpSignalAt; }
+        long rockDownEndAt() { return this.rockDownEndAt; }
+        void rockDownEndAt(long rockDownEndAt) { this.rockDownEndAt = rockDownEndAt; }
+        long rockUpEndAt() { return this.rockUpEndAt; }
+        void rockUpEndAt(long rockUpEndAt) { this.rockUpEndAt = rockUpEndAt; }
+
+        void signalRockMoveDown(long now) {
+            this.rockDownSignalPending = true;
+            this.rockDownSignalAt = now;
+            this.rockUpSignalPending = false;
+        }
+
+        void signalRockMoveUp(long now) {
+            this.rockUpSignalPending = true;
+            this.rockUpSignalAt = now;
+            this.rockDownSignalPending = false;
+        }
 
         void beginMoveUp(long now) {
             this.upStartAt = now;
             this.upEndAt = now + this.moveDurationMs;
             this.launchRequested = false;
+            this.extractionWindowActive = false;
+            this.extractionWindowEndsAt = 0L;
+            this.extractionWindowPlayerIds.clear();
         }
 
         boolean complete() {

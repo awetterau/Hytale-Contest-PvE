@@ -1,13 +1,66 @@
 {
-  "Parent": "Poison",
   "ApplicationEffects": {
-    "ScreenEffect": "ScreenEffects/Fire.png"
+    "ScreenEffect": "ScreenEffects/Crimson.png",
+    "EntityBottomTint": "#170303",
+    "EntityTopTint": "#80001b",
+    "EntityAnimationId": "Hurt",
+    "WorldSoundEventId": "SFX_Effect_Poison_World",
+    "LocalSoundEventId": "SFX_Effect_Poison_Local",
+    "Particles": [
+      {
+        "SystemId": "Effect_Crimson_Poison"
+      }
+    ],
+    "FirstPersonParticles": [
+      {
+        "SystemId": "Effect_Crimson_Poison"
+      }
+    ]
   },
+  "DamageCalculatorCooldown": 1,
   "DamageCalculator": {
     "BaseDamage": {
-      "Poison": 5
+      "Poison": 4
     }
   },
-  "DamageCalculatorCooldown": 2,
-  "Duration": 3
+  "DamageEffects": {
+    "WorldSoundEventId": "SFX_Effect_Poison_World",
+    "PlayerSoundEventId": "SFX_Effect_Poison_Local"
+  },
+  "OverlapBehavior": "Extend",
+  "RemovalBehavior": "Duration",
+  "Infinite": false,
+  "Debuff": true,
+  "StatusEffectIcon": "UI/StatusEffects/Crimson_Poison.png",
+  "Duration": 3,
+  "DeathMessageKey": "server.general.deathCause.poison",
+  "ApplyConditions": [
+    {
+      "Id": "InFluid",
+      "Tags": [
+        "Water"
+      ],
+      "Inverse": true
+    },
+    {
+      "Id": "HasEffect",
+      "EffectId": "Immunity_Fire",
+      "Inverse": true
+    },
+    {
+      "Id": "LogicCondition",
+      "Conditions": [
+        {
+          "Id": "IsPlayer",
+          "Inverse": true
+        },
+        {
+          "Id": "CheckPlayerGameMode",
+          "GameMode": "Adventure",
+          "Inverse": false
+        }
+      ],
+      "Operator": "Or"
+    }
+  ]
 }

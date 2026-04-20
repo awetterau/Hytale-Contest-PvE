@@ -8,6 +8,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.state.run.GameSessionManager;
+import dev.hytalemodding.state.run.RunExtractionConfigManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -23,12 +24,19 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class OrangeBlobBlockManager {
     public static final String BLOCK_ID = "Orange_Blob_Block";
     public static final String ACTIVE_BLOCK_ID = "Orange_Blob_Block_Active";
+    public static final String CORNER_BLOCK_ID = "Blob_Corner_Block";
+    public static final String ACTIVE_CORNER_BLOCK_ID = "Blob_Corner_Block_Active";
+    public static final String ROCKS_BLOCK_ID = "Blob_Rocks";
+    public static final String ACTIVE_ROCKS_BLOCK_ID = "Blob_Rocks_Active";
     public static final String RUNE_BLOCK_ID = "Orange_Blob_Rune";
     public static final String ACTIVE_RUNE_BLOCK_ID = "Orange_Blob_Rune_Active";
     private static final String EMPTY_BLOCK_ID = "Empty";
     private static final int MOVE_DISTANCE_BLOCKS = 5;
     private static final long MOVE_DURATION_MS = 1520L;
+    private static final long ROCK_MOVE_DELAY_MS = 2000L;
     private static final long USE_COOLDOWN_MS = 650L;
+    private static final boolean FORCE_TEST_ROTATION_ENABLED = false;
+    private static final int FORCE_TEST_ROTATION_INDEX = 3;
     private static final Vector3i[] ADJACENT_OFFSETS = new Vector3i[]{
             new Vector3i(1, 0, 0),
             new Vector3i(-1, 0, 0),
@@ -72,11 +80,45 @@ public final class OrangeBlobBlockManager {
 
         OrangeBlobExtractionConfigManager.ExtractionConfigState config =
                 OrangeBlobExtractionConfigManager.get().getState(world.getName());
+        RunExtractionConfigManager.VariantState runtimeExtractionState =
+                RunExtractionConfigManager.get().getVariantState(RunExtractionConfigManager.VariantKey.PLATFORM_RUNE);
+
+        String availabilityFailure = validateRunWindowAvailability(activeSession, runtimeExtractionState);
+        if (availabilityFailure != null) {
+            playerRef.sendMessage(Message.raw(availabilityFailure));
+            return true;
+        }
+
+        OrangeBlobExtractionConfigManager.ExtractionConfigState effectiveConfig = new OrangeBlobExtractionConfigManager.ExtractionConfigState(
+                config.activationRadiusBlocks(),
+                config.defendRadiusBlocks(),
+                runtimeExtractionState.extractionWaitSeconds() * 1000L,
+                0L,
+                runtimeExtractionState.enemyWavesEnabled(),
+                config.waveIntervalMs(),
+                runtimeExtractionState.enemyMobsPerWave(),
+                config.maxWaves(),
+                runtimeExtractionState.coreMaxHealth(),
+                config.runeDamageIntervalMs(),
+                config.runeDamagePerMobTick(),
+                config.runeDamageRadiusBlocks(),
+                config.resetWhenNoPlayersNearby(),
+                config.pauseWhenNoPlayersNearby(),
+                config.abandonmentGraceMs(),
+                config.traversalHelperMode(),
+                config.proceduralSupportEnabled(),
+                config.proceduralSupportCount(),
+                config.loweredIslandBlockId(),
+                config.idleRuneBlockId(),
+                config.activeRuneBlockId(),
+                config.traversalHelperBlockId(),
+                config.proceduralSupportBlockId()
+        );
         OrangeBlobBlockRuntime.ClusterBlock runeBlock = new OrangeBlobBlockRuntime.ClusterBlock(
                 target.x,
                 target.y,
                 target.z,
-                config.idleRuneBlockId(),
+                effectiveConfig.idleRuneBlockId(),
                 readRotation(world, target.x, target.y, target.z)
         );
 
@@ -87,6 +129,7 @@ public final class OrangeBlobBlockManager {
         }
 
         List<OrangeBlobBlockRuntime.ClusterBlock> cluster = findConnectedCluster(world, anchorBlob);
+        List<OrangeBlobBlockRuntime.ClusterBlock> detachedRocks = findNearbyDetachedRockBlocks(world, runeBlock, cluster);
         if (cluster.isEmpty()) {
             playerRef.sendMessage(Message.raw("This extraction island has no connected blob terrain."));
             return true;
@@ -99,20 +142,30 @@ public final class OrangeBlobBlockManager {
         }
 
         OrangeBlobBlockRuntime.ClusterBlock centerBlock = findCenterBlock(cluster);
-        List<OrangeBlobBlockRuntime.SupportBlock> supportBlocks = buildSupportBlocks(world, cluster, centerBlock, runeBlock, config);
+        List<OrangeBlobBlockRuntime.SupportBlock> supportBlocks = buildSupportBlocks(world, cluster, centerBlock, runeBlock, effectiveConfig);
 
         long now = System.currentTimeMillis();
         OrangeBlobBlockRuntime.Session session = OrangeBlobBlockRuntime.createSession(
                 worldId,
                 playerRef.getUuid(),
                 cluster,
+                detachedRocks,
                 centerBlock,
                 runeBlock,
                 now,
                 MOVE_DISTANCE_BLOCKS,
                 MOVE_DURATION_MS,
-                config,
-                supportBlocks
+                effectiveConfig,
+                supportBlocks,
+                runtimeExtractionState.extractionRadiusBlocks(),
+                runtimeExtractionState.extractionMinHeightOffset(),
+                runtimeExtractionState.extractionMaxHeightOffset(),
+                runtimeExtractionState.enemySpawnMinRadiusBlocks(),
+                runtimeExtractionState.enemySpawnMaxRadiusBlocks(),
+                runtimeExtractionState.enemySpawnMinHeightOffset(),
+                runtimeExtractionState.enemySpawnMaxHeightOffset(),
+                runtimeExtractionState.extractionWindowSeconds() * 1000L,
+                detachedRocks.isEmpty() ? 0L : ROCK_MOVE_DELAY_MS
         );
         OrangeBlobBlockRuntime.markClusterActive(session);
         placeSupportBlocks(world, supportBlocks);
@@ -122,6 +175,24 @@ public final class OrangeBlobBlockManager {
         OrangeBlobBlockRuntime.addSession(session);
         playerRef.sendMessage(Message.raw("Extraction rune awakened. Hold the island and defend the rune."));
         return true;
+    }
+
+    @Nullable
+    private static String validateRunWindowAvailability(
+            @Nonnull GameSessionManager.ActiveSessionSnapshot activeSession,
+            @Nonnull RunExtractionConfigManager.VariantState state
+    ) {
+        if (activeSession.startedAtEpochMillis() <= 0L) {
+            return null;
+        }
+        long elapsedSeconds = Math.max(0L, (System.currentTimeMillis() - activeSession.startedAtEpochMillis()) / 1000L);
+        if (elapsedSeconds < state.runEnableFromSecond()) {
+            return "This extraction will be enabled at " + state.runEnableFromSecond() + "s.";
+        }
+        if (elapsedSeconds > state.runEnableUntilSecond()) {
+            return "This extraction is no longer available after " + state.runEnableUntilSecond() + "s.";
+        }
+        return null;
     }
 
     public static boolean tryLaunchReadyExtraction(
@@ -167,6 +238,24 @@ public final class OrangeBlobBlockManager {
             return;
         }
         OrangeBlobBlockRuntime.clearWorld(worldId);
+    }
+
+    public static long getExtractionCountdownMillis(@Nullable UUID worldId) {
+        if (worldId == null) {
+            return 0L;
+        }
+        long now = System.currentTimeMillis();
+        long best = 0L;
+        for (OrangeBlobBlockRuntime.Session session : OrangeBlobBlockRuntime.getSessions(worldId)) {
+            long remaining = 0L;
+            if (session.phase() == OrangeBlobBlockRuntime.Phase.HOLDING_DOWN && !session.extractionReady()) {
+                remaining = Math.max(0L, session.holdEndAt() - now);
+            }
+            if (remaining > best) {
+                best = remaining;
+            }
+        }
+        return best;
     }
 
     public static void createPrototypeAt(@Nonnull World world, @Nonnull Vector3i center) {
@@ -315,7 +404,7 @@ public final class OrangeBlobBlockManager {
                     current.x,
                     current.y,
                     current.z,
-                    BLOCK_ID,
+                    blockType.getId(),
                     readRotation(world, current.x, current.y, current.z)
             ));
 
@@ -325,6 +414,45 @@ public final class OrangeBlobBlockManager {
         }
 
         return blocks;
+    }
+
+    @Nonnull
+    private static List<OrangeBlobBlockRuntime.ClusterBlock> findNearbyDetachedRockBlocks(
+            @Nonnull World world,
+            @Nonnull OrangeBlobBlockRuntime.ClusterBlock runeBlock,
+            @Nonnull List<OrangeBlobBlockRuntime.ClusterBlock> cluster
+    ) {
+        Set<String> existing = new HashSet<>();
+        for (OrangeBlobBlockRuntime.ClusterBlock block : cluster) {
+            existing.add(posKey(block.x(), block.y(), block.z()));
+        }
+        List<OrangeBlobBlockRuntime.ClusterBlock> detached = new ArrayList<>();
+        int radius = 15;
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dy = -radius; dy <= radius; dy++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    if ((dx * dx) + (dy * dy) + (dz * dz) > (radius * radius)) {
+                        continue;
+                    }
+                    int x = runeBlock.x() + dx;
+                    int y = runeBlock.y() + dy;
+                    int z = runeBlock.z() + dz;
+                    String key = posKey(x, y, z);
+                    if (existing.contains(key)) {
+                        continue;
+                    }
+                    BlockType blockType = world.getBlockType(x, y, z);
+                    if (blockType == null || !isDelayedRockBlockId(blockType.getId())) {
+                        continue;
+                    }
+                    detached.add(new OrangeBlobBlockRuntime.ClusterBlock(
+                            x, y, z, blockType.getId(), readRotation(world, x, y, z)
+                    ));
+                    existing.add(key);
+                }
+            }
+        }
+        return List.copyOf(detached);
     }
 
     @Nonnull
@@ -378,26 +506,6 @@ public final class OrangeBlobBlockManager {
             return "That extraction rune is already active.";
         }
 
-        for (OrangeBlobBlockRuntime.ClusterBlock block : cluster) {
-            int targetY = block.y() - MOVE_DISTANCE_BLOCKS;
-            String destinationKey = posKey(block.x(), targetY, block.z());
-            if (clusterKeys.contains(destinationKey)) {
-                continue;
-            }
-            BlockType destinationType = world.getBlockType(block.x(), targetY, block.z());
-            if (!isEmpty(destinationType)) {
-                return "The extraction island needs 5 empty blocks below it.";
-            }
-        }
-
-        String runeDestinationKey = posKey(runeBlock.x(), runeBlock.y() - MOVE_DISTANCE_BLOCKS, runeBlock.z());
-        if (!clusterKeys.contains(runeDestinationKey)) {
-            BlockType runeDestinationType = world.getBlockType(runeBlock.x(), runeBlock.y() - MOVE_DISTANCE_BLOCKS, runeBlock.z());
-            if (!isEmpty(runeDestinationType)) {
-                return "The rune needs empty space below it so it can descend with the island.";
-            }
-        }
-
         return null;
     }
 
@@ -414,7 +522,18 @@ public final class OrangeBlobBlockManager {
     }
 
     static boolean isBlobBlock(@Nullable BlockType blockType) {
-        return blockType != null && BLOCK_ID.equals(blockType.getId());
+        if (blockType == null) {
+            return false;
+        }
+        String id = blockType.getId();
+        return BLOCK_ID.equals(id)
+                || ACTIVE_BLOCK_ID.equals(id)
+                || CORNER_BLOCK_ID.equals(id)
+                || ACTIVE_CORNER_BLOCK_ID.equals(id);
+    }
+
+    static boolean isDelayedRockBlockId(@Nullable String blockId) {
+        return ROCKS_BLOCK_ID.equals(blockId) || ACTIVE_ROCKS_BLOCK_ID.equals(blockId);
     }
 
     static boolean isRuneBlock(@Nullable BlockType blockType) {
@@ -426,6 +545,9 @@ public final class OrangeBlobBlockManager {
     }
 
     static int readRotation(@Nonnull World world, int x, int y, int z) {
+        if (FORCE_TEST_ROTATION_ENABLED) {
+            return FORCE_TEST_ROTATION_INDEX;
+        }
         try {
             return world.getBlockRotationIndex(x, y, z);
         } catch (Throwable ignored) {

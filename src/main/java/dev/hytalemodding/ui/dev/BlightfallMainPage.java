@@ -32,6 +32,7 @@ import dev.hytalemodding.state.run.GameSessionManager;
 import dev.hytalemodding.state.run.InfectionCoreRegistry;
 import dev.hytalemodding.state.run.InfectionActionConfigManager;
 import dev.hytalemodding.state.run.RunChunkSelectionManager;
+import dev.hytalemodding.state.run.RunExtractionConfigManager;
 import dev.hytalemodding.state.transition.GameFlowConfigManager;
 
 import javax.annotation.Nonnull;
@@ -57,6 +58,9 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
     private static final ConcurrentHashMap<UUID, String> PENDING_ACTION_TYPE_BY_PLAYER = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, String> PENDING_CORE_TIER_BY_PLAYER = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, Integer> CHUNK_BRUSH_RANGE_BY_PLAYER = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, String> EXTRACTION_VARIANT_BY_PLAYER = new ConcurrentHashMap<>();
+    private static final String EXTRACTION_VARIANT_PLATFORM = "platform_rune";
+    private static final String EXTRACTION_VARIANT_ROPE = "escape_rope";
 
     public BlightfallMainPage(@Nonnull PlayerRef playerRef) {
         super(playerRef, CustomPageLifetime.CanDismiss, PageEventData.CODEC);
@@ -81,6 +85,7 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         boolean runControlVisible = "run".equals(section);
         boolean chunkControlVisible = "chunks".equals(section);
         boolean infectionControlVisible = "red".equals(section);
+        boolean extractionControlVisible = "extractions".equals(section);
         int chunkBrushRange = Math.max(0, Math.min(5, CHUNK_BRUSH_RANGE_BY_PLAYER.getOrDefault(this.playerRef.getUuid(), 0)));
         ui.set("#TemplateWorldLabel.Visible", runControlVisible);
         ui.set("#TemplateInput.Visible", runControlVisible);
@@ -105,12 +110,16 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         RedWoolDamageSystem.setHazardFogEnabled(GameFlowConfigManager.get().isHazardFogWeatherEnabled());
         ui.set("#ToggleFogWeatherCenterButton.Visible", infectionControlVisible);
         ui.set("#ToggleFogWeatherCenterButton.Text", "Hazard fog: " + (RedWoolDamageSystem.isHazardFogEnabled() ? "ON" : "OFF"));
+        ui.set("#ToggleCoreRadiusChatButton.Visible", infectionControlVisible);
+        ui.set("#ToggleCoreRadiusChatButton.Text", "Core radius chat: " + (GameFlowConfigManager.get().isCoreRadiusChatMessagesEnabled() ? "ON" : "OFF"));
         ui.set("#ChunkReloadFileButton.Visible", chunkControlVisible);
         applyInfectionButtons(ui, events, worldId, "red".equals(section));
         applyInfectionTimeline(ui, events, "red".equals(section));
+        applyExtractionSection(ui, events, extractionControlVisible);
 
         events.addEventBinding(CustomUIEventBindingType.Activating, "#NavRunButton", EventData.of("Action", "nav_run"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#NavRedButton", EventData.of("Action", "nav_red"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#NavExtractionButton", EventData.of("Action", "nav_extractions"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#NavChunksButton", EventData.of("Action", "nav_chunks"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#ChunkBrushRangeDownButton", EventData.of("Action", "chunk_range_down"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#ChunkBrushRangeUpButton", EventData.of("Action", "chunk_range_up"), false);
@@ -136,6 +145,7 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         events.addEventBinding(CustomUIEventBindingType.Activating, "#ToggleAlertsButton", EventData.of("Action", "toggle_alerts"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#ToggleDynamicMapButton", EventData.of("Action", "toggle_dynamic_map"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#ToggleFogWeatherCenterButton", EventData.of("Action", "toggle_fog_weather"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#ToggleCoreRadiusChatButton", EventData.of("Action", "toggle_core_radius_chat"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#ChunkReloadFileButton", EventData.of("Action", "chunk_reload_file"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#RefreshButton", EventData.of("Action", "refresh"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#CloseButton", EventData.of("Action", "close"), false);
@@ -159,8 +169,24 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
                 SECTION_BY_PLAYER.put(this.playerRef.getUuid(), "red");
                 reopen(ref, store, player);
             }
+            case "nav_extractions" -> {
+                SECTION_BY_PLAYER.put(this.playerRef.getUuid(), "extractions");
+                reopen(ref, store, player);
+            }
             case "nav_chunks" -> {
                 SECTION_BY_PLAYER.put(this.playerRef.getUuid(), "chunks");
+                reopen(ref, store, player);
+            }
+            case "extract_sub_platform" -> {
+                EXTRACTION_VARIANT_BY_PLAYER.put(this.playerRef.getUuid(), EXTRACTION_VARIANT_PLATFORM);
+                reopen(ref, store, player);
+            }
+            case "extract_sub_rope" -> {
+                EXTRACTION_VARIANT_BY_PLAYER.put(this.playerRef.getUuid(), EXTRACTION_VARIANT_ROPE);
+                reopen(ref, store, player);
+            }
+            case "extract_apply" -> {
+                applyExtractionConfig(eventData);
                 reopen(ref, store, player);
             }
             case "chunk_range_down" -> {
@@ -258,6 +284,12 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
                 sendUiMessage("Hazard fog: " + (next ? "ON" : "OFF"));
                 reopen(ref, store, player);
             }
+            case "toggle_core_radius_chat" -> {
+                boolean next = !GameFlowConfigManager.get().isCoreRadiusChatMessagesEnabled();
+                GameFlowConfigManager.get().setCoreRadiusChatMessagesEnabled(next);
+                sendUiMessage("Core radius chat: " + (next ? "ON" : "OFF"));
+                reopen(ref, store, player);
+            }
             case "chunk_reload_file" -> {
                 reloadChunkSelectionFromFile();
                 reopen(ref, store, player);
@@ -318,9 +350,30 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
     }
 
     @Nonnull
+    private static EventData withExtractionEditor(@Nonnull String action) {
+        return new EventData()
+                .append("Action", action)
+                .append("@ExtractRunFromSec", "#ExtractionRunFromInput.Value")
+                .append("@ExtractRunUntilSec", "#ExtractionRunUntilInput.Value")
+                .append("@ExtractWaitSec", "#ExtractionWaitInput.Value")
+                .append("@ExtractWindowSec", "#ExtractionWindowInput.Value")
+                .append("@ExtractEnemyWavesEnabled", "#ExtractionEnemyWavesInput.Value")
+                .append("@ExtractEnemyMobsPerWave", "#ExtractionEnemyMobsPerWaveInput.Value")
+                .append("@ExtractCoreMaxHealth", "#ExtractionCoreMaxHealthInput.Value")
+                .append("@ExtractRadiusBlocks", "#ExtractionRadiusInput.Value")
+                .append("@ExtractMinHeightOffset", "#ExtractionMinHeightInput.Value")
+                .append("@ExtractMaxHeightOffset", "#ExtractionMaxHeightInput.Value")
+                .append("@ExtractEnemySpawnMinRadius", "#ExtractionEnemySpawnMinRadiusInput.Value")
+                .append("@ExtractEnemySpawnMaxRadius", "#ExtractionEnemySpawnMaxRadiusInput.Value")
+                .append("@ExtractEnemySpawnMinHeight", "#ExtractionEnemySpawnMinHeightInput.Value")
+                .append("@ExtractEnemySpawnMaxHeight", "#ExtractionEnemySpawnMaxHeightInput.Value");
+    }
+
+    @Nonnull
     private static String buildCenterContent(@Nonnull String section, @Nonnull UUID worldId, GameSessionManager.ActiveSessionSnapshot session) {
         return switch (section) {
             case "red" -> buildInfectionManagerContent(worldId);
+            case "extractions" -> "EXTRACTIONS\nConfigure extraction variants and interaction coordinates.\nUse subsections on the right panel.";
             case "chunks" -> "RUNCHUNKS TOOLS\nEdit selected chunks from this panel.\nChoose type: PIN / MARKER / CLEAR and set brush range.";
             default -> "RUN CONTROL\nUse this panel for start/reset/stop and Apply Game Control.\n\nActive session: " + (session == null ? "No" : "Yes");
         };
@@ -347,6 +400,9 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
                     + "\nPinned: " + pinned
                     + "\nMarker: " + marker;
         }
+        if ("extractions".equals(section)) {
+            return "EXTRAS\nSection: EXTRACTIONS\nUse right panel to edit run windows,\nwait time, and interaction blocks.";
+        }
         return "EXTRAS\nSection: " + formatSectionName(section) + "\nRun phase: "
                 + (session == null ? "IDLE" : session.phase().name()) + "\nElapsed: " + elapsedSeconds + "s";
     }
@@ -359,7 +415,111 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         if ("chunks".equals(section)) {
             return "RUNCHUNKS";
         }
+        if ("extractions".equals(section)) {
+            return "EXTRACTIONS";
+        }
         return "run".equals(section) ? "RUN CONTROL" : section.toUpperCase();
+    }
+
+    private void applyExtractionSection(
+            @Nonnull UICommandBuilder ui,
+            @Nonnull UIEventBuilder events,
+            boolean visible
+    ) {
+        ui.set("#ExtractionSection.Visible", visible);
+        ui.set("#ExtractionConfigSection.Visible", visible);
+        if (!visible) {
+            return;
+        }
+        RunExtractionConfigManager.ExtractionState state = RunExtractionConfigManager.get().getState();
+        String selectedVariant = getSelectedExtractionVariantForPlayer(this.playerRef.getUuid());
+        RunExtractionConfigManager.VariantState variantState = getVariantState(state, selectedVariant);
+
+        ui.set("#ExtractionSubsectionLabel.Text", "Subsection: " + formatExtractionVariantName(selectedVariant));
+        ui.set("#ExtractionPlatformButton.Text", EXTRACTION_VARIANT_PLATFORM.equals(selectedVariant) ? "> Runa de plataforma" : "Runa de plataforma");
+        ui.set("#ExtractionRopeButton.Text", EXTRACTION_VARIANT_ROPE.equals(selectedVariant) ? "> Cuerda de escape" : "Cuerda de escape");
+        ui.set("#ExtractionRunFromInput.Value", (double) variantState.runEnableFromSecond());
+        ui.set("#ExtractionRunUntilInput.Value", (double) variantState.runEnableUntilSecond());
+        ui.set("#ExtractionWaitInput.Value", (double) variantState.extractionWaitSeconds());
+        ui.set("#ExtractionWindowInput.Value", (double) variantState.extractionWindowSeconds());
+        ui.set("#ExtractionEnemyWavesInput.Value", Boolean.toString(variantState.enemyWavesEnabled()));
+        ui.set("#ExtractionEnemyMobsPerWaveInput.Value", (double) variantState.enemyMobsPerWave());
+        ui.set("#ExtractionCoreMaxHealthInput.Value", (double) variantState.coreMaxHealth());
+        ui.set("#ExtractionRadiusInput.Value", variantState.extractionRadiusBlocks());
+        ui.set("#ExtractionMinHeightInput.Value", variantState.extractionMinHeightOffset());
+        ui.set("#ExtractionMaxHeightInput.Value", variantState.extractionMaxHeightOffset());
+        ui.set("#ExtractionEnemySpawnMinRadiusInput.Value", variantState.enemySpawnMinRadiusBlocks());
+        ui.set("#ExtractionEnemySpawnMaxRadiusInput.Value", variantState.enemySpawnMaxRadiusBlocks());
+        ui.set("#ExtractionEnemySpawnMinHeightInput.Value", variantState.enemySpawnMinHeightOffset());
+        ui.set("#ExtractionEnemySpawnMaxHeightInput.Value", variantState.enemySpawnMaxHeightOffset());
+
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#ExtractionPlatformButton", EventData.of("Action", "extract_sub_platform"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#ExtractionRopeButton", EventData.of("Action", "extract_sub_rope"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#ExtractionApplyButton", withExtractionEditor("extract_apply"), false);
+    }
+
+    @Nonnull
+    private String getSelectedExtractionVariantForPlayer(@Nullable UUID playerId) {
+        UUID effectivePlayerId = playerId == null ? this.playerRef.getUuid() : playerId;
+        return EXTRACTION_VARIANT_BY_PLAYER.getOrDefault(effectivePlayerId, EXTRACTION_VARIANT_PLATFORM);
+    }
+
+    @Nonnull
+    private static String formatExtractionVariantName(@Nonnull String variant) {
+        if (EXTRACTION_VARIANT_ROPE.equals(variant)) {
+            return "Cuerda de escape";
+        }
+        return "Runa de plataforma";
+    }
+
+    @Nonnull
+    private static RunExtractionConfigManager.VariantState getVariantState(
+            @Nonnull RunExtractionConfigManager.ExtractionState state,
+            @Nonnull String variant
+    ) {
+        return EXTRACTION_VARIANT_ROPE.equals(variant) ? state.escapeRope() : state.platformRune();
+    }
+
+    private void applyExtractionConfig(@Nonnull PageEventData eventData) {
+        String selectedVariant = getSelectedExtractionVariantForPlayer(this.playerRef.getUuid());
+        int fromSecond = eventData.extractRunFromSec == null ? 0 : Math.max(0, (int) Math.round(eventData.extractRunFromSec));
+        int untilSecondBase = eventData.extractRunUntilSec == null ? fromSecond : (int) Math.round(eventData.extractRunUntilSec);
+        int untilSecond = Math.max(fromSecond, untilSecondBase);
+        int waitSeconds = eventData.extractWaitSec == null ? 20 : Math.max(10, (int) Math.round(eventData.extractWaitSec));
+        int windowSeconds = eventData.extractWindowSec == null ? 1 : Math.max(1, (int) Math.round(eventData.extractWindowSec));
+        boolean enemyWavesEnabled = eventData.extractEnemyWavesEnabled != null
+                && Boolean.parseBoolean(eventData.extractEnemyWavesEnabled.trim());
+        int enemyMobsPerWave = eventData.extractEnemyMobsPerWave == null ? 2 : Math.max(0, (int) Math.round(eventData.extractEnemyMobsPerWave));
+        float coreMaxHealth = eventData.extractCoreMaxHealth == null ? 300.0f : Math.max(1.0f, eventData.extractCoreMaxHealth.floatValue());
+        double extractionRadius = eventData.extractRadiusBlocks == null ? 6.0d : Math.max(0.25d, eventData.extractRadiusBlocks);
+        double minHeight = eventData.extractMinHeightOffset == null ? -1.0d : eventData.extractMinHeightOffset;
+        double maxHeight = eventData.extractMaxHeightOffset == null ? 3.0d : eventData.extractMaxHeightOffset;
+        double enemySpawnMinRadius = eventData.extractEnemySpawnMinRadius == null ? 7.0d : Math.max(0.5d, eventData.extractEnemySpawnMinRadius);
+        double enemySpawnMaxRadius = eventData.extractEnemySpawnMaxRadius == null ? 16.0d : Math.max(enemySpawnMinRadius, eventData.extractEnemySpawnMaxRadius);
+        double enemySpawnMinHeight = eventData.extractEnemySpawnMinHeight == null ? -8.0d : eventData.extractEnemySpawnMinHeight;
+        double enemySpawnMaxHeight = eventData.extractEnemySpawnMaxHeight == null ? 4.0d : eventData.extractEnemySpawnMaxHeight;
+
+        RunExtractionConfigManager.VariantState newState = new RunExtractionConfigManager.VariantState(
+                fromSecond,
+                untilSecond,
+                waitSeconds,
+                windowSeconds,
+                enemyWavesEnabled,
+                enemyMobsPerWave,
+                coreMaxHealth,
+                extractionRadius,
+                minHeight,
+                maxHeight,
+                enemySpawnMinRadius,
+                enemySpawnMaxRadius,
+                enemySpawnMinHeight,
+                enemySpawnMaxHeight
+        );
+        RunExtractionConfigManager.VariantKey key = EXTRACTION_VARIANT_ROPE.equals(selectedVariant)
+                ? RunExtractionConfigManager.VariantKey.ESCAPE_ROPE
+                : RunExtractionConfigManager.VariantKey.PLATFORM_RUNE;
+        RunExtractionConfigManager.get().saveVariant(key, newState);
+        sendUiMessage("Extraction config saved for " + formatExtractionVariantName(selectedVariant) + ".");
     }
 
     private void shiftChunkBrushRange(int direction) {
@@ -1141,6 +1301,34 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         public String coreTier = "";
         @Nullable
         public Double probability;
+        @Nullable
+        public Double extractRunFromSec;
+        @Nullable
+        public Double extractRunUntilSec;
+        @Nullable
+        public Double extractWaitSec;
+        @Nullable
+        public Double extractWindowSec;
+        @Nonnull
+        public String extractEnemyWavesEnabled = "";
+        @Nullable
+        public Double extractEnemyMobsPerWave;
+        @Nullable
+        public Double extractCoreMaxHealth;
+        @Nullable
+        public Double extractRadiusBlocks;
+        @Nullable
+        public Double extractMinHeightOffset;
+        @Nullable
+        public Double extractMaxHeightOffset;
+        @Nullable
+        public Double extractEnemySpawnMinRadius;
+        @Nullable
+        public Double extractEnemySpawnMaxRadius;
+        @Nullable
+        public Double extractEnemySpawnMinHeight;
+        @Nullable
+        public Double extractEnemySpawnMaxHeight;
 
         public static final BuilderCodec<PageEventData> CODEC = BuilderCodec.builder(PageEventData.class, PageEventData::new)
                 .append(new KeyedCodec<>("Action", Codec.STRING), (d, v) -> d.action = v, d -> d.action)
@@ -1168,6 +1356,34 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
                 .append(new KeyedCodec<>("@CoreTier", Codec.STRING), (d, v) -> d.coreTier = v, d -> d.coreTier)
                 .add()
                 .append(new KeyedCodec<>("@Probability", Codec.DOUBLE), (d, v) -> d.probability = v, d -> d.probability)
+                .add()
+                .append(new KeyedCodec<>("@ExtractRunFromSec", Codec.DOUBLE), (d, v) -> d.extractRunFromSec = v, d -> d.extractRunFromSec)
+                .add()
+                .append(new KeyedCodec<>("@ExtractRunUntilSec", Codec.DOUBLE), (d, v) -> d.extractRunUntilSec = v, d -> d.extractRunUntilSec)
+                .add()
+                .append(new KeyedCodec<>("@ExtractWaitSec", Codec.DOUBLE), (d, v) -> d.extractWaitSec = v, d -> d.extractWaitSec)
+                .add()
+                .append(new KeyedCodec<>("@ExtractWindowSec", Codec.DOUBLE), (d, v) -> d.extractWindowSec = v, d -> d.extractWindowSec)
+                .add()
+                .append(new KeyedCodec<>("@ExtractEnemyWavesEnabled", Codec.STRING), (d, v) -> d.extractEnemyWavesEnabled = v, d -> d.extractEnemyWavesEnabled)
+                .add()
+                .append(new KeyedCodec<>("@ExtractEnemyMobsPerWave", Codec.DOUBLE), (d, v) -> d.extractEnemyMobsPerWave = v, d -> d.extractEnemyMobsPerWave)
+                .add()
+                .append(new KeyedCodec<>("@ExtractCoreMaxHealth", Codec.DOUBLE), (d, v) -> d.extractCoreMaxHealth = v, d -> d.extractCoreMaxHealth)
+                .add()
+                .append(new KeyedCodec<>("@ExtractRadiusBlocks", Codec.DOUBLE), (d, v) -> d.extractRadiusBlocks = v, d -> d.extractRadiusBlocks)
+                .add()
+                .append(new KeyedCodec<>("@ExtractMinHeightOffset", Codec.DOUBLE), (d, v) -> d.extractMinHeightOffset = v, d -> d.extractMinHeightOffset)
+                .add()
+                .append(new KeyedCodec<>("@ExtractMaxHeightOffset", Codec.DOUBLE), (d, v) -> d.extractMaxHeightOffset = v, d -> d.extractMaxHeightOffset)
+                .add()
+                .append(new KeyedCodec<>("@ExtractEnemySpawnMinRadius", Codec.DOUBLE), (d, v) -> d.extractEnemySpawnMinRadius = v, d -> d.extractEnemySpawnMinRadius)
+                .add()
+                .append(new KeyedCodec<>("@ExtractEnemySpawnMaxRadius", Codec.DOUBLE), (d, v) -> d.extractEnemySpawnMaxRadius = v, d -> d.extractEnemySpawnMaxRadius)
+                .add()
+                .append(new KeyedCodec<>("@ExtractEnemySpawnMinHeight", Codec.DOUBLE), (d, v) -> d.extractEnemySpawnMinHeight = v, d -> d.extractEnemySpawnMinHeight)
+                .add()
+                .append(new KeyedCodec<>("@ExtractEnemySpawnMaxHeight", Codec.DOUBLE), (d, v) -> d.extractEnemySpawnMaxHeight = v, d -> d.extractEnemySpawnMaxHeight)
                 .add()
                 .build();
     }

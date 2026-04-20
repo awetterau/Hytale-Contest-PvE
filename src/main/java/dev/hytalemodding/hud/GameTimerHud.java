@@ -8,7 +8,9 @@ import javax.annotation.Nonnull;
 
 public class GameTimerHud extends CustomUIHud {
     private String timeString = "05:00";
+    private String extractionTimeString = "";
     private boolean visible = false;
+    private boolean extractionVisible = false;
 
     public GameTimerHud(PlayerRef playerRef) {
         super(playerRef);
@@ -19,6 +21,8 @@ public class GameTimerHud extends CustomUIHud {
         if (visible) {
             ui.append("GameTimerHud.ui");
             ui.set("#TimerLabel.Text", timeString);
+            ui.set("#ExtractionTimerLabel.Visible", extractionVisible);
+            ui.set("#ExtractionTimerLabel.Text", extractionTimeString);
         }
     }
 
@@ -29,6 +33,10 @@ public class GameTimerHud extends CustomUIHud {
     public void setVisible(boolean visible) {
         this.visible = visible;
     }
-}
 
+    public void setExtractionTimer(@Nonnull String timeString, boolean visible) {
+        this.extractionTimeString = timeString;
+        this.extractionVisible = visible;
+    }
+}
 

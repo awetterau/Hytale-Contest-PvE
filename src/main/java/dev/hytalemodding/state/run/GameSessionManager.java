@@ -282,12 +282,6 @@ public final class GameSessionManager {
 
         return transferFuture
                 .thenApply(runWorld -> {
-                    for (UUID expectedPlayerId : session.expectedPlayerIds) {
-                        PlayerRef expectedPlayer = Universe.get().getPlayer(expectedPlayerId);
-                        if (expectedPlayer != null) {
-                            RunStartMovementLockManager.get().lockPlayerForIntro(expectedPlayer);
-                        }
-                    }
                     if (GameFlowConfigManager.get().isStatusMessagesEnabled() && session.appliedRunHour >= 0) {
                         starter.sendMessage(Message.raw("Run world time applied: " + session.appliedRunHour + ":00"));
                     }
@@ -899,7 +893,6 @@ public final class GameSessionManager {
 
         return prewarmSpawnChunks(toWorld, destination, playerRef, selectionWorldName).thenCompose(ignored -> CompletableFuture.runAsync(() -> {
                     if (applyRunStartPreTeleportDelay) {
-                        RunStartMovementLockManager.get().lockPlayerForIntro(playerRef);
                         try {
                             Thread.sleep(RUN_START_PRE_TELEPORT_DELAY_MS);
                         } catch (InterruptedException interruptedException) {

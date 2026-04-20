@@ -48,6 +48,7 @@ public final class GameFlowConfigManager {
     private boolean statusMessagesEnabled = true;
     private boolean chunkLoadingMessagesEnabled = true;
     private boolean hazardFogWeatherEnabled = true;
+    private boolean coreRadiusChatMessagesEnabled = true;
     @Nullable
     private Transform runSpawn;
     @Nullable
@@ -167,6 +168,17 @@ public final class GameFlowConfigManager {
     public synchronized void setHazardFogWeatherEnabled(boolean enabled) {
         ensureLoaded();
         this.hazardFogWeatherEnabled = enabled;
+        saveQuietly();
+    }
+
+    public synchronized boolean isCoreRadiusChatMessagesEnabled() {
+        ensureLoaded();
+        return this.coreRadiusChatMessagesEnabled;
+    }
+
+    public synchronized void setCoreRadiusChatMessagesEnabled(boolean enabled) {
+        ensureLoaded();
+        this.coreRadiusChatMessagesEnabled = enabled;
         saveQuietly();
     }
 
@@ -382,6 +394,7 @@ public final class GameFlowConfigManager {
         lines.add("Status chat messages: " + this.statusMessagesEnabled);
         lines.add("Chunk loading messages: " + this.chunkLoadingMessagesEnabled);
         lines.add("Hazard fog weather: " + this.hazardFogWeatherEnabled);
+        lines.add("Core radius chat messages: " + this.coreRadiusChatMessagesEnabled);
         lines.add("Rescued NPC keys: " + String.join(",", this.rescuedNpcKeys));
         return lines;
     }
@@ -422,6 +435,7 @@ public final class GameFlowConfigManager {
         this.statusMessagesEnabled = parseBoolean(properties.getProperty("statusMessagesEnabled"), true);
         this.chunkLoadingMessagesEnabled = parseBoolean(properties.getProperty("chunkLoadingMessagesEnabled"), true);
         this.hazardFogWeatherEnabled = parseBoolean(properties.getProperty("hazardFogWeatherEnabled"), true);
+        this.coreRadiusChatMessagesEnabled = parseBoolean(properties.getProperty("coreRadiusChatMessagesEnabled"), true);
         this.runSpawn = readTransform(properties, "runSpawn");
         this.baseSpawn = readTransform(properties, "baseSpawn");
         this.rescueRunSpawn = readTransform(properties, "rescueRunSpawn");
@@ -450,6 +464,7 @@ public final class GameFlowConfigManager {
         properties.setProperty("statusMessagesEnabled", Boolean.toString(this.statusMessagesEnabled));
         properties.setProperty("chunkLoadingMessagesEnabled", Boolean.toString(this.chunkLoadingMessagesEnabled));
         properties.setProperty("hazardFogWeatherEnabled", Boolean.toString(this.hazardFogWeatherEnabled));
+        properties.setProperty("coreRadiusChatMessagesEnabled", Boolean.toString(this.coreRadiusChatMessagesEnabled));
         writeVector3i(properties, "doorBlock", this.doorBlock);
         writeTransform(properties, "runSpawn", this.runSpawn);
         writeTransform(properties, "baseSpawn", this.baseSpawn);
