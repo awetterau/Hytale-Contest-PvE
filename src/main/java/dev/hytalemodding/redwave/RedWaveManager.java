@@ -829,11 +829,13 @@ public final class RedWaveManager {
             int frontierSeeds = this.seedFrontierFromExistingCrimson(world);
             if (frontierSeeds > 0) {
                 this.meshReadyForConversion = true;
-                System.out.println(
-                        "[RedWave] core="
-                                + this.corePos.x + "," + this.corePos.y + "," + this.corePos.z
-                                + " seeded frontier from existing crimson=" + frontierSeeds
-                );
+                if (RedWaveConfig.ENABLE_CONSOLE_LOGS) {
+                    System.out.println(
+                            "[RedWave] core="
+                                    + this.corePos.x + "," + this.corePos.y + "," + this.corePos.z
+                                    + " seeded frontier from existing crimson=" + frontierSeeds
+                    );
+                }
                 return;
             }
 

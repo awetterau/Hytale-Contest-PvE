@@ -20,6 +20,11 @@ server.items.Game_Start_Rope.name=Run Gate Rope
 server.items.Game_Start_Rope.description=Use this rope block to start and extract from runs.
 server.items.Base_Plot_Marker.name=Base Plot Marker
 server.items.Base_Plot_Marker.description=Use this marker to assign a rescued NPC to this plot.
+server.items.SpawnRegion_Ravine.name=Spawn Region - Ravine
+server.items.SpawnRegion_DestroyedVillage.name=Spawn Region - Destroyed Village
+server.items.SpawnRegion_CrimsonLake.name=Spawn Region - Crimson Lake
+server.items.SpawnRegion_Mushroom.name=Spawn Region - Mushroom
+server.items.SpawnRegion_Dungeon.name=Spawn Region - Dungeon
 
 
 items.Crimson_Core.name=Crimson Core

@@ -45,6 +45,7 @@ import dev.hytalemodding.commands.run.GameResetCommand;
 import dev.hytalemodding.commands.run.GameStartCommand;
 import dev.hytalemodding.commands.run.BlightfallCommand;
 import dev.hytalemodding.commands.run.PartyCommand;
+import dev.hytalemodding.commands.run.RegionSpawnCommand;
 import dev.hytalemodding.commands.run.SetRunSpawnCommand;
 import dev.hytalemodding.commands.run.RunChunkSelectionCommand;
 import dev.hytalemodding.commands.run.SpawnStartTriggerCommand;
@@ -57,7 +58,9 @@ import dev.hytalemodding.game.DevDebugHudSystem;
 import dev.hytalemodding.loot.LifeEssenceChestBreakCleanupSystem;
 import dev.hytalemodding.loot.LifeEssenceChestOpenSystem;
 import dev.hytalemodding.loot.LifeEssenceContainerKey;
+import dev.hytalemodding.loot.LootHarvestBlockSystem;
 import dev.hytalemodding.loot.LootChestRuntime;
+import dev.hytalemodding.loot.LootTableRegistry;
 import dev.hytalemodding.loot.QuestChestConfigManager;
 import dev.hytalemodding.loot.QuestChestPositionManager;
 import dev.hytalemodding.map.MapReplacementPacketController;
@@ -116,6 +119,10 @@ import dev.hytalemodding.state.run.FarmerAnimalRescueSystem;
 import dev.hytalemodding.state.run.GameDoorTriggerSystem;
 import dev.hytalemodding.state.run.RescueObjectiveManager;
 import dev.hytalemodding.state.run.RescueObjectiveSystem;
+import dev.hytalemodding.state.run.RegionSpawnManager;
+import dev.hytalemodding.state.run.RegionSpawnMarkerDetectionSystem;
+import dev.hytalemodding.state.run.RegionSpawnPlacementHandler;
+import dev.hytalemodding.state.run.RegionSpawnSystem;
 import dev.hytalemodding.state.run.RunDeathHandler;
 import dev.hytalemodding.state.run.RunClientReadyPacketWatcher;
 import dev.hytalemodding.state.run.RunChunkMapRefreshTickingSystem;
@@ -170,6 +177,7 @@ public class ExamplePlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new SpawnStartTriggerCommand());
         this.getCommandRegistry().registerCommand(new SpawnUiCommand());
         this.getCommandRegistry().registerCommand(new PartyCommand());
+        this.getCommandRegistry().registerCommand(new RegionSpawnCommand());
         this.getCommandRegistry().registerCommand(new RunChunkSelectionCommand());
         this.getCommandRegistry().registerCommand(new SetBaseSpawnCommand());
         this.getCommandRegistry().registerCommand(new SetRescueSpawnCommand());
@@ -231,6 +239,7 @@ public class ExamplePlugin extends JavaPlugin {
         this.getEventRegistry().registerGlobal(PlayerMouseButtonEvent.class, GameDoorInteractionHandler::onPlayerMouseButton);
         this.getEventRegistry().registerGlobal(PlayerMouseButtonEvent.class, PartyHubInteractionHandler::onPlayerMouseButton);
         this.getEventRegistry().registerGlobal(PlaceBlockEvent.class, SpawnPointPlacementHandler::onPlaceBlock);
+        this.getEventRegistry().registerGlobal(PlaceBlockEvent.class, RegionSpawnPlacementHandler::onPlaceBlock);
 
         this.getCommandRegistry().registerCommand(new RedCoreCommand());
         this.getCommandRegistry().registerCommand(new RedRadiusCommand());
@@ -254,7 +263,9 @@ public class ExamplePlugin extends JavaPlugin {
         QuestFlagManager.get().initialize();
         QuestChestConfigManager.get().initialize();
         QuestChestPositionManager.get().initialize();
+        LootTableRegistry.get().initialize();
         FarmerAnimalRescueManager.get().initialize();
+        RegionSpawnManager.get().initialize();
         RooterConfig.get().initialize();
         RooterManManager.get().initialize();
         NpcUnifiedRegistry.get().initialize();
@@ -279,10 +290,12 @@ public class ExamplePlugin extends JavaPlugin {
         this.runClientReadyPacketWatcher.register();
         java.util.Set<LifeEssenceContainerKey> processedLifeEssenceContainers = LootChestRuntime.get().processedChests();
         this.getEntityStoreRegistry().registerSystem(new LifeEssenceChestOpenSystem(processedLifeEssenceContainers));
+        this.getEntityStoreRegistry().registerSystem(new LootHarvestBlockSystem());
         this.getEntityStoreRegistry().registerSystem(new LifeEssenceChestBreakCleanupSystem(processedLifeEssenceContainers));
         this.getEntityStoreRegistry().registerSystem(new GameRunDirectorSystem());
         this.getEntityStoreRegistry().registerSystem(new RescueObjectiveSystem());
         this.getEntityStoreRegistry().registerSystem(new FarmerAnimalRescueSystem());
+        this.getEntityStoreRegistry().registerSystem(new RegionSpawnSystem());
         this.getEntityStoreRegistry().registerSystem(new RunStartCameraSystem());
         this.getEntityStoreRegistry().registerSystem(new RunStartMovementLockSystem());
         this.getEntityStoreRegistry().registerSystem(new RunChunkMapRefreshTickingSystem());
@@ -301,6 +314,7 @@ public class ExamplePlugin extends JavaPlugin {
             this.getChunkStoreRegistry().registerSystem(new CrimsonCoreDetectionSystem());
             this.getChunkStoreRegistry().registerSystem(new GameDoorBlockDetectionSystem());
             this.getChunkStoreRegistry().registerSystem(new SpawnPointDetectionSystem());
+            this.getChunkStoreRegistry().registerSystem(new RegionSpawnMarkerDetectionSystem());
             this.getChunkStoreRegistry().registerSystem(new InfectionCoreDetectionSystem());
         } catch (Throwable ignored) {
             // Keep plugin startup and command registration alive even when chunk-store APIs/components are unavailable.

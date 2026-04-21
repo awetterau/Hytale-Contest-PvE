@@ -36,6 +36,7 @@ public final class RedWaveConfig {
     public static final int FINAL_SHAPE_BOOTSTRAP_MIN_NEIGHBORS = 2;
     public static final boolean FINAL_SHAPE_RANDOM_TIPS_ENABLED = true;
     public static final boolean ENABLE_UNDO_RECORDING = false;
+    public static final boolean ENABLE_CONSOLE_LOGS = false;
     public static final float DECORATION_PROBABILITY_MULTIPLIER = 1.3f;
     public static final boolean EXPONENTIAL_SPEED_SCALING_ENABLED = true;
     public static final float EXPONENTIAL_SPEED_CURVE = 3.0f;

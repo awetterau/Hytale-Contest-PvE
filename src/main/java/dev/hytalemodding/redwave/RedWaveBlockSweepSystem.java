@@ -73,14 +73,16 @@ public class RedWaveBlockSweepSystem extends TickingSystem<EntityStore> {
                     continue;
                 }
                 float speedBlocksPerSecond = dt <= 0.0001f ? convertedThisTick : (convertedThisTick / dt);
-                System.out.println(
-                        "[RedWave] core="
-                                + corePos.x + "," + corePos.y + "," + corePos.z
-                                + " type=" + coreType
-                                + " avgRadius=" + String.format("%.2f", wave.averageConvertedRadius())
-                                + " areaRadius=" + String.format("%.2f", wave.areaEquivalentRadius())
-                                + " speed=" + String.format("%.2f", speedBlocksPerSecond) + " blocks/s"
-                );
+                if (RedWaveConfig.ENABLE_CONSOLE_LOGS) {
+                    System.out.println(
+                            "[RedWave] core="
+                                    + corePos.x + "," + corePos.y + "," + corePos.z
+                                    + " type=" + coreType
+                                    + " avgRadius=" + String.format("%.2f", wave.averageConvertedRadius())
+                                    + " areaRadius=" + String.format("%.2f", wave.areaEquivalentRadius())
+                                    + " speed=" + String.format("%.2f", speedBlocksPerSecond) + " blocks/s"
+                    );
+                }
                 sendRunWorldProgressMessage(
                         worldId,
                         "[InfectionProgress] Core " + coreType

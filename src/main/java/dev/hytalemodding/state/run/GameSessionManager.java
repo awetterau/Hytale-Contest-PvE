@@ -1,16 +1,13 @@
 package dev.hytalemodding.state.run;
 
 import com.hypixel.hytale.component.Ref;
-import com.hypixel.hytale.component.RemoveReason;
 import dev.hytalemodding.blob.OrangeBlobBlockManager;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.math.vector.Transform;
 import com.hypixel.hytale.math.vector.Vector3d;
-import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
-import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
@@ -24,14 +21,10 @@ import com.hypixel.hytale.server.core.universe.world.chunk.ChunkFlag;
 import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import com.hypixel.hytale.server.npc.NPCPlugin;
-import com.hypixel.hytale.server.npc.asset.builder.BuilderInfo;
-import com.hypixel.hytale.server.npc.entities.NPCEntity;
 import dev.hytalemodding.redwave.RedCoreRegistry;
 import dev.hytalemodding.redwave.RedWaveConfig;
 import dev.hytalemodding.redwave.RedCoreProfileRegistry;
 import dev.hytalemodding.redwave.RedWaveManager;
-import dev.hytalemodding.rooter.RooterConfig;
 import dev.hytalemodding.rooter.RooterManManager;
 import dev.hytalemodding.loot.LifeEssenceContainerKey;
 import dev.hytalemodding.loot.LootChestAccess;
@@ -42,8 +35,8 @@ import dev.hytalemodding.quest.QuestProgressManager;
 import dev.hytalemodding.state.transition.CrimsonCoreConfigManager;
 import dev.hytalemodding.state.transition.GameFlowConfigManager;
 import dev.hytalemodding.state.transition.PlayerSpawnSafety;
+import dev.hytalemodding.state.transition.RegionSpawnMarkerConfigManager;
 import dev.hytalemodding.state.transition.SpawnPointZoneConfigManager;
-import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 
@@ -70,7 +63,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class GameSessionManager {
-    private static final String BLIGHT_BEAST_ROLE = "Blight_Beast";
     private static final String RUN_WORLD_PREFIX = "run-session-";
     private static final long CRIMSON_START_DELAY_MS = 10_000L;
     private static final long RUN_START_PRE_TELEPORT_DELAY_MS = 1_000L;
@@ -1167,6 +1159,7 @@ public final class GameSessionManager {
         RooterManManager.get().clearRuntimeForWorld(runWorldUuid);
         LootChestRuntime.get().clearWorld(runWorldUuid);
         OrangeBlobBlockManager.clearRuntimeForWorld(runWorldUuid);
+        RegionSpawnManager.get().clearWorld(runWorldUuid);
     }
 
     private static void removeWorldOnOwningThread(@Nonnull Universe universe, @Nonnull String worldName) {
@@ -1292,6 +1285,7 @@ public final class GameSessionManager {
     }
 
     private static void scrubRunWorldMarkersAndUnusedCores(@Nonnull World runWorld, @Nonnull ActiveSession session) {
+        RegionSpawnManager.get().syncTemplateMarkersToConfig(session.templateWorldName);
         scrubSpawnPointBlocks(runWorld, session.templateWorldName);
         scrubUnusedCrimsonCoreBlocks(runWorld, session.templateWorldName, session.crimsonProfiles);
     }
@@ -1302,8 +1296,8 @@ public final class GameSessionManager {
         int selectedHour = chooseRunHour();
         session.appliedRunHour = selectedHour;
         applyRunWorldTimeSet(runWorld, selectedHour);
+        scrubRegionSpawnBlocks(runWorld, session.templateWorldName);
         configureQuestChest(runWorld, session.templateWorldName);
-        replaceRandomBlightBeastWithRooter(runWorld);
     }
 
     private static void configureQuestChest(@Nonnull World runWorld, @Nonnull String templateWorldName) {
@@ -1384,65 +1378,6 @@ public final class GameSessionManager {
         worldTime.setDayTime(dayFraction, runWorld, store);
     }
 
-    private static void replaceRandomBlightBeastWithRooter(@Nonnull World runWorld) {
-        Store<EntityStore> store = runWorld.getEntityStore().getStore();
-        ArrayList<Ref<EntityStore>> candidates = new ArrayList<>();
-        ArrayList<Transform> candidateTransforms = new ArrayList<>();
-
-        store.forEachChunk(NPCEntity.getComponentType(), (chunk, buffer) -> {
-            int size = chunk.size();
-            for (int i = 0; i < size; i++) {
-                NPCEntity npc = chunk.getComponent(i, NPCEntity.getComponentType());
-                if (npc == null || !BLIGHT_BEAST_ROLE.equalsIgnoreCase(npc.getRoleName())) {
-                    continue;
-                }
-                Ref<EntityStore> npcRef = chunk.getReferenceTo(i);
-                if (npcRef == null || !npcRef.isValid()) {
-                    continue;
-                }
-                TransformComponent transform = chunk.getComponent(i, TransformComponent.getComponentType());
-                if (transform == null) {
-                    continue;
-                }
-                candidates.add(npcRef);
-                candidateTransforms.add(new Transform(
-                        new Vector3d(transform.getPosition()),
-                        new Vector3f(transform.getRotation())
-                ));
-            }
-        });
-
-        if (candidates.isEmpty()) {
-            return;
-        }
-
-        String rooterRole = RooterConfig.get().getBossRole();
-        NPCPlugin npcPlugin = NPCPlugin.get();
-        int roleIndex = npcPlugin.getIndex(rooterRole);
-        BuilderInfo roleInfo = npcPlugin.getRoleBuilderInfo(roleIndex);
-        if (roleInfo == null || !roleInfo.getBuilder().isSpawnable()) {
-            System.out.println("[GameSessionManager] Rooter replacement skipped; role unavailable: " + rooterRole);
-            return;
-        }
-
-        int selectedIndex = ThreadLocalRandom.current().nextInt(candidates.size());
-        Ref<EntityStore> beastRef = candidates.get(selectedIndex);
-        Transform spawnTransform = candidateTransforms.get(selectedIndex);
-
-        store.removeEntity(beastRef, RemoveReason.REMOVE);
-        Pair<Ref<EntityStore>, NPCEntity> spawned = npcPlugin.spawnEntity(
-                store,
-                roleIndex,
-                new Vector3d(spawnTransform.getPosition()),
-                new Vector3f(spawnTransform.getRotation()),
-                null,
-                null
-        );
-        if (spawned == null || spawned.first() == null || !spawned.first().isValid()) {
-            System.out.println("[GameSessionManager] Failed to replace Blight Beast with Rooter Man.");
-        }
-    }
-
     private static void scrubSpawnPointBlocks(@Nonnull World runWorld, @Nonnull String templateWorldName) {
         SpawnPointZoneConfigManager.SpawnZoneState spawnState = SpawnPointZoneConfigManager.load(templateWorldName);
         for (LinkedHashMap<Integer, ArrayList<SpawnPointZoneConfigManager.SpawnPointEntry>> locationMap : spawnState.zones().values()) {
@@ -1454,6 +1389,15 @@ public final class GameSessionManager {
                     runWorld.setBlock(entry.position().x, entry.position().y, entry.position().z, "Empty");
                 }
             }
+        }
+    }
+
+    private static void scrubRegionSpawnBlocks(@Nonnull World runWorld, @Nonnull String templateWorldName) {
+        for (RegionSpawnMarkerConfigManager.RegionMarkerEntry entry : RegionSpawnMarkerConfigManager.load(templateWorldName)) {
+            if (!entry.dimension().equalsIgnoreCase(templateWorldName)) {
+                continue;
+            }
+            runWorld.setBlock(entry.position().x, entry.position().y, entry.position().z, "Empty");
         }
     }
 

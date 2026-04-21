@@ -22,8 +22,6 @@ import java.util.Set;
 import java.util.UUID;
 
 public class LifeEssenceChestOpenSystem extends EntityEventSystem<EntityStore, UseBlockEvent.Pre> {
-    private static final String LIFE_ESSENCE_ITEM_ID = "Ingredient_Life_Essence";
-    private static final String TARGET_BLOCK_ID = "Furniture_Village_Chest_Small";
     private static final Random RANDOM = new Random();
 
     private final Set<LifeEssenceContainerKey> processedChests;
@@ -49,42 +47,43 @@ public class LifeEssenceChestOpenSystem extends EntityEventSystem<EntityStore, U
         UUID worldUuid = playerRef.getWorldUuid();
 
         Vector3i pos = event.getTargetBlock();
+        if (pos == null) return;
+        if (LootChestRuntime.get().getQuestChest(worldUuid, pos) != null) {
+            return;
+        }
+
         LifeEssenceContainerKey key = LifeEssenceContainerKey.of(worldUuid, pos);
         if (processedChests.contains(key)) return;
 
         try {
             LootChestAccess.ResolvedChest chest = LootChestAccess.resolveChest(player.getWorld(), pos);
             if (chest == null) return;
-            if (!TARGET_BLOCK_ID.equalsIgnoreCase(chest.blockId())) return;
 
-            int amount = rand(6, 12);
-            
-            // 1. Populate the container in memory
-            if (!LootChestAccess.populate(chest, java.util.List.of(new ItemStack(LIFE_ESSENCE_ITEM_ID, amount)))) {
+            java.util.List<ItemStack> items = LootTableRegistry.get().rollChest(
+                    chest.blockId(),
+                    LootTier.forActiveRun(),
+                    RANDOM
+            );
+            if (items.isEmpty()) {
+                return;
+            }
+
+            if (!LootChestAccess.populate(chest, items)) {
                 processedChests.add(key);
                 return;
             }
-            
-            // 2. FORCE SYNC: Get the internal block entity reference and trigger a component update
-            // This is required post-Update 4 to ensure the client receives the inventory change.
+
             Ref<ChunkStore> blockRef = chest.chunk().getBlockComponentEntity(pos.getX(), pos.getY(), pos.getZ());
             if (blockRef != null && blockRef.isValid()) {
                 Store<ChunkStore> chunkComponentStore = player.getWorld().getChunkStore().getStore();
                 chunkComponentStore.putComponent(blockRef, ItemContainerBlock.getComponentType(), chest.containerBlock());
-                System.out.println("[LifeEssenceChestOpenSystem] Successfully populated and FORCE SYNCED chest at " + pos + " with " + amount + " LE");
-            } else {
-                System.out.println("[LifeEssenceChestOpenSystem] Populated chest but could not find block reference for sync at " + pos);
             }
 
             processedChests.add(key);
         } catch (Exception e) {
-            System.out.println("[LifeEssenceChestOpenSystem] Exception populating chest: " + e.getMessage());
+            System.out.println("[LootChestOpenSystem] Exception populating chest: " + e.getMessage());
             e.printStackTrace();
         }
-    }
-
-    private static int rand(int min, int max) {
-        return min + RANDOM.nextInt(max - min + 1);
     }
 
     @Nullable

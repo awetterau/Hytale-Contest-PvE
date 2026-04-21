@@ -20,6 +20,7 @@ import java.util.Set;
 
 public final class NpcEconomyAdminService {
     private static final NpcEconomyAdminService INSTANCE = new NpcEconomyAdminService();
+    private static final String DEFAULT_ECONOMY_ITEM_ID = "Ingredient_Fibre";
 
     private NpcEconomyAdminService() {
     }
@@ -48,8 +49,8 @@ public final class NpcEconomyAdminService {
     @Nonnull
     public List<String> getKnownItemIds() {
         ArrayList<String> itemIds = new ArrayList<>(NpcEconomyRegistry.get().getAllItemIds());
-        if (!itemIds.contains("Ingredient_Life_Essence")) {
-            itemIds.add("Ingredient_Life_Essence");
+        if (!itemIds.contains(DEFAULT_ECONOMY_ITEM_ID)) {
+            itemIds.add(DEFAULT_ECONOMY_ITEM_ID);
         }
         itemIds.sort(String::compareToIgnoreCase);
         return List.copyOf(itemIds);
@@ -63,8 +64,8 @@ public final class NpcEconomyAdminService {
         LinkedHashSet<String> offers = new LinkedHashSet<>(parseCsv(p.getProperty("offers")));
         String offerId = nextOfferId(offers);
         List<String> knownItems = getKnownItemIds();
-        String defaultCost = knownItems.contains("Ingredient_Life_Essence") ? "Ingredient_Life_Essence" : knownItems.get(0);
-        String defaultReward = knownItems.isEmpty() ? "Ingredient_Life_Essence" : knownItems.get(0);
+        String defaultCost = knownItems.contains(DEFAULT_ECONOMY_ITEM_ID) ? DEFAULT_ECONOMY_ITEM_ID : knownItems.get(0);
+        String defaultReward = knownItems.isEmpty() ? DEFAULT_ECONOMY_ITEM_ID : knownItems.get(0);
         offers.add(offerId);
         p.setProperty("offers", String.join(",", offers));
         p.setProperty("offer." + offerId + ".kind", "trade");
@@ -157,7 +158,7 @@ public final class NpcEconomyAdminService {
         List<String> catalog = getKnownItemIds();
         List<NpcEconomyDefinition.ItemAmount> items = new ArrayList<>(reward ? offer.reward : offer.cost);
         if (items.isEmpty()) {
-            String defaultItem = catalog.isEmpty() ? "Ingredient_Life_Essence" : catalog.get(0);
+            String defaultItem = catalog.isEmpty() ? DEFAULT_ECONOMY_ITEM_ID : catalog.get(0);
             items.add(new NpcEconomyDefinition.ItemAmount(defaultItem, 1));
         }
         NpcEconomyDefinition.ItemAmount current = items.get(0);

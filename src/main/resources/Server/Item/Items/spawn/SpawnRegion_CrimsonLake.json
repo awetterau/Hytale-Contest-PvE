@@ -1,0 +1,62 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.SpawnRegion_CrimsonLake.name"
+  },
+  "Icon": "Icons/ItemsGenerated/SpawnPoint_Block.png",
+  "BlockType": {
+    "ParticleColor": "#c7dbf7",
+    "BlockEntity": {
+      "Components": {
+        "SpawnRegion_CrimsonLake_State": {}
+      }
+    },
+    "Group": "@Tech",
+    "BlockParticleSetId": "Dust",
+    "Gathering": {
+      "Breaking": {
+        "GatherType": "SoftBlocks"
+      }
+    },
+    "DrawType": "Cube",
+    "HitboxType": "Block_Three_Quarter",
+    "Support": {
+      "Down": [
+        {}
+      ]
+    },
+    "Material": "Empty",
+    "Looping": true,
+    "RequiresAlphaBlending": true,
+    "Opacity": "Transparent",
+    "CubeShadingMode": "Flat",
+    "Textures": [
+      {
+        "All": "BlockTextures/Editor_Empty_Crimson_Core.png"
+      }
+    ]
+  },
+  "Tags": {
+    "Type": [
+      "Spawn",
+      "Editor"
+    ]
+  },
+  "Categories": [
+    "Tool.Block"
+  ],
+  "ItemSoundSetId": "ISS_Items_Foliage",
+  "PlayerAnimationsId": "Block",
+  "IconProperties": {
+    "Scale": 0.54,
+    "Rotation": [
+      22.5,
+      45,
+      22.5
+    ],
+    "Translation": [
+      0,
+      -13.5
+    ]
+  },
+  "Quality": "Technical"
+}

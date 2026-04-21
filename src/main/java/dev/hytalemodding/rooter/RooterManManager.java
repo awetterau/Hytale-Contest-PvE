@@ -19,6 +19,7 @@ import com.hypixel.hytale.server.npc.NPCPlugin;
 import com.hypixel.hytale.server.npc.asset.builder.BuilderInfo;
 import com.hypixel.hytale.server.npc.entities.NPCEntity;
 import dev.hytalemodding.redwave.RedCoreRegistry;
+import dev.hytalemodding.state.run.RegionSpawnConfig;
 import dev.hytalemodding.state.run.GameSessionManager;
 import it.unimi.dsi.fastutil.Pair;
 
@@ -186,6 +187,9 @@ public final class RooterManManager {
             @Nonnull World world,
             @Nonnull GameSessionManager.ActiveSessionSnapshot snapshot
     ) {
+        if (RegionSpawnConfig.get().isEnabled()) {
+            return;
+        }
         UUID worldId = world.getWorldConfig().getUuid();
         if (this.spawnedByRunWorld.containsKey(worldId)) {
             return;

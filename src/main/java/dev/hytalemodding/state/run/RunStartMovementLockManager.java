@@ -106,28 +106,27 @@ public final class RunStartMovementLockManager {
                 this.lockByPlayer.remove(playerId, session);
                 continue;
             }
-            if (session.lockedPosition == null) {
-                Vector3d currentPlayerPosition = playerRef.getTransform().getPosition();
-                session.lockedPosition = new Vector3d(currentPlayerPosition);
-            }
-
             Ref<EntityStore> ref = playerRef.getReference();
             if (ref == null || !ref.isValid()) {
                 this.lockByPlayer.remove(playerId, session);
                 continue;
             }
             Store<EntityStore> store = ref.getStore();
-            if (!session.movementSettingsApplied) {
-                applyZeroMovementSettings(playerRef, ref, store);
-                session.movementSettingsApplied = true;
-            }
             TransformComponent transform = store.getComponent(ref, TransformComponent.getComponentType());
             if (transform == null) {
                 this.lockByPlayer.remove(playerId, session);
                 continue;
             }
+            if (!worldId.equals(session.lockedWorldId)) {
+                session.lockedWorldId = worldId;
+                session.lockedPosition = null;
+            }
+            applyZeroMovementSettings(playerRef, ref, store);
 
             Vector3d currentPosition = transform.getPosition();
+            if (session.lockedPosition == null) {
+                session.lockedPosition = new Vector3d(currentPosition);
+            }
             double dx = currentPosition.getX() - session.lockedPosition.getX();
             double dy = currentPosition.getY() - session.lockedPosition.getY();
             double dz = currentPosition.getZ() - session.lockedPosition.getZ();
@@ -182,6 +181,7 @@ public final class RunStartMovementLockManager {
         settings.strafeCrouchSpeedMultiplier = MIN_LOCKED_MOVEMENT_VALUE;
         settings.forwardSprintSpeedMultiplier = MIN_LOCKED_MOVEMENT_VALUE;
         movementManager.update(playerRef.getPacketHandler());
+        store.putComponent(ref, MovementManager.getComponentType(), movementManager);
     }
 
     private static void restoreMovementDefaults(@Nonnull PlayerRef playerRef) {
@@ -203,8 +203,8 @@ public final class RunStartMovementLockManager {
     private static final class LockSession {
         private final long startsAtMs;
         private long endsAtMs;
+        private UUID lockedWorldId;
         private Vector3d lockedPosition;
-        private boolean movementSettingsApplied;
 
         private LockSession(long startsAtMs) {
             this.startsAtMs = startsAtMs;
