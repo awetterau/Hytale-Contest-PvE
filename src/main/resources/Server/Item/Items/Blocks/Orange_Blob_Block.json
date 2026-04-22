@@ -17,7 +17,6 @@
         "GatherType": "SoftBlocks"
       }
     },
-    "BlockParticleSetId": "Dust",
     "Textures": [
       {
         "Weight": 1,
@@ -25,7 +24,6 @@
       }
     ],
     "BlockSoundSetId": "Cloth",
-    "ParticleColor": "#55524f",
     "State": {
       "Property": "state",
       "Default": "On",

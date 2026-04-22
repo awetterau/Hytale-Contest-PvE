@@ -241,9 +241,21 @@ Group {
       Background: (Color: #441010(0.92));
       Visible: false;
     }
+    TextButton #ToggleDefaultWorldHeightGuardButton {
+      Anchor: (Right: 258, Top: 292, Width: 220, Height: 28);
+      Text: "Default height guard: OFF";
+      Background: (Color: #441010(0.92));
+      Visible: false;
+    }
     TextButton #ToggleCoreRadiusChatButton {
       Anchor: (Right: 24, Top: 324, Width: 220, Height: 28);
       Text: "Core radius chat: ON";
+      Background: (Color: #441010(0.92));
+      Visible: false;
+    }
+    TextButton #ToggleGameWorldRedirectButton {
+      Anchor: (Right: 258, Top: 324, Width: 220, Height: 28);
+      Text: "Game world redirect: OFF";
       Background: (Color: #441010(0.92));
       Visible: false;
     }
@@ -349,7 +361,7 @@ Group {
 
     TextButton #ToggleDynamicMapButton {
       Anchor: (Left: 10, Top: 140, Right: 10, Height: 28);
-      Text: "Dinamic map: ON";
+      Text: "Dynamic map: ON";
       Background: (Color: #441010(0.92));
       Visible: false;
     }
@@ -424,12 +436,12 @@ Group {
 
       Label #ExtractionSubsectionLabel {
         Anchor: (Left: 8, Top: 8, Right: 8, Height: 20);
-        Text: "Subsection: Runa de plataforma";
+        Text: "Subsection: Platform rune";
         Style: (HorizontalAlignment: Start, VerticalAlignment: Center, RenderBold: true);
       }
 
-      TextButton #ExtractionPlatformButton { Anchor: (Left: 8, Top: 40, Right: 8, Height: 32); Text: "Runa de plataforma"; Background: (Color: #441010(0.92)); }
-      TextButton #ExtractionRopeButton { Anchor: (Left: 8, Top: 78, Right: 8, Height: 32); Text: "Cuerda de escape"; Background: (Color: #441010(0.92)); }
+      TextButton #ExtractionPlatformButton { Anchor: (Left: 8, Top: 40, Right: 8, Height: 32); Text: "Platform rune"; Background: (Color: #441010(0.92)); }
+      TextButton #ExtractionRopeButton { Anchor: (Left: 8, Top: 78, Right: 8, Height: 32); Text: "Escape rope"; Background: (Color: #441010(0.92)); }
     }
   }
 }

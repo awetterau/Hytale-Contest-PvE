@@ -6,6 +6,10 @@
       "Value": "Wolf_Black",
       "Description": "Model to be used."
     },
+    "DropList": {
+      "Value": "",
+      "Description": "Drop Items."
+    },
     "MaxHealth": {
       "Value": 70,
       "Description": "Max health for the NPC"

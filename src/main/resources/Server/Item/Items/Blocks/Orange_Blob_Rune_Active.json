@@ -28,7 +28,7 @@
     "Looping": true,
     "HitboxType": "Blob_Rune",
     "BlockSoundSetId": "Stone",
-    "ParticleColor": "#ff7a00",
+    "ParticleColor": "#4c453e",
     "VariantRotation": "NESW"
   },
   "PlayerAnimationsId": "Block",

@@ -544,6 +544,17 @@ public final class OrangeBlobBlockManager {
         return blockType == null || blockType == BlockType.EMPTY || EMPTY_BLOCK_ID.equals(blockType.getId());
     }
 
+
+    public static int swapZeroTwoRotation(int rotation) {
+        if (rotation == 0) {
+            return 2;
+        }
+        if (rotation == 2) {
+            return 0;
+        }
+        return rotation;
+    }
+
     static int readRotation(@Nonnull World world, int x, int y, int z) {
         if (FORCE_TEST_ROTATION_ENABLED) {
             return FORCE_TEST_ROTATION_INDEX;

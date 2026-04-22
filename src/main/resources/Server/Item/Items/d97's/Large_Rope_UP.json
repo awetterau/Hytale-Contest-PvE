@@ -1,6 +1,6 @@
 {
   "TranslationProperties": {
-    "Name": "server.items.Large_Rope.name"
+    "Name": "server.items.Large_Rope_UP.name"
   },
   "Icon": "Icons/ItemsGenerated/Large_Rope.png",
   "ItemLevel": 9,
@@ -12,7 +12,7 @@
     "CustomModelTexture": [
       {
         "Weight": 1,
-        "Texture": "Blocks/Farming/Rope_Diagonal_Texture.png"
+        "Texture": "Blocks/Farming/Sticks_Pile_Texture.png"
       }
     ],
     "HitboxType": "Rope",
@@ -35,17 +35,5 @@
     "Blocks.Deco"
   ],
   "ItemSoundSetId": "ISS_Blocks_Wood",
-  "PlayerAnimationsId": "Block",
-  "IconProperties": {
-    "Scale": 0.5,
-    "Rotation": [
-      49,
-      45,
-      22.5
-    ],
-    "Translation": [
-      -11,
-      -25
-    ]
-  }
+  "PlayerAnimationsId": "Block"
 }

@@ -61,6 +61,8 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
     private static final ConcurrentHashMap<UUID, String> EXTRACTION_VARIANT_BY_PLAYER = new ConcurrentHashMap<>();
     private static final String EXTRACTION_VARIANT_PLATFORM = "platform_rune";
     private static final String EXTRACTION_VARIANT_ROPE = "escape_rope";
+    private static volatile boolean defaultWorldHeightGuardEnabled = GameFlowConfigManager.get().isDefaultWorldHeightGuardEnabled();
+    private static volatile boolean gameWorldRedirectEnabled = GameFlowConfigManager.get().isGameWorldRedirectEnabled();
 
     public BlightfallMainPage(@Nonnull PlayerRef playerRef) {
         super(playerRef, CustomPageLifetime.CanDismiss, PageEventData.CODEC);
@@ -106,7 +108,11 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         boolean alertsEnabled = GameFlowConfigManager.get().isStatusMessagesEnabled() || GameFlowConfigManager.get().isChunkLoadingMessagesEnabled();
         ui.set("#ToggleAlertsButton.Text", "Alerts: " + (alertsEnabled ? "ON" : "OFF"));
         ui.set("#ToggleDynamicMapButton.Visible", runControlVisible);
-        ui.set("#ToggleDynamicMapButton.Text", "Dinamic map: " + (GameSessionManager.isDynamicMapRefreshEnabled() ? "ON" : "OFF"));
+        ui.set("#ToggleDynamicMapButton.Text", "Dynamic map: " + (GameSessionManager.isDynamicMapRefreshEnabled() ? "ON" : "OFF"));
+        ui.set("#ToggleDefaultWorldHeightGuardButton.Visible", runControlVisible);
+        ui.set("#ToggleDefaultWorldHeightGuardButton.Text", "Default height guard: " + (defaultWorldHeightGuardEnabled ? "ON" : "OFF"));
+        ui.set("#ToggleGameWorldRedirectButton.Visible", runControlVisible);
+        ui.set("#ToggleGameWorldRedirectButton.Text", "Game world redirect: " + (gameWorldRedirectEnabled ? "ON" : "OFF"));
         RedWoolDamageSystem.setHazardFogEnabled(GameFlowConfigManager.get().isHazardFogWeatherEnabled());
         ui.set("#ToggleFogWeatherCenterButton.Visible", infectionControlVisible);
         ui.set("#ToggleFogWeatherCenterButton.Text", "Hazard fog: " + (RedWoolDamageSystem.isHazardFogEnabled() ? "ON" : "OFF"));
@@ -144,6 +150,8 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         events.addEventBinding(CustomUIEventBindingType.Activating, "#ApplyEventButton", withTimelineEditor("timeline_apply"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#ToggleAlertsButton", EventData.of("Action", "toggle_alerts"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#ToggleDynamicMapButton", EventData.of("Action", "toggle_dynamic_map"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#ToggleDefaultWorldHeightGuardButton", EventData.of("Action", "toggle_default_world_height_guard"), false);
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#ToggleGameWorldRedirectButton", EventData.of("Action", "toggle_game_world_redirect"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#ToggleFogWeatherCenterButton", EventData.of("Action", "toggle_fog_weather"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#ToggleCoreRadiusChatButton", EventData.of("Action", "toggle_core_radius_chat"), false);
         events.addEventBinding(CustomUIEventBindingType.Activating, "#ChunkReloadFileButton", EventData.of("Action", "chunk_reload_file"), false);
@@ -274,7 +282,19 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
             case "toggle_dynamic_map" -> {
                 boolean next = !GameSessionManager.isDynamicMapRefreshEnabled();
                 GameSessionManager.setDynamicMapRefreshEnabled(next);
-                sendUiMessage("Dinamic map: " + (next ? "ON" : "OFF"));
+                sendUiMessage("Dynamic map: " + (next ? "ON" : "OFF"));
+                reopen(ref, store, player);
+            }
+            case "toggle_default_world_height_guard" -> {
+                defaultWorldHeightGuardEnabled = !defaultWorldHeightGuardEnabled;
+                GameFlowConfigManager.get().setDefaultWorldHeightGuardEnabled(defaultWorldHeightGuardEnabled);
+                sendUiMessage("Default world height guard: " + (defaultWorldHeightGuardEnabled ? "ON" : "OFF"));
+                reopen(ref, store, player);
+            }
+            case "toggle_game_world_redirect" -> {
+                gameWorldRedirectEnabled = !gameWorldRedirectEnabled;
+                GameFlowConfigManager.get().setGameWorldRedirectEnabled(gameWorldRedirectEnabled);
+                sendUiMessage("Game world redirect: " + (gameWorldRedirectEnabled ? "ON" : "OFF"));
                 reopen(ref, store, player);
             }
             case "toggle_fog_weather" -> {
@@ -436,8 +456,8 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         RunExtractionConfigManager.VariantState variantState = getVariantState(state, selectedVariant);
 
         ui.set("#ExtractionSubsectionLabel.Text", "Subsection: " + formatExtractionVariantName(selectedVariant));
-        ui.set("#ExtractionPlatformButton.Text", EXTRACTION_VARIANT_PLATFORM.equals(selectedVariant) ? "> Runa de plataforma" : "Runa de plataforma");
-        ui.set("#ExtractionRopeButton.Text", EXTRACTION_VARIANT_ROPE.equals(selectedVariant) ? "> Cuerda de escape" : "Cuerda de escape");
+        ui.set("#ExtractionPlatformButton.Text", EXTRACTION_VARIANT_PLATFORM.equals(selectedVariant) ? "> Platform rune" : "Platform rune");
+        ui.set("#ExtractionRopeButton.Text", EXTRACTION_VARIANT_ROPE.equals(selectedVariant) ? "> Escape rope" : "Escape rope");
         ui.set("#ExtractionRunFromInput.Value", (double) variantState.runEnableFromSecond());
         ui.set("#ExtractionRunUntilInput.Value", (double) variantState.runEnableUntilSecond());
         ui.set("#ExtractionWaitInput.Value", (double) variantState.extractionWaitSeconds());
@@ -467,9 +487,17 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
     @Nonnull
     private static String formatExtractionVariantName(@Nonnull String variant) {
         if (EXTRACTION_VARIANT_ROPE.equals(variant)) {
-            return "Cuerda de escape";
+            return "Escape rope";
         }
-        return "Runa de plataforma";
+        return "Platform rune";
+    }
+
+    public static boolean isDefaultWorldHeightGuardEnabled() {
+        return defaultWorldHeightGuardEnabled;
+    }
+
+    public static boolean isGameWorldRedirectEnabled() {
+        return gameWorldRedirectEnabled;
     }
 
     @Nonnull

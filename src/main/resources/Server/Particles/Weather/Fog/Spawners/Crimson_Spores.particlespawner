@@ -2,16 +2,16 @@
   "RenderMode": "BlendLinear",
   "EmitOffset": {
     "X": {
-      "Min": 10,
-      "Max": 20
+      "Min": 0,
+      "Max": 0
     },
     "Y": {
-      "Min": -4,
-      "Max": 4
+      "Min": -6,
+      "Max": 0
     },
     "Z": {
-      "Min": 10,
-      "Max": 20
+      "Min": 0,
+      "Max": 0
     }
   },
   "ParticleRotationInfluence": "Billboard",
@@ -23,11 +23,11 @@
   "MaxConcurrentParticles": 10,
   "ParticleLifeSpan": {
     "Min": 3.3333333333333335,
-    "Max": 6.666666666666667
+    "Max": 5
   },
   "SpawnRate": {
-    "Min": 150,
-    "Max": 500
+    "Min": 111,
+    "Max": 400
   },
   "InitialVelocity": {
     "Yaw": {
@@ -39,20 +39,20 @@
       "Max": 130
     },
     "Speed": {
-      "Min": -4,
-      "Max": -6
+      "Min": -1,
+      "Max": -3
     }
   },
   "Attractors": [
     {
       "LinearAcceleration": {
-        "X": 0.2,
-        "Y": 3.4,
+        "X": 0.1,
+        "Y": 1.4,
         "Z": 0
       },
       "TrailPositionMultiplier": 0.172,
-      "RadialAcceleration": 0.6,
-      "RadialTangentAcceleration": 1
+      "RadialAcceleration": 0.2,
+      "RadialTangentAcceleration": 0.4
     }
   ],
   "Particle": {
@@ -78,23 +78,13 @@
         "Opacity": 0
       },
       "20": {
-        "Opacity": 0.216
+        "Opacity": 0.436
       },
       "40": {
-        "Opacity": 0.464
+        "Opacity": 0.816
       },
       "80": {
-        "Opacity": 0.124,
-        "Scale": {
-          "X": {
-            "Min": 1.2,
-            "Max": 1.3
-          },
-          "Y": {
-            "Min": 1.2,
-            "Max": 1.3
-          }
-        }
+        "Opacity": 0.572
       },
       "100": {
         "Opacity": 0,
@@ -112,17 +102,7 @@
       }
     },
     "InitialAnimationFrame": {
-      "Scale": {
-        "X": {
-          "Min": 4,
-          "Max": 8
-        },
-        "Y": {
-          "Min": 4,
-          "Max": 8
-        }
-      },
-      "Opacity": 0.968,
+      "Opacity": 0.976,
       "Rotation": {
         "X": {
           "Min": 0,

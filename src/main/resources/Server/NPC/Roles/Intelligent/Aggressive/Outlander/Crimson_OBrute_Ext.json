@@ -32,7 +32,7 @@
     "RelativeChaseSpeed": 0.4,
     "IdleMotionComponent": "$Null",
     "MaxHealth": 124,
-    "IsMemory": true,
+    "IsMemory": false,
     "MemoriesCategory": "Outlander",
     "_InteractionVars": {
       "Melee_Damage": {

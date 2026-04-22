@@ -11,6 +11,7 @@ import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import dev.hytalemodding.blob.OrangeBlobBlockManager;
+import dev.hytalemodding.blob.FlareExtractionManager;
 import dev.hytalemodding.hud.GameTimerHud;
 import dev.hytalemodding.quest.QuestProgressManager;
 import dev.hytalemodding.redwave.RedWaveManager;
@@ -489,7 +490,14 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
         GameSessionManager.ActiveSessionSnapshot snapshot = GameSessionManager.get().getActiveSession();
         long secondsLeft = remainingMs / 1000L;
         String formatted = formatTime(secondsLeft);
-        long extractionCountdownMs = OrangeBlobBlockManager.getExtractionCountdownMillis(runWorldId);
+        long runeCountdownMs = OrangeBlobBlockManager.getExtractionCountdownMillis(runWorldId);
+        long flareCountdownMs = FlareExtractionManager.getExtractionCountdownMillis(runWorldId);
+        long extractionCountdownMs;
+        if (runeCountdownMs > 0L && flareCountdownMs > 0L) {
+            extractionCountdownMs = Math.min(runeCountdownMs, flareCountdownMs);
+        } else {
+            extractionCountdownMs = Math.max(runeCountdownMs, flareCountdownMs);
+        }
         boolean extractionVisible = extractionCountdownMs > 0L;
         String extractionFormatted = extractionVisible ? formatTime(extractionCountdownMs / 1000L) : "";
         boolean witchSpawned = this.witchSpawnedInWorld.getOrDefault(runWorldId, false);

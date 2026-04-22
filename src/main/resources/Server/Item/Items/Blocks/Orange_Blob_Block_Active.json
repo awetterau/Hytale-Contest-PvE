@@ -17,7 +17,6 @@
         "GatherType": "SoftBlocks"
       }
     },
-    "BlockParticleSetId": "Dust",
     "Textures": [
       {
         "Weight": 1,
@@ -25,7 +24,6 @@
       }
     ],
     "BlockSoundSetId": "Cloth",
-    "ParticleColor": "#996720",
     "CustomModelAnimation": "Blocks/d97's/Extraction/Block_Rebound.blockyanim",
     "Looping": true
   },

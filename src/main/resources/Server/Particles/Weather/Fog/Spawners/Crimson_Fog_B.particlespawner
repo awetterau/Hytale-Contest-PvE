@@ -3,15 +3,15 @@
   "EmitOffset": {
     "X": {
       "Min": 0,
-      "Max": 2
+      "Max": 0.1
     },
     "Y": {
-      "Min": -4,
-      "Max": 4
+      "Min": 0,
+      "Max": 0.5
     },
     "Z": {
       "Min": 0,
-      "Max": 2
+      "Max": 0.1
     }
   },
   "ParticleRotationInfluence": "Billboard",
@@ -20,14 +20,14 @@
   "ParticleRotateWithSpawner": false,
   "TrailSpawnerPositionMultiplier": 1,
   "TrailSpawnerRotationMultiplier": 1,
-  "MaxConcurrentParticles": 10,
+  "MaxConcurrentParticles": 40,
   "ParticleLifeSpan": {
-    "Min": 3,
-    "Max": 5
+    "Min": 2,
+    "Max": 3
   },
   "SpawnRate": {
     "Min": 1,
-    "Max": 6
+    "Max": 10
   },
   "InitialVelocity": {
     "Yaw": {
@@ -40,19 +40,19 @@
     },
     "Speed": {
       "Min": -1,
-      "Max": -3
+      "Max": -1
     }
   },
   "Attractors": [
     {
       "LinearAcceleration": {
         "X": 0.2,
-        "Y": 2.4,
+        "Y": 1,
         "Z": 0
       },
       "TrailPositionMultiplier": 0.172,
-      "RadialAcceleration": 0.6,
-      "RadialTangentAcceleration": 1
+      "RadialTangentAcceleration": 0.2,
+      "RadialAcceleration": 0.1
     }
   ],
   "Particle": {
@@ -78,13 +78,13 @@
         "Opacity": 0
       },
       "20": {
-        "Opacity": 0.364
+        "Opacity": 0.192
       },
       "40": {
-        "Opacity": 0.72
+        "Opacity": 0.348
       },
       "80": {
-        "Opacity": 0.404,
+        "Opacity": 0.156,
         "Scale": {
           "X": {
             "Min": 1.2,
@@ -107,19 +107,18 @@
             "Min": 1.3,
             "Max": 1.7
           }
-        },
-        "Color": "#f7dcdc"
+        }
       }
     },
     "InitialAnimationFrame": {
       "Scale": {
         "X": {
-          "Min": 4,
-          "Max": 8
+          "Min": 0.5,
+          "Max": 1.2
         },
         "Y": {
-          "Min": 4,
-          "Max": 8
+          "Min": 0.4,
+          "Max": 1.2
         }
       },
       "Opacity": 1,
@@ -134,7 +133,8 @@
         "Z": {
           "Max": 300
         }
-      }
+      },
+      "Color": "#580b0b"
     },
     "SoftParticlesFadeFactor": 1.301,
     "UseSpriteBlending": false

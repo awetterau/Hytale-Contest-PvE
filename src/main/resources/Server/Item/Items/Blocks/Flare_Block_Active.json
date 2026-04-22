@@ -1,0 +1,47 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.Flare_Block_Active.name",
+    "Description": "server.items.Flare_Block_Active.description"
+  },
+  "Icon": "Icons/ItemsGenerated/Blob_Rune.png",
+  "Categories": [
+    "Blocks.Soils"
+  ],
+  "BlockType": {
+    "Material": "Solid",
+    "DrawType": "Model",
+    "Group": "Dirt",
+    "Flags": {},
+    "Gathering": {
+      "Breaking": {
+        "GatherType": "SoftBlocks"
+      }
+    },
+    "BlockSoundSetId": "Stone",
+    "CustomModel": "Blocks/d97's/Extraction/Flare_Block.blockymodel",
+    "CustomModelTexture": [
+      {
+        "Texture": "Blocks/d97's/Extraction/Blob_Flare_Block.png"
+      }
+    ],
+    "Looping": true,
+    "HitboxType": "Flare_Block",
+    "VariantRotation": "NESW",
+    "Particles": [
+      {
+        "SystemId": "Flare_Smoke_Pending",
+        "Scale": 2,
+        "TargetEntityPart": "Self",
+        "TargetNodeName": "Peak"
+      }
+    ],
+    "CustomModelScale": 1.3
+  },
+  "PlayerAnimationsId": "Block",
+  "Tags": {
+    "Type": [
+      "Soil"
+    ]
+  },
+  "ItemSoundSetId": "ISS_Blocks_Soft"
+}

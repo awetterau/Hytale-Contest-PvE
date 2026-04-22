@@ -48,7 +48,9 @@ import it.unimi.dsi.fastutil.Pair;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -69,11 +71,16 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
     private static final double MOB_SPAWN_MIN_GAP_BLOCKS = 3.5d;
     private static final int MOB_SPAWN_MAX_ATTEMPTS_PER_MOB = 48;
     private static final int MOB_SPAWN_HISTORY_LIMIT = 24;
+    private static final double PLAYER_TARGET_RANGE_BLOCKS = 35.0d;
+    private static final double RANGE_TARGET_RANGE_BLOCKS = 30.0d;
+    private static final long RANGE_TARGET_REACQUIRE_DELAY_MS = 3000L;
     private static final String[] RUNE_TARGET_SLOTS = new String[]{"target", "Target", "CombatTarget"};
     private static int extractionDamageCauseIndex = Integer.MIN_VALUE;
+    private static final Map<UUID, MobTargetState> MOB_TARGET_STATE_BY_ENTITY = new HashMap<>();
     private static final List<SpawnRoleProfile> SPAWN_ROLE_PROFILES = List.of(
-            new SpawnRoleProfile(MOB_ROLE, 75, 0.90d),
-            new SpawnRoleProfile(WOLF_BLACK_ROLE, 25, 0.45d)
+            new SpawnRoleProfile(MOB_ROLE, 20, 0.90d, SpawnTargetRole.RuneTarget),
+            new SpawnRoleProfile(WOLF_BLACK_ROLE, 25, 0.85d, SpawnTargetRole.PlayerTarget),
+            new SpawnRoleProfile(MOB_ROLE, 55, 0.45d, SpawnTargetRole.RangeTarget)
     );
 
     @Override
@@ -527,11 +534,19 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
             if (mobRef == null || !mobRef.isValid()) {
                 continue;
             }
+            UUID mobId = readEntityUuid(store, mobRef);
+            if (mobId == null) {
+                continue;
+            }
             NPCEntity npc = store.getComponent(mobRef, NPC);
             if (npc == null) {
                 continue;
             }
-            aimMobAtRune(store, session, mobRef, npc, runePos);
+            MobTargetState targetState = MOB_TARGET_STATE_BY_ENTITY.computeIfAbsent(
+                    mobId,
+                    ignored -> new MobTargetState(SpawnTargetRole.RuneTarget, null, 0L)
+            );
+            applyMobTargeting(store, session, mobRef, npc, runePos, targetState, System.currentTimeMillis());
             if (isMobLockedOnRune(store, mobRef, runeRef)) {
                 attackers++;
             }
@@ -545,6 +560,130 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
                     "keepingPreviousHealth=" + session.runeHealth());
         }
         return attackers;
+    }
+
+    private static void applyMobTargeting(
+            @Nonnull Store<EntityStore> store,
+            @Nonnull OrangeBlobBlockRuntime.Session session,
+            @Nonnull Ref<EntityStore> mobRef,
+            @Nonnull NPCEntity npc,
+            @Nonnull Vector3d runePos,
+            @Nonnull MobTargetState state,
+            long now
+    ) {
+        if (state.targetRole() == SpawnTargetRole.RuneTarget) {
+            aimMobAtRune(store, session, mobRef, npc, runePos);
+            return;
+        }
+
+        double range = state.targetRole() == SpawnTargetRole.PlayerTarget
+                ? PLAYER_TARGET_RANGE_BLOCKS
+                : RANGE_TARGET_RANGE_BLOCKS;
+        PlayerRef targetPlayer = resolvePlayerTargetByState(session, state, range);
+        if (targetPlayer != null) {
+            Ref<EntityStore> playerTargetRef = resolvePlayerCombatTarget(store, session, targetPlayer);
+            if (playerTargetRef != null) {
+                aimMobAtPlayer(store, mobRef, npc, playerTargetRef, targetPlayer);
+                return;
+            }
+        }
+
+        if (state.targetRole() == SpawnTargetRole.RangeTarget) {
+            if (state.playerTargetId() != null) {
+                state.playerTargetId(null);
+                state.nextPlayerRetargetAt(now + RANGE_TARGET_REACQUIRE_DELAY_MS);
+            }
+            if (now < state.nextPlayerRetargetAt()) {
+                aimMobAtRune(store, session, mobRef, npc, runePos);
+                return;
+            }
+            PlayerRef reacquiredPlayer = pickRandomPlayerNearRune(session, RANGE_TARGET_RANGE_BLOCKS, new Random(now ^ session.id().getLeastSignificantBits()));
+            if (reacquiredPlayer != null) {
+                state.playerTargetId(reacquiredPlayer.getUuid());
+                Ref<EntityStore> reacquiredRef = resolvePlayerCombatTarget(store, session, reacquiredPlayer);
+                if (reacquiredRef != null) {
+                    aimMobAtPlayer(store, mobRef, npc, reacquiredRef, reacquiredPlayer);
+                    return;
+                }
+            }
+        } else if (state.targetRole() == SpawnTargetRole.PlayerTarget) {
+            PlayerRef randomPlayer = pickRandomPlayerNearRune(session, PLAYER_TARGET_RANGE_BLOCKS, new Random(now ^ session.id().getMostSignificantBits()));
+            if (randomPlayer != null) {
+                state.playerTargetId(randomPlayer.getUuid());
+                Ref<EntityStore> randomTargetRef = resolvePlayerCombatTarget(store, session, randomPlayer);
+                if (randomTargetRef != null) {
+                    aimMobAtPlayer(store, mobRef, npc, randomTargetRef, randomPlayer);
+                    return;
+                }
+            }
+        }
+
+        aimMobAtRune(store, session, mobRef, npc, runePos);
+    }
+
+    @Nullable
+    private static PlayerRef resolvePlayerTargetByState(
+            @Nonnull OrangeBlobBlockRuntime.Session session,
+            @Nonnull MobTargetState state,
+            double maxRange
+    ) {
+        UUID targetId = state.playerTargetId();
+        if (targetId != null) {
+            PlayerRef current = Universe.get().getPlayer(targetId);
+            if (current != null && isPlayerNearRune(session, current, maxRange)) {
+                return current;
+            }
+            state.playerTargetId(null);
+        }
+        PlayerRef picked = pickRandomPlayerNearRune(session, maxRange, new Random(System.currentTimeMillis() ^ session.id().getLeastSignificantBits()));
+        if (picked != null) {
+            state.playerTargetId(picked.getUuid());
+        }
+        return picked;
+    }
+
+    @Nullable
+    private static PlayerRef pickRandomPlayerNearRune(
+            @Nonnull OrangeBlobBlockRuntime.Session session,
+            double maxRange,
+            @Nonnull Random random
+    ) {
+        List<PlayerRef> candidates = new ArrayList<>();
+        for (PlayerRef playerRef : Universe.get().getPlayers()) {
+            if (playerRef == null || !isPlayerNearRune(session, playerRef, maxRange)) {
+                continue;
+            }
+            candidates.add(playerRef);
+        }
+        if (candidates.isEmpty()) {
+            return null;
+        }
+        return candidates.get(random.nextInt(candidates.size()));
+    }
+
+    private static boolean isPlayerNearRune(
+            @Nonnull OrangeBlobBlockRuntime.Session session,
+            @Nonnull PlayerRef playerRef,
+            double maxRange
+    ) {
+        if (playerRef.getWorldUuid() == null || !playerRef.getWorldUuid().equals(session.worldId())) {
+            return false;
+        }
+        Vector3d position = playerRef.getTransform().getPosition();
+        double centerX = session.loweredRuneBlock().x() + 0.5d;
+        double centerZ = session.loweredRuneBlock().z() + 0.5d;
+        double dx = position.getX() - centerX;
+        double dz = position.getZ() - centerZ;
+        return (dx * dx) + (dz * dz) <= (maxRange * maxRange);
+    }
+
+    @Nullable
+    private static UUID readEntityUuid(
+            @Nonnull Store<EntityStore> store,
+            @Nonnull Ref<EntityStore> entityRef
+    ) {
+        UUIDComponent uuidComponent = store.getComponent(entityRef, UUIDComponent.getComponentType());
+        return uuidComponent == null ? null : uuidComponent.getUuid();
     }
 
     private static void aimMobAtRune(
@@ -906,7 +1045,7 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
         for (int i = 0; i < count; i++) {
             OrangeBlobBlockRuntime.Mover mover = movers.get(i);
             OrangeBlobBlockRuntime.ClusterBlock target = targetBlocks.get(i);
-            int finalRotation = forcedRotation(mover.rotation());
+            int finalRotation = forcedRotation(target.rotation());
             placeRotatedBlock(world, target.x(), target.y(), target.z(), target.blockId(), finalRotation);
         }
         for (int i = count; i < targetBlocks.size(); i++) {
@@ -931,6 +1070,10 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
         return forcedRotation(rotationIndex);
     }
 
+    private static int movingEntityRotation(@Nullable String blockId, int baseRotation) {
+        return OrangeBlobBlockManager.swapZeroTwoRotation(baseRotation);
+    }
+
     private static void updateMovers(
             @Nonnull Store<EntityStore> store,
             @Nonnull List<OrangeBlobBlockRuntime.Mover> movers,
@@ -947,7 +1090,7 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
                 moverRef = spawnStaticBlockEntity(
                         store,
                         mover.blockId(),
-                        mover.rotation(),
+                        movingEntityRotation(mover.blockId(), mover.rotation()),
                         mover.startX(),
                         mover.startY(),
                         mover.startZ(),
@@ -1081,8 +1224,29 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
                 return;
             }
             session.spawnedMobRefs().add(spawned.first());
+            UUID mobId = readEntityUuid(store, spawned.first());
+            if (mobId != null) {
+                MobTargetState state = new MobTargetState(profile.targetRole(), null, 0L);
+                if (profile.targetRole() == SpawnTargetRole.PlayerTarget) {
+                    PlayerRef initialTarget = pickRandomPlayerNearRune(session, PLAYER_TARGET_RANGE_BLOCKS, random);
+                    if (initialTarget != null) {
+                        state.playerTargetId(initialTarget.getUuid());
+                    }
+                } else if (profile.targetRole() == SpawnTargetRole.RangeTarget) {
+                    PlayerRef initialTarget = pickRandomPlayerNearRune(session, RANGE_TARGET_RANGE_BLOCKS, random);
+                    if (initialTarget != null) {
+                        state.playerTargetId(initialTarget.getUuid());
+                    }
+                }
+                MOB_TARGET_STATE_BY_ENTITY.put(mobId, state);
+            }
             if (spawned.second() != null) {
-                aimMobAtRune(store, session, spawned.first(), spawned.second(), runePos);
+                MobTargetState state = mobId == null ? null : MOB_TARGET_STATE_BY_ENTITY.get(mobId);
+                if (state == null) {
+                    aimMobAtRune(store, session, spawned.first(), spawned.second(), runePos);
+                } else {
+                    applyMobTargeting(store, session, spawned.first(), spawned.second(), runePos, state, now);
+                }
             }
         }
     }
@@ -1173,7 +1337,7 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
             Ref<EntityStore> spawnedBody = spawnStaticBlockEntity(
                     store,
                     session.loweredRuneBlock().blockId(),
-                    session.sourceRuneInitialRotation(),
+                    OrangeBlobBlockManager.swapZeroTwoRotation(session.sourceRuneInitialRotation()),
                     runePos.getX(),
                     runePos.getY(),
                     runePos.getZ(),
@@ -1212,6 +1376,10 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
             if (mobRef != null && mobRef.isValid()) {
                 Store<EntityStore> mobStore = mobRef.getStore();
                 if (mobStore != null) {
+                    UUID mobId = readEntityUuid(mobStore, mobRef);
+                    if (mobId != null) {
+                        MOB_TARGET_STATE_BY_ENTITY.remove(mobId);
+                    }
                     applyExtractionEndDamage(mobStore, mobRef);
                 }
             }
@@ -1422,12 +1590,6 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
         return ref;
     }
 
-    @Nonnull
-    private static boolean isRuneBlockId(@Nullable String blockId) {
-        return OrangeBlobBlockManager.RUNE_BLOCK_ID.equals(blockId)
-                || OrangeBlobBlockManager.ACTIVE_RUNE_BLOCK_ID.equals(blockId);
-    }
-
     private static Vector3f applyRotation(@Nonnull Holder<EntityStore> holder, @Nullable String blockId, int rotation) {
         Vector3f rot = new Vector3f(0.0f, 0.0f, 0.0f);
         try {
@@ -1435,7 +1597,7 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
             Rotation yaw = tuple.yaw();
             Rotation pitch = tuple.pitch();
             Rotation roll = tuple.roll();
-            float sign = isRuneBlockId(blockId) ? 1.0f : -1.0f;
+            float sign = -1.0f;
             rot.setYaw((float) (sign * yaw.getRadians()));
             rot.setPitch((float) (sign * pitch.getRadians()));
             rot.setRoll((float) (sign * roll.getRadians()));
@@ -1467,8 +1629,35 @@ public final class OrangeBlobBlockSystem extends TickingSystem<EntityStore> {
     private record SpawnRoleProfile(
             @Nonnull String roleName,
             int weight,
-            double distanceRangePercent
+            double distanceRangePercent,
+            @Nonnull SpawnTargetRole targetRole
     ) {
+    }
+
+    private enum SpawnTargetRole {
+        RuneTarget,
+        PlayerTarget,
+        RangeTarget
+    }
+
+    private static final class MobTargetState {
+        @Nonnull
+        private final SpawnTargetRole targetRole;
+        @Nullable
+        private UUID playerTargetId;
+        private long nextPlayerRetargetAt;
+
+        private MobTargetState(@Nonnull SpawnTargetRole targetRole, @Nullable UUID playerTargetId, long nextPlayerRetargetAt) {
+            this.targetRole = targetRole;
+            this.playerTargetId = playerTargetId;
+            this.nextPlayerRetargetAt = nextPlayerRetargetAt;
+        }
+
+        @Nonnull SpawnTargetRole targetRole() { return this.targetRole; }
+        @Nullable UUID playerTargetId() { return this.playerTargetId; }
+        void playerTargetId(@Nullable UUID playerTargetId) { this.playerTargetId = playerTargetId; }
+        long nextPlayerRetargetAt() { return this.nextPlayerRetargetAt; }
+        void nextPlayerRetargetAt(long nextPlayerRetargetAt) { this.nextPlayerRetargetAt = nextPlayerRetargetAt; }
     }
 
     private static double normalizedProgress(long now, long startAt, long endAt) {

@@ -24,37 +24,133 @@
   ],
   "Clouds": [
     {
-      "Texture": "Sky/Clouds/Twirled.png",
+      "Texture": "Sky/Clouds/Rain_Heavy_Base.png",
       "Colors": [
         {
           "Hour": 3,
-          "Color": "#3c3b0b24"
+          "Color": "#3d3c3c6d"
         },
         {
           "Hour": 5,
-          "Color": "#8edebf5e"
+          "Color": "#7e878b7a"
         },
         {
           "Hour": 7,
-          "Color": "#e3edc5e6"
+          "Color": "#02000055"
         },
         {
           "Hour": 17,
-          "Color": "#e3edc5e6"
+          "Color": "#02000050"
         },
         {
           "Hour": 19,
-          "Color": "#cdeb696b"
+          "Color": "#7e878b44"
         },
         {
           "Hour": 21,
-          "Color": "#3c3b0bad"
+          "Color": "#3d3c3c9e"
+        },
+        {
+          "Hour": 22,
+          "Color": "#ffffff8b"
         }
       ],
       "Speeds": [
         {
           "Hour": 0,
-          "Value": 0.3
+          "Value": 1
+        },
+        {
+          "Hour": 1,
+          "Value": 1
+        },
+        {
+          "Hour": 2,
+          "Value": 1
+        },
+        {
+          "Hour": 3,
+          "Value": 1
+        },
+        {
+          "Hour": 4,
+          "Value": 1
+        },
+        {
+          "Hour": 5,
+          "Value": 1
+        },
+        {
+          "Hour": 6,
+          "Value": 1
+        },
+        {
+          "Hour": 7,
+          "Value": 1
+        },
+        {
+          "Hour": 8,
+          "Value": 1
+        },
+        {
+          "Hour": 9,
+          "Value": 1
+        },
+        {
+          "Hour": 10,
+          "Value": 1
+        },
+        {
+          "Hour": 11,
+          "Value": 1
+        },
+        {
+          "Hour": 12,
+          "Value": 1
+        },
+        {
+          "Hour": 13,
+          "Value": 1
+        },
+        {
+          "Hour": 14,
+          "Value": 1
+        },
+        {
+          "Hour": 15,
+          "Value": 1
+        },
+        {
+          "Hour": 16,
+          "Value": 1
+        },
+        {
+          "Hour": 17,
+          "Value": 1
+        },
+        {
+          "Hour": 18,
+          "Value": 1
+        },
+        {
+          "Hour": 19,
+          "Value": 1
+        },
+        {
+          "Hour": 20,
+          "Value": 1
+        },
+        {
+          "Hour": 21,
+          "Value": 1
+        },
+        {
+          "Hour": 22,
+          "Value": 1
+        },
+        {
+          "Hour": 23,
+          "Value": 1
         }
       ]
     },
@@ -71,15 +167,15 @@
         },
         {
           "Hour": 7,
-          "Color": "#e9fdb2e6"
+          "Color": "#e9fdb26f"
         },
         {
           "Hour": 17,
-          "Color": "#b6ce71e6"
+          "Color": "#b6ce7193"
         },
         {
           "Hour": 19,
-          "Color": "#d9eb696b"
+          "Color": "#d9eb6974"
         },
         {
           "Hour": 21,
@@ -90,6 +186,168 @@
         {
           "Hour": 0,
           "Value": 0.5
+        }
+      ]
+    },
+    {
+      "Texture": "Sky/Clouds/Twirled.png",
+      "Colors": [
+        {
+          "Hour": 3,
+          "Color": "#3c3b0b24"
+        },
+        {
+          "Hour": 5,
+          "Color": "#8edebf5e"
+        },
+        {
+          "Hour": 7,
+          "Color": "#e3edc5af"
+        },
+        {
+          "Hour": 17,
+          "Color": "#e3edc5a3"
+        },
+        {
+          "Hour": 19,
+          "Color": "#cdeb6980"
+        },
+        {
+          "Hour": 21,
+          "Color": "#3c3b0b84"
+        }
+      ],
+      "Speeds": [
+        {
+          "Hour": 0,
+          "Value": 0.3
+        }
+      ]
+    },
+    {
+      "Texture": "Sky/Clouds/Rain_Heavy_Highlights.png",
+      "Colors": [
+        {
+          "Hour": 3,
+          "Color": "#3d3c3cff"
+        },
+        {
+          "Hour": 5,
+          "Color": "#7e878bff"
+        },
+        {
+          "Hour": 7,
+          "Color": "rgba(#726e6e, 1)"
+        },
+        {
+          "Hour": 17,
+          "Color": "rgba(#726e6e, 1)"
+        },
+        {
+          "Hour": 19,
+          "Color": "#7e878bff"
+        },
+        {
+          "Hour": 21,
+          "Color": "#3d3c3cff"
+        }
+      ],
+      "Speeds": [
+        {
+          "Hour": 0,
+          "Value": 1
+        },
+        {
+          "Hour": 1,
+          "Value": 1
+        },
+        {
+          "Hour": 2,
+          "Value": 1
+        },
+        {
+          "Hour": 3,
+          "Value": 1
+        },
+        {
+          "Hour": 4,
+          "Value": 1
+        },
+        {
+          "Hour": 5,
+          "Value": 1
+        },
+        {
+          "Hour": 6,
+          "Value": 1
+        },
+        {
+          "Hour": 7,
+          "Value": 1
+        },
+        {
+          "Hour": 8,
+          "Value": 1
+        },
+        {
+          "Hour": 9,
+          "Value": 1
+        },
+        {
+          "Hour": 10,
+          "Value": 1
+        },
+        {
+          "Hour": 11,
+          "Value": 1
+        },
+        {
+          "Hour": 12,
+          "Value": 1
+        },
+        {
+          "Hour": 13,
+          "Value": 1
+        },
+        {
+          "Hour": 14,
+          "Value": 1
+        },
+        {
+          "Hour": 15,
+          "Value": 1
+        },
+        {
+          "Hour": 16,
+          "Value": 1
+        },
+        {
+          "Hour": 17,
+          "Value": 1
+        },
+        {
+          "Hour": 18,
+          "Value": 1
+        },
+        {
+          "Hour": 19,
+          "Value": 1
+        },
+        {
+          "Hour": 20,
+          "Value": 1
+        },
+        {
+          "Hour": 21,
+          "Value": 1
+        },
+        {
+          "Hour": 22,
+          "Value": 1
+        },
+        {
+          "Hour": 23,
+          "Value": 1
         }
       ]
     }

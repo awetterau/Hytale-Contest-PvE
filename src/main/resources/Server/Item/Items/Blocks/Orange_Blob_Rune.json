@@ -35,18 +35,7 @@
       "Use": {
         "Interactions": [
           {
-            "Type": "orange_blob_block_use_interaction",
-            "Effects": {
-              "Particles": [
-                {
-                  "Scale": 2,
-                  "PositionOffset": {
-                    "Y": -2
-                  },
-                  "SystemId": "Rune_Activated_Spawn"
-                }
-              ]
-            }
+            "Type": "orange_blob_block_use_interaction"
           }
         ]
       }

@@ -49,6 +49,8 @@ public final class GameFlowConfigManager {
     private boolean chunkLoadingMessagesEnabled = true;
     private boolean hazardFogWeatherEnabled = true;
     private boolean coreRadiusChatMessagesEnabled = true;
+    private boolean defaultWorldHeightGuardEnabled = false;
+    private boolean gameWorldRedirectEnabled = false;
     @Nullable
     private Transform runSpawn;
     @Nullable
@@ -179,6 +181,28 @@ public final class GameFlowConfigManager {
     public synchronized void setCoreRadiusChatMessagesEnabled(boolean enabled) {
         ensureLoaded();
         this.coreRadiusChatMessagesEnabled = enabled;
+        saveQuietly();
+    }
+
+    public synchronized boolean isDefaultWorldHeightGuardEnabled() {
+        ensureLoaded();
+        return this.defaultWorldHeightGuardEnabled;
+    }
+
+    public synchronized void setDefaultWorldHeightGuardEnabled(boolean enabled) {
+        ensureLoaded();
+        this.defaultWorldHeightGuardEnabled = enabled;
+        saveQuietly();
+    }
+
+    public synchronized boolean isGameWorldRedirectEnabled() {
+        ensureLoaded();
+        return this.gameWorldRedirectEnabled;
+    }
+
+    public synchronized void setGameWorldRedirectEnabled(boolean enabled) {
+        ensureLoaded();
+        this.gameWorldRedirectEnabled = enabled;
         saveQuietly();
     }
 
@@ -395,6 +419,8 @@ public final class GameFlowConfigManager {
         lines.add("Chunk loading messages: " + this.chunkLoadingMessagesEnabled);
         lines.add("Hazard fog weather: " + this.hazardFogWeatherEnabled);
         lines.add("Core radius chat messages: " + this.coreRadiusChatMessagesEnabled);
+        lines.add("Default world height guard: " + this.defaultWorldHeightGuardEnabled);
+        lines.add("Game world redirect: " + this.gameWorldRedirectEnabled);
         lines.add("Rescued NPC keys: " + String.join(",", this.rescuedNpcKeys));
         return lines;
     }
@@ -436,6 +462,8 @@ public final class GameFlowConfigManager {
         this.chunkLoadingMessagesEnabled = parseBoolean(properties.getProperty("chunkLoadingMessagesEnabled"), true);
         this.hazardFogWeatherEnabled = parseBoolean(properties.getProperty("hazardFogWeatherEnabled"), true);
         this.coreRadiusChatMessagesEnabled = parseBoolean(properties.getProperty("coreRadiusChatMessagesEnabled"), true);
+        this.defaultWorldHeightGuardEnabled = parseBoolean(properties.getProperty("defaultWorldHeightGuardEnabled"), false);
+        this.gameWorldRedirectEnabled = parseBoolean(properties.getProperty("gameWorldRedirectEnabled"), false);
         this.runSpawn = readTransform(properties, "runSpawn");
         this.baseSpawn = readTransform(properties, "baseSpawn");
         this.rescueRunSpawn = readTransform(properties, "rescueRunSpawn");
@@ -465,6 +493,8 @@ public final class GameFlowConfigManager {
         properties.setProperty("chunkLoadingMessagesEnabled", Boolean.toString(this.chunkLoadingMessagesEnabled));
         properties.setProperty("hazardFogWeatherEnabled", Boolean.toString(this.hazardFogWeatherEnabled));
         properties.setProperty("coreRadiusChatMessagesEnabled", Boolean.toString(this.coreRadiusChatMessagesEnabled));
+        properties.setProperty("defaultWorldHeightGuardEnabled", Boolean.toString(this.defaultWorldHeightGuardEnabled));
+        properties.setProperty("gameWorldRedirectEnabled", Boolean.toString(this.gameWorldRedirectEnabled));
         writeVector3i(properties, "doorBlock", this.doorBlock);
         writeTransform(properties, "runSpawn", this.runSpawn);
         writeTransform(properties, "baseSpawn", this.baseSpawn);

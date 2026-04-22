@@ -52,6 +52,11 @@ items.Crimson_Stairs.name=Crimson Stairs
 items.Crimson_Prop.name=Crimson Prop
 
 items.Large_Rope.name=Large Rope
+server.items.Flare_Block.name=Flare Block
+server.items.Flare_Block.description=Use this flare to trigger rope extraction.
+server.items.Flare_Block_Active.name=Flare Block Active
+server.items.Flare_Block_Active.description=Rope extraction is currently charging.
+server.items.Large_Rope_UP.name=Large Rope Up
 server.npcRoles.Farmer_Chicken_Objective.name=Lost Chicken
 server.npcRoles.Farmer_Calf_Objective.name=Lost Calf
 server.npcRoles.Farmer_Goat_Objective.name=Lost Goat

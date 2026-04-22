@@ -2,6 +2,7 @@ package dev.hytalemodding.state.run;
 
 import com.hypixel.hytale.component.Ref;
 import dev.hytalemodding.blob.OrangeBlobBlockManager;
+import dev.hytalemodding.blob.FlareExtractionManager;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.math.vector.Transform;
@@ -1159,7 +1160,11 @@ public final class GameSessionManager {
         RooterManManager.get().clearRuntimeForWorld(runWorldUuid);
         LootChestRuntime.get().clearWorld(runWorldUuid);
         OrangeBlobBlockManager.clearRuntimeForWorld(runWorldUuid);
+
         RegionSpawnManager.get().clearWorld(runWorldUuid);
+
+        FlareExtractionManager.clearRuntimeForWorld(runWorldUuid);
+
     }
 
     private static void removeWorldOnOwningThread(@Nonnull Universe universe, @Nonnull String worldName) {

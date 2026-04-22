@@ -6,6 +6,8 @@ import com.hypixel.hytale.server.core.event.events.player.PlayerMouseButtonEvent
 import dev.hytalemodding.commands.run. SpawnExtractionPrototypeCommand;
 import dev.hytalemodding.blob.OrangeBlobBlockSystem;
 import dev.hytalemodding.blob.OrangeBlobBlockUseInteraction;
+import dev.hytalemodding.blob.FlareExtractionSystem;
+import dev.hytalemodding.blob.FlareExtractionUseInteraction;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Interaction;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
@@ -128,6 +130,7 @@ import dev.hytalemodding.state.run.RunClientReadyPacketWatcher;
 import dev.hytalemodding.state.run.RunChunkMapRefreshTickingSystem;
 import dev.hytalemodding.state.run.RunActiveMapRefreshSystem;
 import dev.hytalemodding.state.run.RunPinnedChunkKeepAliveSystem;
+import dev.hytalemodding.state.run.RunControlWorldSafetySystem;
 import dev.hytalemodding.state.run.RunStartCameraSystem;
 import dev.hytalemodding.state.run.RunStartMovementLockSystem;
 import dev.hytalemodding.state.run.InfectionCoreDetectionSystem;
@@ -211,6 +214,11 @@ public class ExamplePlugin extends JavaPlugin {
                 "orange_blob_block_use_interaction",
                 OrangeBlobBlockUseInteraction.class,
                 OrangeBlobBlockUseInteraction.CODEC
+        );
+        this.getCodecRegistry(Interaction.CODEC).register(
+                "flare_extraction_use_interaction",
+                FlareExtractionUseInteraction.class,
+                FlareExtractionUseInteraction.CODEC
         );
 
         this.getCodecRegistry(Interaction.CODEC).register(
@@ -301,6 +309,7 @@ public class ExamplePlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new RunChunkMapRefreshTickingSystem());
         this.getEntityStoreRegistry().registerSystem(new RunActiveMapRefreshSystem());
         this.getEntityStoreRegistry().registerSystem(new RunPinnedChunkKeepAliveSystem());
+        this.getEntityStoreRegistry().registerSystem(new RunControlWorldSafetySystem());
         this.getEntityStoreRegistry().registerSystem(new RunDeathHandler());
         this.getEntityStoreRegistry().registerSystem(new BlightBeastKillTrackerSystem());
         this.getEntityStoreRegistry().registerSystem(new BaseHousingSystem());
@@ -309,6 +318,7 @@ public class ExamplePlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new TransparentLightProtectionSystem());
         this.getEntityStoreRegistry().registerSystem(new DevDebugHudSystem());
         this.getEntityStoreRegistry().registerSystem(new OrangeBlobBlockSystem());
+        this.getEntityStoreRegistry().registerSystem(new FlareExtractionSystem());
 
         try {
             this.getChunkStoreRegistry().registerSystem(new CrimsonCoreDetectionSystem());
