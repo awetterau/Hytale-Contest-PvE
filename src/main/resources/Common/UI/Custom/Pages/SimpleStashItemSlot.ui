@@ -1,0 +1,26 @@
+$C = "../Common.ui";
+
+@SlotSize = 50;
+@SlotGap = 2;
+@IconSize = 40;
+
+Button {
+  Anchor: (Width: @SlotSize, Height: @SlotSize, Right: @SlotGap, Bottom: @SlotGap);
+  Style: (
+    Default: (Background: (Color: #172431)),
+    Hovered: (Background: (Color: #24384a)),
+    Pressed: (Background: (Color: #2d8659))
+  );
+  TooltipText: "";
+  TextTooltipStyle: $C.@DefaultTextTooltipStyle;
+
+  ItemIcon #SlotItem {
+    Anchor: (Width: @IconSize, Height: @IconSize, Horizontal: 0, Vertical: 0);
+  }
+
+  Label #QuantityLabel {
+    Anchor: (Right: 3, Bottom: 1);
+    Text: "";
+    Style: (FontSize: 10, TextColor: #ffffff, RenderBold: true, HorizontalAlignment: End, VerticalAlignment: End);
+  }
+}

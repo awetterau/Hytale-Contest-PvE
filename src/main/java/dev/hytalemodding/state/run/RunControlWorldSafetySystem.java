@@ -97,10 +97,29 @@ public final class RunControlWorldSafetySystem extends TickingSystem<EntityStore
     }
 
     private static void teleportPlayer(@Nonnull PlayerRef playerRef, @Nonnull World targetWorld, @Nonnull Transform target) {
-        playerRef.getReference().getStore().putComponent(
-                playerRef.getReference(),
-                Teleport.getComponentType(),
-                Teleport.createForPlayer(targetWorld, target)
-        );
+        var initialRef = playerRef.getReference();
+        if (initialRef == null || !initialRef.isValid() || initialRef.getStore() == null) {
+            return;
+        }
+        World sourceWorld = initialRef.getStore().getExternalData().getWorld();
+        if (sourceWorld == null) {
+            return;
+        }
+
+        sourceWorld.execute(() -> {
+            var ref = playerRef.getReference();
+            if (ref == null || !ref.isValid() || ref.getStore() == null) {
+                return;
+            }
+            if (playerRef.getWorldUuid() == null
+                    || !sourceWorld.getWorldConfig().getUuid().equals(playerRef.getWorldUuid())) {
+                return;
+            }
+            ref.getStore().putComponent(
+                    ref,
+                    Teleport.getComponentType(),
+                    Teleport.createForPlayer(targetWorld, target)
+            );
+        });
     }
 }

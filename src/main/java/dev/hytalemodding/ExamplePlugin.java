@@ -1,9 +1,13 @@
 package dev.hytalemodding;
 
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.event.events.ecs.PlaceBlockEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerMouseButtonEvent;
-import dev.hytalemodding.commands.run. SpawnExtractionPrototypeCommand;
+import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
+import dev.hytalemodding.commands.run.SpawnExtractionPrototypeCommand;
 import dev.hytalemodding.blob.OrangeBlobBlockSystem;
 import dev.hytalemodding.blob.OrangeBlobBlockUseInteraction;
 import dev.hytalemodding.blob.FlareExtractionSystem;
@@ -27,6 +31,7 @@ import dev.hytalemodding.commands.dev.UndoFarmerCommand;
 import dev.hytalemodding.commands.hub.GameConfigCommand;
 import dev.hytalemodding.commands.hub.SetBaseSpawnCommand;
 import dev.hytalemodding.commands.hub.SetRescueSpawnCommand;
+import dev.hytalemodding.commands.hub.StashCommand;
 import dev.hytalemodding.commands.npc.NpcAdminCommand;
 import dev.hytalemodding.commands.npc.DespawnWitchCommand;
 import dev.hytalemodding.commands.npc.NpcRolesCommand;
@@ -139,6 +144,7 @@ import dev.hytalemodding.state.run.SpawnPointPlacementHandler;
 import dev.hytalemodding.state.transition.GameFlowConfigManager;
 import dev.hytalemodding.state.transition.PlayerSpawnSafety;
 import dev.hytalemodding.npc.state.NpcStateManager;
+import dev.hytalemodding.stash.PlayerStashManager;
 
 import javax.annotation.Nonnull;
 
@@ -184,6 +190,7 @@ public class ExamplePlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new RunChunkSelectionCommand());
         this.getCommandRegistry().registerCommand(new SetBaseSpawnCommand());
         this.getCommandRegistry().registerCommand(new SetRescueSpawnCommand());
+        this.getCommandRegistry().registerCommand(new StashCommand());
         this.getCommandRegistry().registerCommand(new GameConfigCommand());
         this.getCommandRegistry().registerCommand(new NpcRolesCommand());
         this.getCommandRegistry().registerCommand(new NpcSpawnCommand());
@@ -237,6 +244,8 @@ public class ExamplePlugin extends JavaPlugin {
                 BasePlotUseInteraction.CODEC
         );
         this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, GameSessionManager.get()::onPlayerReady);
+        this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, this::onStashPlayerReady);
+        this.getEventRegistry().registerGlobal(PlayerDisconnectEvent.class, this::onStashPlayerDisconnect);
         this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, PlayerSpawnSafety::onPlayerReady);
         this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, BaseHousingManager::onPlayerReady);
         this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, FarmerAnimalRescueManager.get()::onPlayerReady);
@@ -257,6 +266,19 @@ public class ExamplePlugin extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new RedSpeedCommand());
         this.getCommandRegistry().registerCommand(new RedLimitCommand());
 
+    }
+
+    private void onStashPlayerReady(PlayerReadyEvent event) {
+        Ref<com.hypixel.hytale.server.core.universe.world.storage.EntityStore> ref = event.getPlayerRef();
+        Store<com.hypixel.hytale.server.core.universe.world.storage.EntityStore> store = ref.getStore();
+        PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
+        if (playerRef != null) {
+            PlayerStashManager.get().load(playerRef.getUuid());
+        }
+    }
+
+    private void onStashPlayerDisconnect(PlayerDisconnectEvent event) {
+        PlayerStashManager.get().unload(event.getPlayerRef().getUuid());
     }
 
     @Override
@@ -372,6 +394,8 @@ public class ExamplePlugin extends JavaPlugin {
 
     @Override
     protected void shutdown() {
+        PlayerStashManager.get().saveAll();
+
         if (this.rescueInteractionPacketWatcher != null) {
             this.rescueInteractionPacketWatcher.unregister();
             this.rescueInteractionPacketWatcher = null;

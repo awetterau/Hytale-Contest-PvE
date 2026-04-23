@@ -1,0 +1,181 @@
+@SlotSize = 50;
+@SlotIconSize = 40;
+@SlotGap = 2;
+
+Group #Root {
+  Anchor: (Full: 0);
+  LayoutMode: Middle;
+  Background: #000000(0.5);
+
+  Group #Panel {
+    Anchor: (Width: 1000, Height: 600);
+    Background: #0a1014(0.95);
+    OutlineColor: #2d8659;
+    OutlineSize: 2;
+    Padding: (Full: 16);
+    LayoutMode: Top;
+
+    Group #Header {
+      Anchor: (Height: 40, Bottom: 16);
+      LayoutMode: Left;
+
+      Label {
+        Text: "Stash";
+        FlexWeight: 1;
+        Style: (FontSize: 24, TextColor: #ffffff, RenderBold: true, VerticalAlignment: Center);
+      }
+
+      Label #StatusLabel {
+        Text: "";
+        Anchor: (Width: 300);
+        Style: (FontSize: 12, TextColor: #b0d0a0, HorizontalAlignment: End, VerticalAlignment: Center);
+      }
+
+      Button #CloseButton {
+        Anchor: (Width: 80, Height: 32);
+        Style: (Default: (Background: #1a3a24), Hovered: (Background: #2d5a3d), Pressed: (Background: #0f2818));
+        Label { Text: "Close"; Style: (FontSize: 12, TextColor: #c0e0b0, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); }
+      }
+    }
+
+    Group #Content {
+      FlexWeight: 1;
+      LayoutMode: Left;
+
+      Group #GridsArea {
+        FlexWeight: 1;
+        LayoutMode: Top;
+
+        Group #StashSection {
+          FlexWeight: 1;
+          LayoutMode: Top;
+          Padding: (Bottom: 12);
+
+          Label {
+            Anchor: (Height: 24, Bottom: 8);
+            Text: "Stash";
+            Style: (FontSize: 14, TextColor: #e0f0d0, RenderBold: true);
+          }
+
+          TextField #StashSearch {
+            Anchor: (Height: 28, Bottom: 8);
+            PlaceholderText: "Search...";
+            Background: (Color: #051008);
+            Style: (FontSize: 11, TextColor: #f0f0f0);
+          }
+
+          Group {
+            FlexWeight: 1;
+            LayoutMode: TopScrolling;
+            Background: #06120c(0.85);
+            OutlineColor: #1f5a3f;
+            OutlineSize: 1;
+            ScrollbarStyle: ScrollbarStyle(Spacing: 4, Size: 4, Background: #0a1014, Handle: #2d8659, HoveredHandle: #4d9d7d, DraggedHandle: #6dbd9d);
+            Padding: (Full: 6);
+
+            Group #StashGrid {
+              Anchor: (Left: 0, Right: 0);
+              LayoutMode: LeftCenterWrap;
+            }
+          }
+
+          Label #StashCountLabel {
+            Anchor: (Height: 18, Top: 6);
+            Text: "";
+            Style: (FontSize: 11, TextColor: #90c080);
+          }
+        }
+
+        Group #InventorySection {
+          Anchor: (Height: 200);
+          LayoutMode: Top;
+
+          Label {
+            Anchor: (Height: 24, Bottom: 8);
+            Text: "Inventory";
+            Style: (FontSize: 14, TextColor: #e0f0d0, RenderBold: true);
+          }
+
+          Group {
+            FlexWeight: 1;
+            LayoutMode: TopScrolling;
+            Background: #06120c(0.85);
+            OutlineColor: #1f5a3f;
+            OutlineSize: 1;
+            ScrollbarStyle: ScrollbarStyle(Spacing: 4, Size: 4, Background: #0a1014, Handle: #2d8659, HoveredHandle: #4d9d7d, DraggedHandle: #6dbd9d);
+            Padding: (Full: 6);
+
+            Group #InventoryGrid {
+              Anchor: (Left: 0, Right: 0);
+              LayoutMode: LeftCenterWrap;
+            }
+          }
+
+          Label #InventoryCountLabel {
+            Anchor: (Height: 18, Top: 6);
+            Text: "";
+            Style: (FontSize: 11, TextColor: #90c080);
+          }
+        }
+      }
+
+      Group { Anchor: (Width: 16); }
+
+      Group #RightPanel {
+        Anchor: (Width: 240);
+        Background: #051008(0.8);
+        OutlineColor: #1f5a3f;
+        OutlineSize: 1;
+        Padding: (Full: 12);
+        LayoutMode: Top;
+
+        Label {
+          Anchor: (Height: 26, Bottom: 14);
+          Text: "Transfer";
+          Style: (FontSize: 14, TextColor: #ffffff, RenderBold: true);
+        }
+
+        Label {
+          Anchor: (Height: 18, Bottom: 8);
+          Text: "Amount";
+          Style: (FontSize: 11, TextColor: #a0c090);
+        }
+
+        Button #FullStackButton {
+          Anchor: (Height: 40, Bottom: 10);
+          Style: (Default: (Background: #2d8659), Hovered: (Background: #4da879), Pressed: (Background: #1d5639));
+
+          Label #FullStackLabel {
+            Text: "Full Stack: ON";
+            Style: (FontSize: 13, TextColor: #ffffff, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center);
+          }
+        }
+
+        TextField #AmountInput {
+          Anchor: (Height: 32, Bottom: 10);
+          PlaceholderText: "Amount";
+          Background: (Color: #0f1f18);
+          Style: (FontSize: 12, TextColor: #ffffff);
+        }
+
+        Group {
+          Anchor: (Height: 32, Bottom: 8);
+          LayoutMode: Left;
+          Padding: (Full: 2);
+
+          Button #DecreaseButton {
+            FlexWeight: 1;
+            Style: (Default: (Background: #2d5a40), Hovered: (Background: #3d7a50), Pressed: (Background: #1d3a20));
+            Label { Text: "-"; Style: (FontSize: 12, TextColor: #d0e0c0, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); }
+          }
+
+          Button #IncreaseButton {
+            FlexWeight: 1;
+            Style: (Default: (Background: #2d5a40), Hovered: (Background: #3d7a50), Pressed: (Background: #1d3a20));
+            Label { Text: "+"; Style: (FontSize: 12, TextColor: #d0e0c0, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center); }
+          }
+        }
+      }
+    }
+  }
+}
