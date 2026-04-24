@@ -51,8 +51,11 @@
       ]
     },
     "BlockParticleSetId": "Dust",
-    "ParticleColor": "#f6d572",
-    "BlockSoundSetId": "Mushroom"
+    "ParticleColor": "#cf5c5c",
+    "BlockSoundSetId": "Mushroom",
+    "Tint": [
+      "#ebc0c0"
+    ]
   },
   "ResourceTypes": [
     {

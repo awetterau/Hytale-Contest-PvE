@@ -37,6 +37,7 @@ import dev.hytalemodding.state.transition.GameFlowConfigManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -363,6 +364,16 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
                 .append("@TriggerSecond", "#EventTriggerSecondInput.Value")
                 .append("@CoreCount", "#EventCoreCountInput.Value")
                 .append("@CoreType", "#EventCoreTypeInput.Value")
+                .append("@MainTriggerPctMin", "#MainTriggerPctMinInput.Value")
+                .append("@MainTriggerPctMax", "#MainTriggerPctMaxInput.Value")
+                .append("@SeedSpawnDelaySecMin", "#SeedSpawnDelaySecMinInput.Value")
+                .append("@SeedSpawnDelaySecMax", "#SeedSpawnDelaySecMaxInput.Value")
+                .append("@SeedRadiusAvgPctMin", "#SeedRadiusAvgPctMinInput.Value")
+                .append("@SeedRadiusAvgPctMax", "#SeedRadiusAvgPctMaxInput.Value")
+                .append("@SeedTargetRadiusMin", "#SeedTargetRadiusMinInput.Value")
+                .append("@SeedTargetRadiusMax", "#SeedTargetRadiusMaxInput.Value")
+                .append("@ChunkRangePerCore", "#ChunkRangePerCoreInput.Value")
+                .append("@MaxActiveSeeds", "#MaxActiveSeedsInput.Value")
                 .append("@EventEnabled", "#EventEnabledInput.Value")
                 .append("@ActionType", "#ActionTypeInput.Value")
                 .append("@CoreTier", "#CoreTierInput.Value")
@@ -748,12 +759,43 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         ui.set("#EventTriggerSecondInput.Value", selected == null ? 30d : (double) selected.triggerSecond);
         ui.set("#EventCoreCountInput.Value", selected == null ? 6d : (double) selected.coreCount);
         ui.set("#EventCoreTypeInput.Value", selected == null ? "2" : String.valueOf(selected.ticksPerBlock));
+        String mainTriggerRange = selected == null ? "0.70-0.70" : selected.mainTriggerPctRange;
+        String seedDelayRange = selected == null ? "2.0-2.0" : selected.seedSpawnDelaySecRange;
+        String seedRadiusAvgRange = selected == null ? "0.90-0.90" : selected.seedRadiusAvgTriggerPctRange;
+        String seedRadiusRange = selected == null ? "120-120" : selected.seedTargetRadiusRange;
+        ui.set("#MainTriggerPctMinInput.Value", doubleNumericText(rangePart(mainTriggerRange, true)));
+        ui.set("#MainTriggerPctMaxInput.Value", doubleNumericText(rangePart(mainTriggerRange, false)));
+        ui.set("#SeedSpawnDelaySecMinInput.Value", rangePart(seedDelayRange, true));
+        ui.set("#SeedSpawnDelaySecMaxInput.Value", rangePart(seedDelayRange, false));
+        ui.set("#SeedRadiusAvgPctMinInput.Value", doubleNumericText(rangePart(seedRadiusAvgRange, true)));
+        ui.set("#SeedRadiusAvgPctMaxInput.Value", doubleNumericText(rangePart(seedRadiusAvgRange, false)));
+        ui.set("#SeedTargetRadiusMinInput.Value", rangePart(seedRadiusRange, true));
+        ui.set("#SeedTargetRadiusMaxInput.Value", rangePart(seedRadiusRange, false));
+        ui.set("#ChunkRangePerCoreInput.Value", selected == null ? "1" : String.valueOf(selected.chunkRangePerCore));
+        ui.set("#MaxActiveSeedsInput.Value", selected == null ? "4" : String.valueOf(selected.maxActiveSeeds));
         ui.set("#EventEnabledInput.Value", selected == null ? "true" : String.valueOf(selected.enabled));
         ui.set("#ActionTypeSelectorValue.Text", selectedActionType.toUpperCase());
         ui.set("#ActionTypeInput.Value", selectedActionType);
         ui.set("#CoreTierSelectorValue.Text", selectedCoreTier.toUpperCase());
         ui.set("#CoreTierInput.Value", selectedCoreTier);
         ui.set("#ProbabilityInput.Value", selected == null ? 100d : (double) selected.probabilityPercent);
+        boolean seededOptionsVisible = "seeded_grow".equalsIgnoreCase(selectedActionType);
+        ui.set("#SeededMainTriggerLabel.Visible", seededOptionsVisible);
+        ui.set("#MainTriggerPctMinInput.Visible", seededOptionsVisible);
+        ui.set("#MainTriggerPctMaxInput.Visible", seededOptionsVisible);
+        ui.set("#SeededDelayLabel.Visible", seededOptionsVisible);
+        ui.set("#SeedSpawnDelaySecMinInput.Visible", seededOptionsVisible);
+        ui.set("#SeedSpawnDelaySecMaxInput.Visible", seededOptionsVisible);
+        ui.set("#SeededRadiusAvgLabel.Visible", seededOptionsVisible);
+        ui.set("#SeedRadiusAvgPctMinInput.Visible", seededOptionsVisible);
+        ui.set("#SeedRadiusAvgPctMaxInput.Visible", seededOptionsVisible);
+        ui.set("#SeededTargetRadiusLabel.Visible", seededOptionsVisible);
+        ui.set("#SeedTargetRadiusMinInput.Visible", seededOptionsVisible);
+        ui.set("#SeedTargetRadiusMaxInput.Visible", seededOptionsVisible);
+        ui.set("#SeededChunkRangeLabel.Visible", seededOptionsVisible);
+        ui.set("#ChunkRangePerCoreInput.Visible", seededOptionsVisible);
+        ui.set("#SeededMaxActiveLabel.Visible", seededOptionsVisible);
+        ui.set("#MaxActiveSeedsInput.Visible", seededOptionsVisible);
     }
 
     private void shiftInfectionSelection(@Nonnull Store<EntityStore> store, boolean weakList, int direction) {
@@ -819,6 +861,47 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         int normalized = normalizeSelectionIndex(index, positions.size());
         Vector3i pos = positions.get(normalized);
         return "[" + (normalized + 1) + "/" + positions.size() + "] " + formatPos(pos);
+    }
+
+    @Nonnull
+    private static String rangePart(@Nonnull String rangeText, boolean minPart) {
+        String[] split = rangeText.split("[-:,]");
+        if (split.length >= 2) {
+            return (minPart ? split[0] : split[1]).trim();
+        }
+        return rangeText.trim();
+    }
+
+    @Nonnull
+    private static String halveNumericText(@Nonnull String text) {
+        if (text.isBlank()) {
+            return text;
+        }
+        try {
+            BigDecimal value = new BigDecimal(text.trim());
+            return value
+                    .divide(BigDecimal.valueOf(2))
+                    .stripTrailingZeros()
+                    .toPlainString();
+        } catch (NumberFormatException ignored) {
+            return text.trim();
+        }
+    }
+
+    @Nonnull
+    private static String doubleNumericText(@Nonnull String text) {
+        if (text.isBlank()) {
+            return text;
+        }
+        try {
+            BigDecimal value = new BigDecimal(text.trim());
+            return value
+                    .multiply(BigDecimal.valueOf(2))
+                    .stripTrailingZeros()
+                    .toPlainString();
+        } catch (NumberFormatException ignored) {
+            return text.trim();
+        }
     }
 
     private void applyGameControl(@Nonnull PageEventData eventData) {
@@ -898,9 +981,15 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         if (selectedIndex < 0) {
             return;
         }
-        String[] options = {"spawn", "grow"};
+        String[] options = {"spawn", "grow", "seeded_grow"};
         String currentValue = getCurrentActionTypeForSelection(timeline, selectedIndex);
-        int current = "grow".equalsIgnoreCase(currentValue) ? 1 : 0;
+        int current = 0;
+        for (int i = 0; i < options.length; i++) {
+            if (options[i].equalsIgnoreCase(currentValue)) {
+                current = i;
+                break;
+            }
+        }
         int next = (current + direction) % options.length;
         if (next < 0) {
             next += options.length;
@@ -983,7 +1072,7 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
 
         if (eventData.actionType != null && !eventData.actionType.isBlank()) {
             String normalizedAction = eventData.actionType.trim().toLowerCase();
-            if ("spawn".equals(normalizedAction) || "grow".equals(normalizedAction)) {
+            if ("spawn".equals(normalizedAction) || "grow".equals(normalizedAction) || "seeded_grow".equals(normalizedAction)) {
                 event.actionType = normalizedAction;
             }
         }
@@ -996,6 +1085,46 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         if (eventData.probability != null) {
             event.probabilityPercent = Math.max(0, Math.min(100, (int) Math.round(eventData.probability)));
         }
+        if (!eventData.mainTriggerPctMin.isBlank() || !eventData.mainTriggerPctMax.isBlank()) {
+            String min = eventData.mainTriggerPctMin.isBlank()
+                    ? rangePart(event.mainTriggerPctRange, true)
+                    : halveNumericText(eventData.mainTriggerPctMin.trim());
+            String max = eventData.mainTriggerPctMax.isBlank()
+                    ? rangePart(event.mainTriggerPctRange, false)
+                    : halveNumericText(eventData.mainTriggerPctMax.trim());
+            event.mainTriggerPctRange = min + "-" + max;
+        }
+        if (!eventData.seedSpawnDelaySecMin.isBlank() || !eventData.seedSpawnDelaySecMax.isBlank()) {
+            String min = eventData.seedSpawnDelaySecMin.isBlank() ? rangePart(event.seedSpawnDelaySecRange, true) : eventData.seedSpawnDelaySecMin.trim();
+            String max = eventData.seedSpawnDelaySecMax.isBlank() ? rangePart(event.seedSpawnDelaySecRange, false) : eventData.seedSpawnDelaySecMax.trim();
+            event.seedSpawnDelaySecRange = min + "-" + max;
+        }
+        if (!eventData.seedRadiusAvgPctMin.isBlank() || !eventData.seedRadiusAvgPctMax.isBlank()) {
+            String min = eventData.seedRadiusAvgPctMin.isBlank()
+                    ? rangePart(event.seedRadiusAvgTriggerPctRange, true)
+                    : halveNumericText(eventData.seedRadiusAvgPctMin.trim());
+            String max = eventData.seedRadiusAvgPctMax.isBlank()
+                    ? rangePart(event.seedRadiusAvgTriggerPctRange, false)
+                    : halveNumericText(eventData.seedRadiusAvgPctMax.trim());
+            event.seedRadiusAvgTriggerPctRange = min + "-" + max;
+        }
+        if (!eventData.seedTargetRadiusMin.isBlank() || !eventData.seedTargetRadiusMax.isBlank()) {
+            String min = eventData.seedTargetRadiusMin.isBlank() ? rangePart(event.seedTargetRadiusRange, true) : eventData.seedTargetRadiusMin.trim();
+            String max = eventData.seedTargetRadiusMax.isBlank() ? rangePart(event.seedTargetRadiusRange, false) : eventData.seedTargetRadiusMax.trim();
+            event.seedTargetRadiusRange = min + "-" + max;
+        }
+        if (!eventData.chunkRangePerCore.isBlank()) {
+            try {
+                event.chunkRangePerCore = Math.max(0, Integer.parseInt(eventData.chunkRangePerCore.trim()));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        if (!eventData.maxActiveSeeds.isBlank()) {
+            try {
+                event.maxActiveSeeds = Math.max(1, Integer.parseInt(eventData.maxActiveSeeds.trim()));
+            } catch (NumberFormatException ignored) {
+            }
+        }
 
         persistActionsForPlayer();
         sendUiMessage("Action #" + (selectedIndex + 1) + " updated.");
@@ -1005,9 +1134,12 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
     @Nonnull
     private static TimelineEvent defaultAction(@Nonnull String actionType) {
         if ("grow".equalsIgnoreCase(actionType)) {
-            return new TimelineEvent("grow", "core", 60, 12, 1, 100, true);
+            return new TimelineEvent("grow", "core", 60, 12, 1, 100, true, "0.70-0.70", "2.0-2.0", "0.90-0.90", "120-120", 1, 4);
         }
-        return new TimelineEvent("spawn", "core", 30, 6, 2, 100, true);
+        if ("seeded_grow".equalsIgnoreCase(actionType)) {
+            return new TimelineEvent("seeded_grow", "core", 60, 50, 1, 100, true, "0.70-0.70", "2.0-4.0", "0.90-0.90", "100-140", 1, 4);
+        }
+        return new TimelineEvent("spawn", "core", 30, 6, 2, 100, true, "0.70-0.70", "2.0-2.0", "0.90-0.90", "120-120", 1, 4);
     }
 
     private List<TimelineEvent> getTimelineForPlayer() {
@@ -1016,11 +1148,39 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         if (loadedWorld == null || !loadedWorld.equalsIgnoreCase(worldName)) {
             ArrayList<TimelineEvent> loaded = new ArrayList<>();
             for (InfectionActionConfigManager.ActionEntry entry : InfectionActionConfigManager.loadActions(worldName)) {
-                loaded.add(new TimelineEvent(entry.actionType(), entry.coreTier(), entry.triggerSecond(), entry.radius(), entry.ticksPerBlock(), entry.probabilityPercent(), entry.enabled()));
+                loaded.add(new TimelineEvent(
+                        entry.actionType(),
+                        entry.coreTier(),
+                        entry.triggerSecond(),
+                        entry.radius(),
+                        entry.ticksPerBlock(),
+                        entry.probabilityPercent(),
+                        entry.enabled(),
+                        entry.mainTriggerPctRange(),
+                        entry.seedSpawnDelaySecRange(),
+                        entry.seedRadiusAvgTriggerPctRange(),
+                        entry.seedTargetRadiusRange(),
+                        entry.chunkRangePerCore(),
+                        entry.maxActiveSeeds()
+                ));
             }
             if (loaded.isEmpty()) {
                 loaded.add(defaultAction("spawn"));
-                InfectionActionConfigManager.saveActions(worldName, List.of(new InfectionActionConfigManager.ActionEntry("spawn", "core", 30, 6, 2, 100, true)));
+                InfectionActionConfigManager.saveActions(worldName, List.of(new InfectionActionConfigManager.ActionEntry(
+                        "spawn",
+                        "core",
+                        30,
+                        6,
+                        2,
+                        100,
+                        true,
+                        "0.70-0.70",
+                        "2.0-2.0",
+                        "0.90-0.90",
+                        "120-120",
+                        1,
+                        4
+                )));
             }
             TIMELINE_EVENTS_BY_PLAYER.put(this.playerRef.getUuid(), loaded);
             LOADED_ACTION_WORLD_BY_PLAYER.put(this.playerRef.getUuid(), worldName);
@@ -1040,7 +1200,21 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         }
         ArrayList<InfectionActionConfigManager.ActionEntry> entries = new ArrayList<>(timeline.size());
         for (TimelineEvent event : timeline) {
-            entries.add(new InfectionActionConfigManager.ActionEntry(event.actionType, event.coreTier, event.triggerSecond, event.coreCount, event.ticksPerBlock, event.probabilityPercent, event.enabled));
+            entries.add(new InfectionActionConfigManager.ActionEntry(
+                    event.actionType,
+                    event.coreTier,
+                    event.triggerSecond,
+                    event.coreCount,
+                    event.ticksPerBlock,
+                    event.probabilityPercent,
+                    event.enabled,
+                    event.mainTriggerPctRange,
+                    event.seedSpawnDelaySecRange,
+                    event.seedRadiusAvgTriggerPctRange,
+                    event.seedTargetRadiusRange,
+                    event.chunkRangePerCore,
+                    event.maxActiveSeeds
+            ));
         }
         InfectionActionConfigManager.saveActions(worldName, entries);
     }
@@ -1266,8 +1440,32 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         private int ticksPerBlock;
         private int probabilityPercent;
         private boolean enabled;
+        @Nonnull
+        private String mainTriggerPctRange;
+        @Nonnull
+        private String seedSpawnDelaySecRange;
+        @Nonnull
+        private String seedRadiusAvgTriggerPctRange;
+        @Nonnull
+        private String seedTargetRadiusRange;
+        private int chunkRangePerCore;
+        private int maxActiveSeeds;
 
-        private TimelineEvent(@Nonnull String actionType, @Nonnull String coreTier, int triggerSecond, int coreCount, int ticksPerBlock, int probabilityPercent, boolean enabled) {
+        private TimelineEvent(
+                @Nonnull String actionType,
+                @Nonnull String coreTier,
+                int triggerSecond,
+                int coreCount,
+                int ticksPerBlock,
+                int probabilityPercent,
+                boolean enabled,
+                @Nonnull String mainTriggerPctRange,
+                @Nonnull String seedSpawnDelaySecRange,
+                @Nonnull String seedRadiusAvgTriggerPctRange,
+                @Nonnull String seedTargetRadiusRange,
+                int chunkRangePerCore,
+                int maxActiveSeeds
+        ) {
             this.actionType = actionType;
             this.coreTier = coreTier;
             this.triggerSecond = triggerSecond;
@@ -1275,6 +1473,12 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
             this.ticksPerBlock = ticksPerBlock;
             this.probabilityPercent = probabilityPercent;
             this.enabled = enabled;
+            this.mainTriggerPctRange = mainTriggerPctRange;
+            this.seedSpawnDelaySecRange = seedSpawnDelaySecRange;
+            this.seedRadiusAvgTriggerPctRange = seedRadiusAvgTriggerPctRange;
+            this.seedTargetRadiusRange = seedTargetRadiusRange;
+            this.chunkRangePerCore = chunkRangePerCore;
+            this.maxActiveSeeds = maxActiveSeeds;
         }
     }
 
@@ -1286,7 +1490,21 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         }
         ArrayList<RuntimeAction> copy = new ArrayList<>(events.size());
         for (TimelineEvent e : events) {
-            copy.add(new RuntimeAction(e.actionType, e.coreTier, e.triggerSecond, e.coreCount, e.ticksPerBlock, e.probabilityPercent, e.enabled));
+            copy.add(new RuntimeAction(
+                    e.actionType,
+                    e.coreTier,
+                    e.triggerSecond,
+                    e.coreCount,
+                    e.ticksPerBlock,
+                    e.probabilityPercent,
+                    e.enabled,
+                    e.mainTriggerPctRange,
+                    e.seedSpawnDelaySecRange,
+                    e.seedRadiusAvgTriggerPctRange,
+                    e.seedTargetRadiusRange,
+                    e.chunkRangePerCore,
+                    e.maxActiveSeeds
+            ));
         }
         return copy;
     }
@@ -1298,7 +1516,13 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
             int radius,
             int ticksPerBlock,
             int probabilityPercent,
-            boolean enabled
+            boolean enabled,
+            @Nonnull String mainTriggerPctRange,
+            @Nonnull String seedSpawnDelaySecRange,
+            @Nonnull String seedRadiusAvgTriggerPctRange,
+            @Nonnull String seedTargetRadiusRange,
+            int chunkRangePerCore,
+            int maxActiveSeeds
     ) {
     }
 
@@ -1329,6 +1553,26 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         public String coreTier = "";
         @Nullable
         public Double probability;
+        @Nonnull
+        public String mainTriggerPctMin = "";
+        @Nonnull
+        public String mainTriggerPctMax = "";
+        @Nonnull
+        public String seedSpawnDelaySecMin = "";
+        @Nonnull
+        public String seedSpawnDelaySecMax = "";
+        @Nonnull
+        public String seedRadiusAvgPctMin = "";
+        @Nonnull
+        public String seedRadiusAvgPctMax = "";
+        @Nonnull
+        public String seedTargetRadiusMin = "";
+        @Nonnull
+        public String seedTargetRadiusMax = "";
+        @Nonnull
+        public String chunkRangePerCore = "";
+        @Nonnull
+        public String maxActiveSeeds = "";
         @Nullable
         public Double extractRunFromSec;
         @Nullable
@@ -1384,6 +1628,26 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
                 .append(new KeyedCodec<>("@CoreTier", Codec.STRING), (d, v) -> d.coreTier = v, d -> d.coreTier)
                 .add()
                 .append(new KeyedCodec<>("@Probability", Codec.DOUBLE), (d, v) -> d.probability = v, d -> d.probability)
+                .add()
+                .append(new KeyedCodec<>("@MainTriggerPctMin", Codec.STRING), (d, v) -> d.mainTriggerPctMin = v, d -> d.mainTriggerPctMin)
+                .add()
+                .append(new KeyedCodec<>("@MainTriggerPctMax", Codec.STRING), (d, v) -> d.mainTriggerPctMax = v, d -> d.mainTriggerPctMax)
+                .add()
+                .append(new KeyedCodec<>("@SeedSpawnDelaySecMin", Codec.STRING), (d, v) -> d.seedSpawnDelaySecMin = v, d -> d.seedSpawnDelaySecMin)
+                .add()
+                .append(new KeyedCodec<>("@SeedSpawnDelaySecMax", Codec.STRING), (d, v) -> d.seedSpawnDelaySecMax = v, d -> d.seedSpawnDelaySecMax)
+                .add()
+                .append(new KeyedCodec<>("@SeedRadiusAvgPctMin", Codec.STRING), (d, v) -> d.seedRadiusAvgPctMin = v, d -> d.seedRadiusAvgPctMin)
+                .add()
+                .append(new KeyedCodec<>("@SeedRadiusAvgPctMax", Codec.STRING), (d, v) -> d.seedRadiusAvgPctMax = v, d -> d.seedRadiusAvgPctMax)
+                .add()
+                .append(new KeyedCodec<>("@SeedTargetRadiusMin", Codec.STRING), (d, v) -> d.seedTargetRadiusMin = v, d -> d.seedTargetRadiusMin)
+                .add()
+                .append(new KeyedCodec<>("@SeedTargetRadiusMax", Codec.STRING), (d, v) -> d.seedTargetRadiusMax = v, d -> d.seedTargetRadiusMax)
+                .add()
+                .append(new KeyedCodec<>("@ChunkRangePerCore", Codec.STRING), (d, v) -> d.chunkRangePerCore = v, d -> d.chunkRangePerCore)
+                .add()
+                .append(new KeyedCodec<>("@MaxActiveSeeds", Codec.STRING), (d, v) -> d.maxActiveSeeds = v, d -> d.maxActiveSeeds)
                 .add()
                 .append(new KeyedCodec<>("@ExtractRunFromSec", Codec.DOUBLE), (d, v) -> d.extractRunFromSec = v, d -> d.extractRunFromSec)
                 .add()

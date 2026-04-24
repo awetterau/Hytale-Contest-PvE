@@ -367,16 +367,16 @@
   "FogColors": [
     {
       "Hour": 7,
-      "Color": "#a03131"
+      "Color": "#450000"
     },
     {
       "Hour": 15,
-      "Color": "#870000"
+      "Color": "#2f0404"
     }
   ],
   "FogDistance": [
-    -36,
-    24
+    -66,
+    27
   ],
   "FogDensities": [
     {

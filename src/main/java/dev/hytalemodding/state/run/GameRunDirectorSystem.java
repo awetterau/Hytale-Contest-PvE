@@ -3,9 +3,11 @@ package dev.hytalemodding.state.run;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
+import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.hud.CustomUIHud;
+import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -25,6 +27,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Deque;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 import com.hypixel.hytale.server.npc.NPCPlugin;
 import com.hypixel.hytale.server.npc.asset.builder.BuilderInfo;
@@ -38,6 +41,7 @@ import java.util.UUID;
 
 public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
     private static final String WEAK_RUNTIME_CORE_BLOCK_ID = "Crimson_Core_Weak";
+    private static final int CHUNK_SIZE_BLOCKS = 32;
     private static final String POTION_BREWER_WITCH_ROLE = "Potion_Brewer_Witch";
     private static final Vector3d WITCH_SPAWN_POS = new Vector3d(-2, 225, -90);
     private final ConcurrentHashMap<UUID, GameTimerHud> timerHuds = new ConcurrentHashMap<>();
@@ -45,14 +49,47 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
     private final ConcurrentHashMap<UUID, Set<Integer>> executedAutomationByWorld = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, ConcurrentHashMap<Integer, Integer>> failedAutomationByWorld = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, ConcurrentHashMap<String, CoreGrowthQueue>> pendingGrowthByWorld = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, java.util.Map<String, SeededGrowEvent>> activeSeededGrowByWorld = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, java.util.Set<String>> seededGrowMainCoreHistoryByWorld = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, ConcurrentHashMap<ChunkReachCacheKey, java.util.Set<RunChunkSelectionManager.ChunkPosKey>>> seededGrowChunkCacheByWorld = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Boolean> witchSpawnedInWorld = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, String> currentFormattedTime = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, java.util.Set<String>> SEEDED_GROW_SEED_KEYS_BY_WORLD = new ConcurrentHashMap<>();
     private static final long GROWTH_STAGE_INTERVAL_MS = 500L;
     private static final float GROWTH_EXPANSION_PROGRESS_THRESHOLD = 0.96f;
     private static Vector3d witchMarkerPos = null;
 
     public static String getFormattedTime(@Nonnull UUID playerId) {
         return currentFormattedTime.getOrDefault(playerId, "00:00");
+    }
+
+    public static boolean isSeededGrowSeedCore(@Nonnull UUID worldId, @Nonnull Vector3i corePos) {
+        java.util.Set<String> keys = SEEDED_GROW_SEED_KEYS_BY_WORLD.get(worldId);
+        if (keys == null || keys.isEmpty()) {
+            return false;
+        }
+        return keys.contains(growthKey(corePos));
+    }
+
+    public static void clearSeededGrowSeedCore(@Nonnull UUID worldId, @Nonnull Vector3i corePos) {
+        java.util.Set<String> keys = SEEDED_GROW_SEED_KEYS_BY_WORLD.get(worldId);
+        if (keys == null || keys.isEmpty()) {
+            return;
+        }
+        keys.remove(growthKey(corePos));
+        if (keys.isEmpty()) {
+            SEEDED_GROW_SEED_KEYS_BY_WORLD.remove(worldId);
+        }
+    }
+
+    private static void markSeededGrowSeedCore(@Nonnull UUID worldId, @Nonnull Vector3i corePos) {
+        SEEDED_GROW_SEED_KEYS_BY_WORLD
+                .computeIfAbsent(worldId, ignored -> java.util.concurrent.ConcurrentHashMap.newKeySet())
+                .add(growthKey(corePos));
+    }
+
+    private static void clearSeededGrowSeedCores(@Nonnull UUID worldId) {
+        SEEDED_GROW_SEED_KEYS_BY_WORLD.remove(worldId);
     }
 
     @Override
@@ -63,7 +100,11 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
             this.executedAutomationByWorld.clear();
             this.failedAutomationByWorld.clear();
             this.pendingGrowthByWorld.clear();
+            this.activeSeededGrowByWorld.clear();
+            this.seededGrowMainCoreHistoryByWorld.clear();
+            this.seededGrowChunkCacheByWorld.clear();
             this.witchSpawnedInWorld.clear();
+            SEEDED_GROW_SEED_KEYS_BY_WORLD.clear();
             return;
         }
         if (snapshot.phase() != GameSessionManager.RunPhase.EXPLORATION
@@ -72,7 +113,11 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
             this.executedAutomationByWorld.clear();
             this.failedAutomationByWorld.clear();
             this.pendingGrowthByWorld.clear();
+            this.activeSeededGrowByWorld.clear();
+            this.seededGrowMainCoreHistoryByWorld.clear();
+            this.seededGrowChunkCacheByWorld.clear();
             this.witchSpawnedInWorld.remove(snapshot.runWorldUuid());
+            clearSeededGrowSeedCores(snapshot.runWorldUuid());
             return;
         }
 
@@ -87,6 +132,7 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
         updateRunWorldTimerHud(worldId, remainingMs);
         processAutomatedActions(world, snapshot);
         processPendingGrowth(world);
+        processSeededGrowEvents(world);
 
         // End run when time expires, wiping inventory like death
         if (remainingMs <= 0) {
@@ -164,6 +210,7 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
             boolean performed = switch (action.actionType().toLowerCase()) {
                 case "spawn" -> executeSpawnAction(worldId, world, action);
                 case "grow" -> executeGrowAction(worldId, world, action);
+                case "seeded_grow" -> executeSeededGrowAction(worldId, world, action);
                 default -> false;
             };
             if (performed) {
@@ -265,6 +312,62 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
             RedWaveManager.beginUndoSession(worldId, target);
         }
         RedWaveManager.startWave(worldId, target, growthRadius, targetSeconds, true);
+        return true;
+    }
+
+    private boolean executeSeededGrowAction(@Nonnull UUID worldId, @Nonnull World world, @Nonnull BlightfallMainPage.RuntimeAction action) {
+        List<Vector3i> cores = RedCoreRegistry.snapshot(worldId).stream()
+                .filter(pos -> {
+                    var bt = world.getBlockType(pos.x, pos.y, pos.z);
+                    return bt != null && RedWaveConfig.CORE_BLOCK_ID.equals(bt.getId());
+                })
+                .toList();
+        if (cores.isEmpty()) {
+            return false;
+        }
+        java.util.Set<String> usedMainCores = this.seededGrowMainCoreHistoryByWorld
+                .computeIfAbsent(worldId, ignored -> java.util.concurrent.ConcurrentHashMap.newKeySet());
+        List<Vector3i> availableCores = new java.util.ArrayList<>();
+        for (Vector3i core : cores) {
+            if (!usedMainCores.contains(growthKey(core))) {
+                availableCores.add(core);
+            }
+        }
+        if (availableCores.isEmpty()) {
+            usedMainCores.clear();
+            availableCores.addAll(cores);
+        }
+        Vector3i target = availableCores.get(ThreadLocalRandom.current().nextInt(availableCores.size()));
+        usedMainCores.add(growthKey(target));
+
+        RedWaveManager.clearWave(worldId, target);
+        ConcurrentHashMap<String, CoreGrowthQueue> pendingByCore = this.pendingGrowthByWorld.get(worldId);
+        if (pendingByCore != null) {
+            pendingByCore.remove(growthKey(target));
+        }
+
+        int targetRadius = Math.max(1, action.radius());
+        float targetSeconds = Math.max(0.1f, action.ticksPerBlock() / 20.0f);
+        RedWaveManager.startWave(worldId, target, targetRadius, targetSeconds, true);
+
+        double mainTriggerPct = randomFromRange(action.mainTriggerPctRange(), 0.70d, 0.70d, 0.10d, 0.95d);
+        double seedRadiusAvgTriggerPct = randomFromRange(action.seedRadiusAvgTriggerPctRange(), 0.90d, 0.90d, 0.10d, 0.95d);
+        double seedTargetRadius = randomFromRange(action.seedTargetRadiusRange(), 120.0d, 120.0d, 8.0d, 600.0d);
+
+        SeededGrowEvent event = new SeededGrowEvent(
+                new Vector3i(target),
+                targetRadius,
+                targetSeconds,
+                mainTriggerPct,
+                action.seedSpawnDelaySecRange(),
+                seedRadiusAvgTriggerPct,
+                (int) Math.round(seedTargetRadius),
+                Math.max(0, action.chunkRangePerCore()),
+                Math.max(1, action.maxActiveSeeds())
+        );
+        this.activeSeededGrowByWorld
+                .computeIfAbsent(worldId, ignored -> new ConcurrentHashMap<>())
+                .put(growthKey(target), event);
         return true;
     }
 
@@ -383,9 +486,528 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
         return true;
     }
 
+    private void processSeededGrowEvents(@Nonnull World world) {
+        UUID worldId = world.getWorldConfig().getUuid();
+        java.util.Map<String, SeededGrowEvent> events = this.activeSeededGrowByWorld.get(worldId);
+        if (events == null || events.isEmpty()) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        RunChunkSelectionManager runChunkSelectionManager = RunChunkSelectionManager.get();
+        java.util.LinkedHashSet<RunChunkSelectionManager.ChunkPosKey> selectedRunChunks = runChunkSelectionManager.getSelectedChunks(world.getName());
+        it.unimi.dsi.fastutil.longs.LongSet markerChunkIndices = runChunkSelectionManager.getPinnedChunkIndices(world.getName());
+        java.util.LinkedHashSet<RunChunkSelectionManager.ChunkPosKey> selectableRunChunks = new java.util.LinkedHashSet<>();
+        for (RunChunkSelectionManager.ChunkPosKey selected : selectedRunChunks) {
+            long chunkIndex = ChunkUtil.indexChunk(selected.x(), selected.z());
+            if (markerChunkIndices.contains(chunkIndex)) {
+                continue;
+            }
+            selectableRunChunks.add(selected);
+        }
+        if (selectableRunChunks.isEmpty() && !selectedRunChunks.isEmpty()) {
+            selectableRunChunks.addAll(selectedRunChunks);
+        }
+        for (var entry : events.entrySet()) {
+            SeededGrowEvent event = entry.getValue();
+            if (event == null || event.done) {
+                continue;
+            }
+            RedWaveManager.ActiveWave mainWave = RedWaveManager.getActiveWave(worldId, event.mainCorePos);
+            float simulatedMainRadiusAvg = mainWave == null
+                    ? 0.0f
+                    : (mainWave.averageConvertedRadius() * 0.5f);
+            float mainTriggerRadius = event.mainTargetRadius * event.mainTriggerPct;
+            if (!event.mainTriggered && simulatedMainRadiusAvg >= mainTriggerRadius) {
+                event.mainTriggered = true;
+                event.nextSpawnAtMs = now;
+                sendStatusIfEnabled(worldId, "[SeededGrow] Main core reached trigger "
+                        + String.format("%.0f", event.mainTriggerPct * 100f)
+                        + "% at " + event.mainCorePos.x + "," + event.mainCorePos.y + "," + event.mainCorePos.z
+                        + " simulatedRadius(avg)=" + String.format("%.2f", simulatedMainRadiusAvg));
+            }
+
+            event.reachedChunks.clear();
+            event.frameChunks.clear();
+            addReachedChunksForCore(worldId, event, event.mainCorePos, selectableRunChunks);
+            for (Vector3i seedPos : event.seedCores) {
+                addReachedChunksForCore(worldId, event, seedPos, selectableRunChunks);
+            }
+            rebuildFrameChunks(event, selectableRunChunks);
+            refreshManagedSeedQueue(worldId, event);
+
+            boolean spawnChained = event.mainTriggered && !event.frameChunks.isEmpty();
+            int activeSeedWaves = 0;
+            for (Vector3i seedPos : event.seedCores) {
+                RedWaveManager.ActiveWave seedWave = RedWaveManager.getActiveWave(worldId, seedPos);
+                if (seedWave != null) {
+                    activeSeedWaves++;
+                }
+                float simulatedSeedRadiusAvg = seedWave == null
+                        ? event.seedTargetRadius
+                        : seedWave.averageConvertedRadius();
+                if (simulatedSeedRadiusAvg >= (event.seedTargetRadius * event.seedRadiusAvgTriggerPct)) {
+                    spawnChained = true;
+                    break;
+                }
+            }
+            if (event.mainTriggered && event.seedCores.isEmpty()) {
+                spawnChained = true;
+            } else if (event.mainTriggered && event.spawnedSeeds >= event.maxInitialSeeds && activeSeedWaves < event.minActiveSeedsAfterInitial) {
+                spawnChained = true;
+            }
+            if (activeSeedWaves >= event.maxActiveSeeds) {
+                spawnChained = false;
+            }
+            if (spawnChained && !event.frameChunks.isEmpty()) {
+                while (event.seedSpawnQueue.size() + event.managedSeedCores.size() < event.maxActiveSeeds) {
+                    event.seedSpawnQueue.addLast(SeedSpawnRequest.chain());
+                }
+            }
+            if (now >= event.nextSpawnAtMs
+                    && !event.seedSpawnQueue.isEmpty()
+                    && event.managedSeedCores.size() < event.maxActiveSeeds) {
+                SeedSpawnRequest next = event.seedSpawnQueue.pollFirst();
+                boolean spawned = false;
+                if (next != null) {
+                    spawned = spawnSeedFromFrameChunk(world, worldId, event, "chain-frame");
+                }
+                if (spawned) {
+                    event.spawnedSeeds++;
+                }
+                event.nextSpawnAtMs = now + nextSeedDelayMs(event);
+            }
+
+            if (event.frameChunks.isEmpty()
+                    && event.seedSpawnQueue.isEmpty()
+                    && event.managedSeedCores.isEmpty()
+                    && activeSeedWaves <= 0) {
+                event.done = true;
+            }
+        }
+        events.entrySet().removeIf(e -> e.getValue() == null || e.getValue().done);
+        if (events.isEmpty()) {
+            this.activeSeededGrowByWorld.remove(worldId);
+        }
+    }
+
+    private boolean spawnSeedFromFrameChunk(
+            @Nonnull World world,
+            @Nonnull UUID worldId,
+            @Nonnull SeededGrowEvent event,
+            @Nonnull String phase
+    ) {
+        if (event.frameChunks.isEmpty()) {
+            return false;
+        }
+        ArrayList<RunChunkSelectionManager.ChunkPosKey> candidates = new ArrayList<>();
+        for (RunChunkSelectionManager.ChunkPosKey frame : event.frameChunks) {
+            if (event.consumedFrameChunks.contains(frame)) {
+                continue;
+            }
+            if (event.rejectedFrameChunks.contains(frame)) {
+                continue;
+            }
+            if (event.reservedFrameChunks.contains(frame)) {
+                continue;
+            }
+            if (event.seededChunks.contains(frame)) {
+                continue;
+            }
+            candidates.add(frame);
+        }
+        if (candidates.isEmpty()) {
+            return false;
+        }
+        RunChunkSelectionManager.ChunkPosKey chosen = candidates.get(0);
+        event.reservedFrameChunks.add(chosen);
+        Vector3i spawnPos = resolveEdgeSpawnFromFrame(event, chosen);
+        if (spawnPos == null) {
+            registerFrameSpawnFailure(event, chosen);
+            event.reservedFrameChunks.remove(chosen);
+            return false;
+        }
+        RunChunkSelectionManager.ChunkPosKey spawnChunk = toChunkPosKey(spawnPos.x, spawnPos.z);
+        if (event.seededChunks.contains(spawnChunk)) {
+            registerFrameSpawnFailure(event, chosen);
+            event.reservedFrameChunks.remove(chosen);
+            return false;
+        }
+        boolean spawned = trySpawnSeedAt(world, worldId, event, spawnPos.x, spawnPos.y, spawnPos.z, phase + " " + chosen.x() + "," + chosen.z());
+        if (spawned) {
+            event.consumedFrameChunks.add(chosen);
+            event.frameChunks.remove(chosen);
+            event.seededChunks.add(spawnChunk);
+            event.frameFailedAttempts.remove(chosen);
+        } else {
+            registerFrameSpawnFailure(event, chosen);
+        }
+        event.reservedFrameChunks.remove(chosen);
+        return spawned;
+    }
+
+    private void registerFrameSpawnFailure(@Nonnull SeededGrowEvent event, @Nonnull RunChunkSelectionManager.ChunkPosKey frameChunk) {
+        int failures = event.frameFailedAttempts.getOrDefault(frameChunk, 0) + 1;
+        if (failures >= 3) {
+            event.rejectedFrameChunks.add(frameChunk);
+            event.frameChunks.remove(frameChunk);
+            event.frameFailedAttempts.remove(frameChunk);
+            return;
+        }
+        event.frameFailedAttempts.put(frameChunk, failures);
+    }
+
+    @Nonnull
+    private static RunChunkSelectionManager.ChunkPosKey toChunkPosKey(int blockX, int blockZ) {
+        return new RunChunkSelectionManager.ChunkPosKey(
+                Math.floorDiv(blockX, CHUNK_SIZE_BLOCKS),
+                Math.floorDiv(blockZ, CHUNK_SIZE_BLOCKS)
+        );
+    }
+
+    private void addReachedChunksForCore(
+            @Nonnull UUID worldId,
+            @Nonnull SeededGrowEvent event,
+            @Nonnull Vector3i origin,
+            @Nonnull java.util.Set<RunChunkSelectionManager.ChunkPosKey> selectedRunChunks
+    ) {
+        int originChunkX = Math.floorDiv(origin.x, CHUNK_SIZE_BLOCKS);
+        int originChunkZ = Math.floorDiv(origin.z, CHUNK_SIZE_BLOCKS);
+        for (RunChunkSelectionManager.ChunkPosKey reached : getSharedReachedChunks(worldId, originChunkX, originChunkZ, event.chunkRangePerCore)) {
+            if (selectedRunChunks.isEmpty() || selectedRunChunks.contains(reached)) {
+                event.reachedChunks.add(reached);
+            }
+        }
+    }
+
+    @Nonnull
+    private java.util.Set<RunChunkSelectionManager.ChunkPosKey> getSharedReachedChunks(
+            @Nonnull UUID worldId,
+            int originChunkX,
+            int originChunkZ,
+            int chunkRange
+    ) {
+        ConcurrentHashMap<ChunkReachCacheKey, java.util.Set<RunChunkSelectionManager.ChunkPosKey>> worldCache =
+                this.seededGrowChunkCacheByWorld.computeIfAbsent(worldId, ignored -> new ConcurrentHashMap<>());
+        ChunkReachCacheKey cacheKey = new ChunkReachCacheKey(originChunkX, originChunkZ, Math.max(0, chunkRange));
+        return worldCache.computeIfAbsent(cacheKey, ignored -> {
+            java.util.HashSet<RunChunkSelectionManager.ChunkPosKey> chunks = new java.util.HashSet<>();
+            for (int dx = -cacheKey.chunkRange; dx <= cacheKey.chunkRange; dx++) {
+                for (int dz = -cacheKey.chunkRange; dz <= cacheKey.chunkRange; dz++) {
+                    chunks.add(new RunChunkSelectionManager.ChunkPosKey(cacheKey.originChunkX + dx, cacheKey.originChunkZ + dz));
+                }
+            }
+            return java.util.Set.copyOf(chunks);
+        });
+    }
+
+    private void rebuildFrameChunks(
+            @Nonnull SeededGrowEvent event,
+            @Nonnull java.util.Set<RunChunkSelectionManager.ChunkPosKey> selectedRunChunks
+    ) {
+        java.util.HashSet<RunChunkSelectionManager.ChunkPosKey> nextFrameSet = new java.util.HashSet<>();
+        int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        for (RunChunkSelectionManager.ChunkPosKey reached : event.reachedChunks) {
+            for (int[] dir : dirs) {
+                RunChunkSelectionManager.ChunkPosKey neighbor = new RunChunkSelectionManager.ChunkPosKey(reached.x() + dir[0], reached.z() + dir[1]);
+                if (event.reachedChunks.contains(neighbor)) {
+                    continue;
+                }
+                if (!selectedRunChunks.isEmpty() && !selectedRunChunks.contains(neighbor)) {
+                    continue;
+                }
+                if (event.consumedFrameChunks.contains(neighbor)) {
+                    continue;
+                }
+                nextFrameSet.add(neighbor);
+            }
+        }
+        ArrayList<RunChunkSelectionManager.ChunkPosKey> nextFrame = new ArrayList<>(nextFrameSet);
+        int mainChunkX = Math.floorDiv(event.mainCorePos.x, CHUNK_SIZE_BLOCKS);
+        int mainChunkZ = Math.floorDiv(event.mainCorePos.z, CHUNK_SIZE_BLOCKS);
+        nextFrame.sort(java.util.Comparator.comparingInt(chunk -> {
+            int dx = chunk.x() - mainChunkX;
+            int dz = chunk.z() - mainChunkZ;
+            return (dx * dx) + (dz * dz);
+        }));
+        event.frameChunks.clear();
+        event.frameChunks.addAll(nextFrame);
+    }
+
+    private Vector3i resolveEdgeSpawnFromFrame(
+            @Nonnull SeededGrowEvent event,
+            @Nonnull RunChunkSelectionManager.ChunkPosKey frame
+    ) {
+        int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        ArrayList<RunChunkSelectionManager.ChunkPosKey> inwardNeighbors = new ArrayList<>(4);
+        for (int[] dir : dirs) {
+            RunChunkSelectionManager.ChunkPosKey neighbor = new RunChunkSelectionManager.ChunkPosKey(frame.x() + dir[0], frame.z() + dir[1]);
+            if (event.frameChunks.contains(neighbor) || event.reachedChunks.contains(neighbor)) {
+                inwardNeighbors.add(neighbor);
+            }
+        }
+        if (inwardNeighbors.isEmpty()) {
+            return null;
+        }
+        java.util.Collections.shuffle(inwardNeighbors);
+        RunChunkSelectionManager.ChunkPosKey neighborTarget = inwardNeighbors.get(0);
+        int frameMinX = frame.x() * CHUNK_SIZE_BLOCKS;
+        int frameMinZ = frame.z() * CHUNK_SIZE_BLOCKS;
+        int frameMaxX = frameMinX + CHUNK_SIZE_BLOCKS - 1;
+        int frameMaxZ = frameMinZ + CHUNK_SIZE_BLOCKS - 1;
+        int y = event.mainCorePos.y;
+        int x = ThreadLocalRandom.current().nextInt(frameMinX + 4, frameMaxX - 3);
+        int z = ThreadLocalRandom.current().nextInt(frameMinZ + 4, frameMaxZ - 3);
+        int dx = neighborTarget.x() - frame.x();
+        int dz = neighborTarget.z() - frame.z();
+        if (dx > 0) {
+            x = frameMaxX;
+        } else if (dx < 0) {
+            x = frameMinX;
+        } else if (dz > 0) {
+            z = frameMaxZ;
+        } else if (dz < 0) {
+            z = frameMinZ;
+        }
+        return new Vector3i(x, y, z);
+    }
+
+    private int countActiveSeedWaves(@Nonnull UUID worldId, @Nonnull SeededGrowEvent event) {
+        int active = 0;
+        for (Vector3i seedPos : event.seedCores) {
+            if (RedWaveManager.getActiveWave(worldId, seedPos) != null) {
+                active++;
+            }
+        }
+        return active;
+    }
+
+    private void refreshManagedSeedQueue(@Nonnull UUID worldId, @Nonnull SeededGrowEvent event) {
+        float releaseRadius = event.seedTargetRadius * event.seedRadiusAvgTriggerPct;
+        java.util.Iterator<Vector3i> it = event.managedSeedCores.iterator();
+        while (it.hasNext()) {
+            Vector3i seedPos = it.next();
+            RedWaveManager.ActiveWave seedWave = RedWaveManager.getActiveWave(worldId, seedPos);
+            if (seedWave == null) {
+                it.remove();
+                continue;
+            }
+            float radiusAvg = seedWave.averageConvertedRadius();
+            if (radiusAvg >= releaseRadius) {
+                it.remove();
+            }
+        }
+    }
+
+    private long nextSeedDelayMs(@Nonnull SeededGrowEvent event) {
+        double delaySec = randomFromRange(event.seedSpawnDelaySecRange, 2.0d, 2.0d, 0.0d, 30.0d);
+        return (long) (Math.max(0.0d, delaySec) * 1000d);
+    }
+
+    private boolean trySpawnSeedAt(
+            @Nonnull World world,
+            @Nonnull UUID worldId,
+            @Nonnull SeededGrowEvent event,
+            int x,
+            int y,
+            int z,
+            @Nonnull String phase
+    ) {
+        int spawnY = resolveSeedSpawnY(world, x, y, z);
+        if (spawnY < 0) {
+            return false;
+        }
+        Vector3i seedPos = new Vector3i(x, spawnY, z);
+        world.setBlock(x, spawnY, z, RedWaveConfig.CORE_BLOCK_ID);
+        RunEnvironmentPainter.paintColumnForRunBlock(world, x, spawnY, z);
+        RedCoreRegistry.register(worldId, seedPos);
+        markSeededGrowSeedCore(worldId, seedPos);
+        RedWaveManager.startWave(worldId, seedPos, event.seedTargetRadius, event.mainTargetSeconds);
+        event.seedCores.add(seedPos);
+        event.managedSeedCores.add(seedPos);
+        sendStatusIfEnabled(worldId, "[SeededGrow] Seed spawned (" + phase + ") at "
+                + x + "," + spawnY + "," + z
+                + " targetRadius=" + event.seedTargetRadius
+                + " delay=dynamic");
+        return true;
+    }
+
+    private int resolveSeedSpawnY(@Nonnull World world, int x, int y, int z) {
+        int maxOffset = 24;
+        for (int offset = 0; offset <= maxOffset; offset++) {
+            int upY = y + offset;
+            if (isSupportedEmpty(world, x, upY, z)) {
+                return upY;
+            }
+            if (offset == 0) {
+                continue;
+            }
+            int downY = y - offset;
+            if (isSupportedEmpty(world, x, downY, z)) {
+                return downY;
+            }
+        }
+        return -1;
+    }
+
+    private boolean isSupportedEmpty(@Nonnull World world, int x, int y, int z) {
+        BlockType target = world.getBlockType(x, y, z);
+        if (target != null && target != BlockType.EMPTY) {
+            return false;
+        }
+        BlockType below = world.getBlockType(x, y - 1, z);
+        return below != null && below != BlockType.EMPTY;
+    }
+
+    private static float simulateRadiusAvg(int targetRadius, float progress) {
+        float clampedProgress = Math.max(0.0f, Math.min(1.0f, progress));
+        float targetDiameter = Math.max(1.0f, targetRadius * 2.0f);
+        return (targetDiameter / 2.0f) * clampedProgress;
+    }
+
+    private static double randomFromRange(
+            @Nonnull String rangeText,
+            double fallbackMin,
+            double fallbackMax,
+            double clampMin,
+            double clampMax
+    ) {
+        String normalized = rangeText == null ? "" : rangeText.trim();
+        double min = fallbackMin;
+        double max = fallbackMax;
+        if (!normalized.isEmpty()) {
+            String[] split = normalized.split("[-:,]");
+            if (split.length >= 2) {
+                try {
+                    min = Double.parseDouble(split[0].trim());
+                    max = Double.parseDouble(split[1].trim());
+                } catch (NumberFormatException ignored) {
+                }
+            } else {
+                try {
+                    min = Double.parseDouble(normalized);
+                    max = min;
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+        double low = Math.max(clampMin, Math.min(min, max));
+        double high = Math.min(clampMax, Math.max(min, max));
+        if (high <= low) {
+            return low;
+        }
+        return ThreadLocalRandom.current().nextDouble(low, high);
+    }
+
     @Nonnull
     private static String growthKey(@Nonnull Vector3i corePos) {
         return corePos.x + ":" + corePos.y + ":" + corePos.z;
+    }
+
+    private static final class SeededGrowEvent {
+        private final Vector3i mainCorePos;
+        private final int mainTargetRadius;
+        private final float mainTargetSeconds;
+        private final float mainTriggerPct;
+        private final float seedRadiusAvgTriggerPct;
+        private final String seedSpawnDelaySecRange;
+        private final int seedTargetRadius;
+        private final int maxInitialSeeds;
+        private final int minActiveSeedsAfterInitial;
+        private final int maxActiveSeeds;
+        private final int chunkRangePerCore;
+        private final List<Vector3i> seedCores = new ArrayList<>();
+        private final java.util.Set<RunChunkSelectionManager.ChunkPosKey> reachedChunks = new java.util.HashSet<>();
+        private final java.util.List<RunChunkSelectionManager.ChunkPosKey> frameChunks = new ArrayList<>();
+        private final java.util.Set<RunChunkSelectionManager.ChunkPosKey> consumedFrameChunks = new java.util.HashSet<>();
+        private final java.util.Set<RunChunkSelectionManager.ChunkPosKey> rejectedFrameChunks = new java.util.HashSet<>();
+        private final java.util.Set<RunChunkSelectionManager.ChunkPosKey> reservedFrameChunks = new java.util.HashSet<>();
+        private final java.util.Set<RunChunkSelectionManager.ChunkPosKey> seededChunks = new java.util.HashSet<>();
+        private final java.util.Map<RunChunkSelectionManager.ChunkPosKey, Integer> frameFailedAttempts = new java.util.HashMap<>();
+        private final java.util.ArrayDeque<SeedSpawnRequest> seedSpawnQueue = new java.util.ArrayDeque<>();
+        private final java.util.ArrayDeque<Vector3i> managedSeedCores = new java.util.ArrayDeque<>();
+        private boolean mainTriggered;
+        private int spawnedSeeds;
+        private long nextSpawnAtMs;
+        private boolean done;
+
+        private SeededGrowEvent(
+                @Nonnull Vector3i mainCorePos,
+                int mainTargetRadius,
+                float mainTargetSeconds,
+                double mainTriggerPct,
+                @Nonnull String seedSpawnDelaySecRange,
+                double seedRadiusAvgTriggerPct,
+                int seedTargetRadius,
+                int chunkRangePerCore,
+                int maxActiveSeeds
+        ) {
+            this.mainCorePos = new Vector3i(mainCorePos);
+            this.mainTargetRadius = Math.max(1, mainTargetRadius);
+            this.mainTargetSeconds = Math.max(0.1f, mainTargetSeconds);
+            this.mainTriggerPct = (float) Math.max(0.1d, Math.min(0.95d, mainTriggerPct));
+            this.seedRadiusAvgTriggerPct = (float) Math.max(0.1d, Math.min(0.95d, seedRadiusAvgTriggerPct));
+            this.seedSpawnDelaySecRange = seedSpawnDelaySecRange == null ? "2.0-2.0" : seedSpawnDelaySecRange;
+            this.seedTargetRadius = Math.max(8, seedTargetRadius);
+            this.maxInitialSeeds = 0;
+            this.minActiveSeedsAfterInitial = 0;
+            this.maxActiveSeeds = Math.max(1, maxActiveSeeds);
+            this.chunkRangePerCore = Math.max(0, chunkRangePerCore);
+            this.mainTriggered = false;
+            this.spawnedSeeds = 0;
+            this.nextSpawnAtMs = 0L;
+            this.done = false;
+        }
+    }
+
+    private static final class ChunkReachCacheKey {
+        private final int originChunkX;
+        private final int originChunkZ;
+        private final int chunkRange;
+
+        private ChunkReachCacheKey(int originChunkX, int originChunkZ, int chunkRange) {
+            this.originChunkX = originChunkX;
+            this.originChunkZ = originChunkZ;
+            this.chunkRange = chunkRange;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof ChunkReachCacheKey)) {
+                return false;
+            }
+            ChunkReachCacheKey other = (ChunkReachCacheKey) obj;
+            return this.originChunkX == other.originChunkX
+                    && this.originChunkZ == other.originChunkZ
+                    && this.chunkRange == other.chunkRange;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Integer.hashCode(this.originChunkX);
+            result = (31 * result) + Integer.hashCode(this.originChunkZ);
+            result = (31 * result) + Integer.hashCode(this.chunkRange);
+            return result;
+        }
+    }
+
+    private enum SeedSpawnPhase {
+        CHAIN
+    }
+
+    private static final class SeedSpawnRequest {
+        private final SeedSpawnPhase phase;
+
+        private SeedSpawnRequest(@Nonnull SeedSpawnPhase phase) {
+            this.phase = phase;
+        }
+
+        @Nonnull
+        private static SeedSpawnRequest chain() {
+            return new SeedSpawnRequest(SeedSpawnPhase.CHAIN);
+        }
     }
 
     private enum GrowthEventStatus {
@@ -457,7 +1079,13 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
                     action.radius(),
                     action.ticksPerBlock(),
                     action.probabilityPercent(),
-                    action.enabled()
+                    action.enabled(),
+                    action.mainTriggerPctRange(),
+                    action.seedSpawnDelaySecRange(),
+                    action.seedRadiusAvgTriggerPctRange(),
+                    action.seedTargetRadiusRange(),
+                    action.chunkRangePerCore(),
+                    action.maxActiveSeeds()
             ));
         }
         return mapped;

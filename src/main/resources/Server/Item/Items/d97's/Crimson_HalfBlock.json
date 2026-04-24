@@ -62,7 +62,8 @@
           }
         }
       }
-    }
+    },
+    "Material": "Solid"
   },
   "Tags": {
     "Type": [

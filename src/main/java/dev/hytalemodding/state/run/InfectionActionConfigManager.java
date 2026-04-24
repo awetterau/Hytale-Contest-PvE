@@ -36,7 +36,27 @@ public final class InfectionActionConfigManager {
             int ticksPerBlock = parseInt(properties.getProperty(base + ".ticksPerBlock"), 2);
             int probabilityPercent = parseInt(properties.getProperty(base + ".probabilityPercent"), 100);
             boolean enabled = Boolean.parseBoolean(properties.getProperty(base + ".enabled", "true"));
-            out.add(new ActionEntry(actionType, coreTier, Math.max(0, triggerSecond), Math.max(1, radius), Math.max(1, ticksPerBlock), Math.max(0, Math.min(100, probabilityPercent)), enabled));
+            String mainTriggerPctRange = properties.getProperty(base + ".mainTriggerPctRange", "0.70-0.70");
+            String seedSpawnDelaySecRange = properties.getProperty(base + ".seedSpawnDelaySecRange", "2.0-2.0");
+            String seedRadiusAvgTriggerPctRange = properties.getProperty(base + ".seedRadiusAvgTriggerPctRange", "0.90-0.90");
+            String seedTargetRadiusRange = properties.getProperty(base + ".seedTargetRadiusRange", "120-120");
+            int chunkRangePerCore = parseInt(properties.getProperty(base + ".chunkRangePerCore"), 1);
+            int maxActiveSeeds = parseInt(properties.getProperty(base + ".maxActiveSeeds"), 4);
+            out.add(new ActionEntry(
+                    actionType,
+                    coreTier,
+                    Math.max(0, triggerSecond),
+                    Math.max(1, radius),
+                    Math.max(1, ticksPerBlock),
+                    Math.max(0, Math.min(100, probabilityPercent)),
+                    enabled,
+                    mainTriggerPctRange,
+                    seedSpawnDelaySecRange,
+                    seedRadiusAvgTriggerPctRange,
+                    seedTargetRadiusRange,
+                    Math.max(0, chunkRangePerCore),
+                    Math.max(1, maxActiveSeeds)
+            ));
         }
         return out;
     }
@@ -60,6 +80,12 @@ public final class InfectionActionConfigManager {
             properties.setProperty(base + ".ticksPerBlock", Integer.toString(a.ticksPerBlock()));
             properties.setProperty(base + ".probabilityPercent", Integer.toString(a.probabilityPercent()));
             properties.setProperty(base + ".enabled", Boolean.toString(a.enabled()));
+            properties.setProperty(base + ".mainTriggerPctRange", a.mainTriggerPctRange());
+            properties.setProperty(base + ".seedSpawnDelaySecRange", a.seedSpawnDelaySecRange());
+            properties.setProperty(base + ".seedRadiusAvgTriggerPctRange", a.seedRadiusAvgTriggerPctRange());
+            properties.setProperty(base + ".seedTargetRadiusRange", a.seedTargetRadiusRange());
+            properties.setProperty(base + ".chunkRangePerCore", Integer.toString(a.chunkRangePerCore()));
+            properties.setProperty(base + ".maxActiveSeeds", Integer.toString(a.maxActiveSeeds()));
         }
         saveProperties(properties);
     }
@@ -122,7 +148,13 @@ public final class InfectionActionConfigManager {
             int radius,
             int ticksPerBlock,
             int probabilityPercent,
-            boolean enabled
+            boolean enabled,
+            @Nonnull String mainTriggerPctRange,
+            @Nonnull String seedSpawnDelaySecRange,
+            @Nonnull String seedRadiusAvgTriggerPctRange,
+            @Nonnull String seedTargetRadiusRange,
+            int chunkRangePerCore,
+            int maxActiveSeeds
     ) {
     }
 }

@@ -30,7 +30,8 @@
       "Definitions": {
         "On": {}
       }
-    }
+    },
+    "ParticleColor": "#363535"
   },
   "PlayerAnimationsId": "Block",
   "Tags": {

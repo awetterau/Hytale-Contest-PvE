@@ -25,7 +25,8 @@
     ],
     "BlockSoundSetId": "Cloth",
     "CustomModelAnimation": "Blocks/d97's/Extraction/Block_Rebound.blockyanim",
-    "Looping": true
+    "Looping": true,
+    "ParticleColor": "#292727"
   },
   "PlayerAnimationsId": "Block",
   "Tags": {

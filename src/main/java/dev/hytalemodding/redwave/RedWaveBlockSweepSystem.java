@@ -12,10 +12,14 @@ import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import dev.hytalemodding.state.run.GameRunDirectorSystem;
 import dev.hytalemodding.state.run.RunEnvironmentPainter;
 import dev.hytalemodding.state.transition.GameFlowConfigManager;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.UUID;
 
@@ -42,6 +46,21 @@ public class RedWaveBlockSweepSystem extends TickingSystem<EntityStore> {
 
                 BlockType existing = world.getBlockType(pos.x, pos.y, pos.z);
                 if (!RedWaveManager.shouldConvertBlock(existing)) {
+                    ReplacementDecision replacement = resolveSkippedReplacement(existing);
+                    if (replacement != null) {
+                        RedWaveManager.recordOriginalBlock(worldId, corePos, pos.x, pos.y, pos.z, existing.getId());
+                        if (replacement.copyRotation()) {
+                            int rotationIndex = world.getBlockRotationIndex(pos.x, pos.y, pos.z);
+                            placeRotatedBlock(world, pos.x, pos.y, pos.z, replacement.blockId(), rotationIndex);
+                        } else {
+                            world.setBlock(pos.x, pos.y, pos.z, replacement.blockId());
+                        }
+                        RunEnvironmentPainter.paintColumnForRunBlock(world, pos.x, pos.y, pos.z);
+                        wave.markConverted(pos);
+                        wave.onConverted(pos);
+                        convertedThisTick++;
+                        continue;
+                    }
                     wave.discardGrowth(pos);
                     continue;
                 }
@@ -68,6 +87,9 @@ public class RedWaveBlockSweepSystem extends TickingSystem<EntityStore> {
             }
 
             if (wave.shouldEmitRadiusSample()) {
+                if (GameRunDirectorSystem.isSeededGrowSeedCore(worldId, corePos)) {
+                    continue;
+                }
                 String coreType = resolveCoreType(world, corePos);
                 if ("weak".equalsIgnoreCase(coreType)) {
                     continue;
@@ -93,8 +115,146 @@ public class RedWaveBlockSweepSystem extends TickingSystem<EntityStore> {
             }
 
             if (wave.done()) {
+                GameRunDirectorSystem.clearSeededGrowSeedCore(worldId, corePos);
                 RedWaveManager.clearWave(worldId, corePos);
             }
+        }
+    }
+
+    private static ReplacementDecision resolveSkippedReplacement(BlockType blockType) {
+        if (blockType == null || blockType.getId() == null) {
+            return null;
+        }
+        String id = blockType.getId();
+        String lowerId = id.toLowerCase();
+        if ("empty".equals(lowerId)) {
+            return null;
+        }
+        if (lowerId.contains("crimson")) {
+            return null;
+        }
+        if (lowerId.contains("water")) {
+            return ReplacementDecision.withoutRotation(RedWaveConfig.CRIMSON_FLUID_BLOCK_ID);
+        }
+        if (hasTag(blockType, "rubble")) {
+            return ReplacementDecision.withoutRotation("Empty");
+        }
+        if (lowerId.contains("leaves")) {
+            return ReplacementDecision.withRotation(RedWaveConfig.CRIMSON_LEAVES_BLOCK_ID);
+        }
+        for (String keyword : RedWaveConfig.NON_CONVERTIBLE_ID_KEYWORDS) {
+            if (lowerId.contains(keyword)) {
+                return ReplacementDecision.withoutRotation("Empty");
+            }
+        }
+        if (lowerId.contains("half")) {
+            return ReplacementDecision.withRotation(RedWaveConfig.CRIMSON_HALF_BLOCK_ID);
+        }
+        if (lowerId.contains("beam")) {
+            return ReplacementDecision.withoutRotation(RedWaveConfig.CRIMSON_BEAM_BLOCK_ID);
+        }
+        if (lowerId.contains("pillar")) {
+            return ReplacementDecision.withoutRotation(RedWaveConfig.CRIMSON_PILLAR_BLOCK_ID);
+        }
+        if (lowerId.contains("stair")) {
+            return ReplacementDecision.withRotation(RedWaveConfig.CRIMSON_STAIRS_BLOCK_ID);
+        }
+        if (lowerId.contains("trunk")) {
+            return ReplacementDecision.withoutRotation(RedWaveConfig.CRIMSON_TRUNK_FULL_BLOCK_ID);
+        }
+        return ReplacementDecision.withoutRotation(RedWaveConfig.CRIMSON_PROP_BLOCK_ID);
+    }
+
+    private static void placeRotatedBlock(
+            @Nonnull World world,
+            int x,
+            int y,
+            int z,
+            @Nonnull String blockId,
+            int rotationIndex
+    ) {
+        RotationTuple tuple = RotationTuple.get(rotationIndex);
+        long chunkIndex = ChunkUtil.indexChunkFromBlock(x, z);
+        WorldChunk worldChunk = world.getChunk(chunkIndex);
+        if (worldChunk != null) {
+            boolean placed = worldChunk.placeBlock(x, y, z, blockId, tuple, 0, true);
+            if (placed) {
+                return;
+            }
+        }
+        world.setBlock(x, y, z, blockId, rotationIndex);
+    }
+
+    private static boolean hasTag(@Nonnull BlockType blockType, @Nonnull String tag) {
+        Object tags = invokeOptionalZeroArg(blockType, "getTags");
+        if (tags == null) {
+            tags = invokeOptionalZeroArg(blockType, "tags");
+        }
+        return containsTag(tags, tag);
+    }
+
+    @Nullable
+    private static Object invokeOptionalZeroArg(@Nonnull Object target, @Nonnull String methodName) {
+        try {
+            Method method = target.getClass().getMethod(methodName);
+            return method.invoke(target);
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
+    }
+
+    private static boolean containsTag(@Nullable Object tags, @Nonnull String expectedTag) {
+        if (tags == null) {
+            return false;
+        }
+        if (tags instanceof Collection<?> collection) {
+            for (Object entry : collection) {
+                if (entry != null && expectedTag.equalsIgnoreCase(String.valueOf(entry))) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        if (tags instanceof String tagText) {
+            if (expectedTag.equalsIgnoreCase(tagText)) {
+                return true;
+            }
+            for (String token : tagText.split("[,;|\\s]+")) {
+                if (expectedTag.equalsIgnoreCase(token)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static final class ReplacementDecision {
+        @Nonnull
+        private final String blockId;
+        private final boolean copyRotation;
+
+        private ReplacementDecision(@Nonnull String blockId, boolean copyRotation) {
+            this.blockId = blockId;
+            this.copyRotation = copyRotation;
+        }
+
+        @Nonnull
+        private String blockId() {
+            return this.blockId;
+        }
+
+        private boolean copyRotation() {
+            return this.copyRotation;
+        }
+
+        @Nonnull
+        private static ReplacementDecision withRotation(@Nonnull String blockId) {
+            return new ReplacementDecision(blockId, true);
+        }
+
+        @Nonnull
+        private static ReplacementDecision withoutRotation(@Nonnull String blockId) {
+            return new ReplacementDecision(blockId, false);
         }
     }
 

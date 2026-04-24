@@ -42,6 +42,11 @@ public final class RunStartCameraManager {
     private static final double PLAYER_LOOK_TARGET_HEIGHT = 1.3D;
     private static final String INTRO_PLAYER_ANIMATION = "Player_Anim_LargeRope_A";
     private static final String INTRO_ROPE_BLOCK_ID = "Large_Rope";
+    private static final String INTRO_ROPE_UP_BLOCK_ID = "Large_Rope_UP";
+    private static final String EMPTY_BLOCK_ID = "Empty";
+    private static final long INTRO_ROPE_SWAP_AFTER_END_MS = 4_000L;
+    private static final long INTRO_ROPE_REMOVE_AFTER_END_MS = 5_000L;
+    private static final long INTRO_ROPE_SYNC_RETRY_MS = 250L;
     private static final long CAMERA_REAPPLY_DELAY_MS = 1_600L;
     private static final RunStartCameraManager INSTANCE = new RunStartCameraManager();
     private static volatile long introEndFromRunStartMs = -1L;
@@ -112,10 +117,11 @@ public final class RunStartCameraManager {
                 this.introByPlayer.remove(playerId);
                 continue;
             }
+            updatePostIntroRope(world, session, now);
 
             PlayerRef playerRef = Universe.get().getPlayer(playerId);
             if (playerRef == null || !playerRef.isValid() || playerRef.getWorldUuid() == null) {
-                if (now >= session.endsAtMs) {
+                if (session.isFullyDone(now)) {
                     this.introByPlayer.remove(playerId, session);
                 }
                 continue;
@@ -126,7 +132,9 @@ public final class RunStartCameraManager {
             if (now >= session.endsAtMs) {
                 restoreDefaultCamera(playerRef);
                 restoreIntroHud(playerRef);
-                this.introByPlayer.remove(playerId, session);
+                if (session.isFullyDone(now)) {
+                    this.introByPlayer.remove(playerId, session);
+                }
                 continue;
             }
             if (now < session.startsAtMs) {
@@ -288,6 +296,54 @@ public final class RunStartCameraManager {
         int blockY = (int) Math.floor(transform.getPosition().getY());
         int blockZ = (int) Math.floor(transform.getPosition().getZ());
         world.setBlock(blockX, blockY, blockZ, INTRO_ROPE_BLOCK_ID);
+        session.ropeX = blockX;
+        session.ropeY = blockY;
+        session.ropeZ = blockZ;
+        session.ropePlaced = true;
+    }
+
+    private static void updatePostIntroRope(@Nonnull World world, @Nonnull IntroSession session, long now) {
+        if (!session.ropePlaced) {
+            return;
+        }
+        if (now < session.nextRopeSyncAtMs) {
+            return;
+        }
+        session.nextRopeSyncAtMs = now + INTRO_ROPE_SYNC_RETRY_MS;
+        long elapsedAfterIntroMs = now - session.endsAtMs;
+
+        String currentId = blockId(world, session.ropeX, session.ropeY, session.ropeZ);
+        if (!session.ropeUpApplied && elapsedAfterIntroMs >= INTRO_ROPE_SWAP_AFTER_END_MS) {
+            if (isRopeBlock(currentId)) {
+                world.setBlock(session.ropeX, session.ropeY, session.ropeZ, INTRO_ROPE_UP_BLOCK_ID);
+                session.ropeUpApplied = true;
+                currentId = INTRO_ROPE_UP_BLOCK_ID;
+            } else if (isRopeUpBlock(currentId)) {
+                session.ropeUpApplied = true;
+            }
+        }
+        if (!session.ropeRemoved && elapsedAfterIntroMs >= INTRO_ROPE_REMOVE_AFTER_END_MS) {
+            if (isRopeBlock(currentId) || isRopeUpBlock(currentId)) {
+                world.setBlock(session.ropeX, session.ropeY, session.ropeZ, EMPTY_BLOCK_ID);
+            }
+            session.ropeRemoved = true;
+        }
+    }
+
+    private static String blockId(@Nonnull World world, int x, int y, int z) {
+        BlockType blockType = world.getBlockType(x, y, z);
+        if (blockType == null || blockType.getId() == null) {
+            return EMPTY_BLOCK_ID;
+        }
+        return blockType.getId();
+    }
+
+    private static boolean isRopeBlock(@Nonnull String blockId) {
+        return INTRO_ROPE_BLOCK_ID.equals(blockId);
+    }
+
+    private static boolean isRopeUpBlock(@Nonnull String blockId) {
+        return INTRO_ROPE_UP_BLOCK_ID.equals(blockId);
     }
 
     private static final class IntroSession {
@@ -297,10 +353,24 @@ public final class RunStartCameraManager {
         private boolean cameraApplied;
         private boolean cameraReapplied;
         private long cameraAppliedAtMs;
+        private int ropeX;
+        private int ropeY;
+        private int ropeZ;
+        private boolean ropePlaced;
+        private boolean ropeUpApplied;
+        private boolean ropeRemoved;
+        private long nextRopeSyncAtMs;
 
         private IntroSession(long startsAtMs, long endsAtMs) {
             this.startsAtMs = startsAtMs;
             this.endsAtMs = endsAtMs;
+        }
+
+        private boolean isFullyDone(long now) {
+            if (now < this.endsAtMs + INTRO_ROPE_REMOVE_AFTER_END_MS) {
+                return false;
+            }
+            return !this.ropePlaced || this.ropeRemoved;
         }
     }
 }

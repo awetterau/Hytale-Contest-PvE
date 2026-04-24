@@ -577,11 +577,11 @@ public final class RedWaveManager {
                 {0, 1, 0}, {0, -1, 0}
         };
         private static final int FINAL_MASK_SIDES = 24;
-        private static final float INITIAL_DYNAMIC_RADIUS = 20.0f;
+        private static final float INITIAL_DYNAMIC_RADIUS = 26.0f;
         private static final float INITIAL_DYNAMIC_HALF_HEIGHT = 12.0f;
-        private static final float DYNAMIC_RADIUS_GROWTH_PER_SECOND = 2.0f;
-        private static final float DYNAMIC_HEIGHT_GROWTH_PER_SECOND = 1.2f;
-        private static final float MIN_RADIUS_BEFORE_CONVERSION = 18.0f;
+        private static final float DYNAMIC_RADIUS_GROWTH_PER_SECOND = 3.8f;
+        private static final float DYNAMIC_HEIGHT_GROWTH_PER_SECOND = 2.0f;
+        private static final float MIN_RADIUS_BEFORE_CONVERSION = 30.0f;
         @Nonnull
         private final UUID worldId;
         @Nonnull

@@ -4,7 +4,15 @@ import java.util.List;
 
 public final class RedWaveConfig {
     public static final String CRIMSON_LAYER_BLOCK_ID = "Crimson_Layer";
+    public static final String CRIMSON_HALF_BLOCK_ID = "Crimson_HalfBlock";
     public static final String CRIMSON_PLATE_BLOCK_ID = "Crimson_Plate";
+    public static final String CRIMSON_BEAM_BLOCK_ID = "Crimson_Beam";
+    public static final String CRIMSON_FLUID_BLOCK_ID = "Crimson_Leaves";
+    public static final String CRIMSON_LEAVES_BLOCK_ID = "Crimson_Leaves";
+    public static final String CRIMSON_PILLAR_BLOCK_ID = "Crimson_Pillar";
+    public static final String CRIMSON_STAIRS_BLOCK_ID = "Crimson_Stairs";
+    public static final String CRIMSON_TRUNK_FULL_BLOCK_ID = "Crimson_Trunk_Full";
+    public static final String CRIMSON_PROP_BLOCK_ID = "Crimson_Prop";
     public static final String CRIMSON_BLOCK_ID = CRIMSON_LAYER_BLOCK_ID;
     public static final String CORE_BLOCK_ID = "Crimson_Core";
     public static final String OPTIONAL_CRIMSON_VOID_DAMAGE_BLOCK_ID = "Crimson_Void_Damage";
@@ -55,6 +63,7 @@ public final class RedWaveConfig {
             "crop",
             "vine",
             "mushroom",
+            "rubble",
             "seaweed",
             "sapling",
             "fern",

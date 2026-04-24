@@ -1,13 +1,12 @@
 {
   "Spawners": [
-  {
-      "SpawnerId": "",
-      "StartDelay": 0,
-      "RotationOffset": {
-        "Pitch": 90.0
-      }
-    }],
+    {
+      "SpawnerId": "PlayerSpawn_SmallFlash",
+      "FixedRotation": false,
+      "StartDelay": 0.1
+    }
+  ],
   "CullDistance": 100,
   "IsImportant": true,
-  "LifeSpan": 0.0
+  "LifeSpan": 10.0
 }
