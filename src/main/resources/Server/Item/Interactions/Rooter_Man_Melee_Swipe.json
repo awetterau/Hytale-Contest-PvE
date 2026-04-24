@@ -1,54 +1,29 @@
 {
   "Type": "Simple",
-  "RunTime": 0.1,
+  "RunTime": 0.36,
   "Next": {
-    "Type": "Parallel",
-    "Interactions": [
-      {
-        "Interactions": [
-          {
-            "Type": "Selector",
-            "RunTime": 0.2,
-            "Selector": {
-              "Id": "Horizontal",
-              "Direction": "ToLeft",
-              "TestLineOfSight": true,
-              "ExtendTop": 0.5,
-              "ExtendBottom": 2.5,
-              "StartDistance": 0.1,
-              "EndDistance": 3.2,
-              "Length": 115,
-              "RollOffset": -50,
-              "YawStartOffset": -80
-            },
-            "HitEntity": {
-              "Interactions": [
-                {
-                  "Type": "Replace",
-                  "DefaultValue": {
-                    "Interactions": [
-                      "Rooter_Man_Melee_Damage"
-                    ]
-                  },
-                  "Var": ""
-                }
-              ]
-            },
-            "Next": {
-              "Type": "Simple",
-              "RunTime": 0.2
-            }
-          }
-        ]
-      },
-      {
-        "Interactions": [
-          {
-            "Type": "Simple",
-            "RunTime": 0.4
-          }
-        ]
-      }
-    ]
+    "Type": "Selector",
+    "RunTime": 0.28,
+    "Selector": {
+      "Id": "Horizontal",
+      "Direction": "ToLeft",
+      "TestLineOfSight": true,
+      "ExtendTop": 0.8,
+      "ExtendBottom": 2.8,
+      "StartDistance": 0.0,
+      "EndDistance": 3.7,
+      "Length": 135,
+      "RollOffset": -42,
+      "YawStartOffset": -88
+    },
+    "HitEntity": {
+      "Interactions": [
+        "Rooter_Man_Melee_Damage"
+      ]
+    },
+    "Next": {
+      "Type": "Simple",
+      "RunTime": 0.16
+    }
   }
 }

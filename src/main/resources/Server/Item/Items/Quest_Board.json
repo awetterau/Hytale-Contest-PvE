@@ -1,0 +1,61 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.Quest_Board.name"
+  },
+  "Icon": "Icons/ItemsGenerated/Flare_Block.png",
+  "Categories": [
+    "Furniture"
+  ],
+  "Interactions": {
+    "Primary": "Block_Primary",
+    "Secondary": "Block_Secondary"
+  },
+  "BlockType": {
+    "Material": "Solid",
+    "DrawType": "Model",
+    "Opacity": "Transparent",
+    "CustomModel": "Blocks/Quest/Quest_board.blockymodel",
+    "CustomModelTexture": [
+      {
+        "Texture": "Blocks/Quest/Quest_board.png",
+        "Weight": 1
+      }
+    ],
+    "HitboxType": "Quest_Board",
+    "VariantRotation": "NESW",
+    "Gathering": {
+      "Breaking": {
+        "GatherType": "Woods"
+      }
+    },
+    "BlockParticleSetId": "Wood",
+    "BlockSoundSetId": "Wood",
+    "Flags": {
+      "IsUsable": true,
+      "IsHighlightable": true,
+      "HasCollision": true
+    },
+    "State": {
+      "Property": "state",
+      "Default": "Active",
+      "States": [
+        {
+          "Id": "Active",
+          "InteractionHint": "Press F to view Quests"
+        }
+      ]
+    },
+    "Interactions": {
+      "Use": {
+        "Interactions": [
+          {
+            "Type": "quest_board_use_interaction"
+          }
+        ]
+      }
+    }
+  },
+  "Tags": {
+    "Type": [ "Furniture" ]
+  }
+}

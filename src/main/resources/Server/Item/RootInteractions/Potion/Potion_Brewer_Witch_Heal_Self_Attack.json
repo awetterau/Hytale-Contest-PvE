@@ -5,7 +5,7 @@
     ]
   },
   "Cooldown": {
-    "Cooldown": 1.5
+    "Cooldown": 0.25
   },
   "Interactions": [
     "Potion_Brewer_Witch_Heal_Self"

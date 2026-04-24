@@ -58,8 +58,6 @@ public final class QuestLogPage extends InteractiveCustomUIPage<QuestLogPage.Dat
             ui.set(row + "Title.Text", quest.title);
             ui.set(row + "Summary.Text", summary);
             ui.set(row + "Progress.Text", progressLines.isEmpty() ? "" : String.join("\n", progressLines));
-            ui.set(row + "Circle.Value", overall);
-            ui.set(row + "Percent.Text", Math.round(overall * 100.0f) + "%");
         }
 
         events.addEventBinding(CustomUIEventBindingType.Activating, "#CloseBtn", EventData.of("Action", "close"), false);

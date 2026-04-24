@@ -73,7 +73,7 @@ public final class PotionBrewerWitchBindingSystem extends TickingSystem<EntitySt
     private static final double LOCK_POSITION_EPSILON = 0.01d;
     private static final float BINDING_VISUAL_SCALE = 0.9f;
     private static final float BINDING_HURTBOX_SCALE = 0.45f;
-    private static final double BINDING_VISUAL_Y_OFFSET = 0.65d;
+    private static final double BINDING_VISUAL_Y_OFFSET = 0.05d;
     private static final int ZONE_VISUAL_COUNT = 8;
     private static final float ZONE_VISUAL_SCALE = 0.55f;
     private static final double ZONE_VISUAL_HEIGHT = 0.05d;
@@ -91,6 +91,11 @@ public final class PotionBrewerWitchBindingSystem extends TickingSystem<EntitySt
         UUID worldId = world.getWorldConfig().getUuid();
         long now = System.currentTimeMillis();
         List<PlayerSnapshot> players = collectPlayers(store);
+
+        if (players.isEmpty()) {
+            world.execute(() -> clearWorld(worldId));
+            return;
+        }
 
         claimPendingThrownBindingProjectiles(store, world, worldId);
         processThrownBindingProjectiles(store, world, worldId, players, now);
@@ -255,7 +260,7 @@ public final class PotionBrewerWitchBindingSystem extends TickingSystem<EntitySt
             Map<UUID, BoundPlayer> worldBoundPlayers = BOUND_PLAYERS_BY_WORLD.remove(worldId);
             if (worldBoundPlayers != null) {
                 for (BoundPlayer bound : worldBoundPlayers.values()) {
-                    removeEntityIfValid(bound.hurtboxRef);
+                    softDisableHurtboxRef(bound.hurtboxRef);
                     softDisableVisualRef(bound.visualRef);
                 }
             }
@@ -264,7 +269,7 @@ public final class PotionBrewerWitchBindingSystem extends TickingSystem<EntitySt
             List<DebugHurtboxPair> pairs = DEBUG_HURTBOX_PAIRS_BY_WORLD.remove(worldId);
             if (pairs != null) {
                 for (DebugHurtboxPair pair : pairs) {
-                    removeEntityIfValid(pair.hurtboxRef);
+                    softDisableHurtboxRef(pair.hurtboxRef);
                     softDisableVisualRef(pair.visualRef);
                 }
             }
@@ -649,7 +654,7 @@ public final class PotionBrewerWitchBindingSystem extends TickingSystem<EntitySt
                     continue;
                 }
 
-                removeEntityIfValid(pair.hurtboxRef);
+                softDisableHurtboxRef(pair.hurtboxRef);
                 softDisableVisualRef(pair.visualRef);
                 iterator.remove();
             }
@@ -667,11 +672,14 @@ public final class PotionBrewerWitchBindingSystem extends TickingSystem<EntitySt
             @Nonnull PlayerSnapshot player,
             long now
     ) {
+        Vector3d lockSource = resolveLivePlayerPosition(store, player);
+        Vector3d lockedPosition = floorToFeet(lockSource);
+        snapPlayerToLockedPosition(store, player, lockedPosition);
         synchronized (BOUND_PLAYERS_BY_WORLD) {
             Map<UUID, BoundPlayer> worldBound = BOUND_PLAYERS_BY_WORLD.computeIfAbsent(worldId, ignored -> new HashMap<>());
             BoundPlayer existing = worldBound.get(player.playerId);
             if (existing != null) {
-                existing.lockedPosition = floorToFeet(player.position);
+                existing.lockedPosition = lockedPosition;
                 existing.temporaryLockExpiresAtMillis = 0L;
                 if (existing.visualRef == null || !existing.visualRef.isValid()) {
                     existing.visualRef = spawnBindingVisual(store, existing.lockedPosition);
@@ -686,7 +694,6 @@ public final class PotionBrewerWitchBindingSystem extends TickingSystem<EntitySt
                 return;
             }
 
-            Vector3d lockedPosition = floorToFeet(player.position);
             Ref<EntityStore> visualRef = spawnBindingVisual(store, lockedPosition);
             Ref<EntityStore> hurtboxRef = spawnBindingHurtbox(store, lockedPosition);
             worldBound.put(player.playerId, new BoundPlayer(lockedPosition, visualRef, hurtboxRef));
@@ -895,7 +902,7 @@ public final class PotionBrewerWitchBindingSystem extends TickingSystem<EntitySt
         }
         if (!isChunkLoaded(store.getExternalData().getWorld(), feetPosition.getX(), feetPosition.getZ())) {
             System.out.println("[PotionWitch][binding] skipHurtboxMove unloadedChunk pos=" + fmtVec(feetPosition));
-            removeEntityIfValid(hurtboxRef);
+            softDisableHurtboxRef(hurtboxRef);
             return;
         }
         TransformComponent transform = store.getComponent(hurtboxRef, TRANSFORM);
@@ -949,17 +956,6 @@ public final class PotionBrewerWitchBindingSystem extends TickingSystem<EntitySt
         return spawnBlockVisual(store, position, ZONE_VISUAL_SCALE);
     }
 
-    private static void removeEntityIfValid(@Nullable Ref<EntityStore> ref) {
-        if (ref == null || !ref.isValid()) {
-            return;
-        }
-        Store<EntityStore> store = ref.getStore();
-        if (store == null) {
-            return;
-        }
-        store.removeEntity(ref, RemoveReason.REMOVE);
-    }
-
     private static void softDisableVisualRef(@Nullable Ref<EntityStore> ref) {
         if (ref == null || !ref.isValid()) {
             return;
@@ -970,6 +966,67 @@ public final class PotionBrewerWitchBindingSystem extends TickingSystem<EntitySt
         }
         store.putComponent(ref, EntityScaleComponent.getComponentType(), new EntityScaleComponent(0.01f));
         store.putComponent(ref, Velocity.getComponentType(), new Velocity());
+    }
+
+    private static void softDisableHurtboxRef(@Nullable Ref<EntityStore> ref) {
+        if (ref == null || !ref.isValid()) {
+            return;
+        }
+        Store<EntityStore> store = ref.getStore();
+        if (store == null) {
+            return;
+        }
+        TransformComponent transform = store.getComponent(ref, TRANSFORM);
+        if (transform != null) {
+            TransformComponent updated = transform.clone();
+            updated.teleportPosition(new Vector3d(transform.getPosition().getX(), -16.0d, transform.getPosition().getZ()));
+            updated.markChunkDirty(store);
+            store.putComponent(ref, TRANSFORM, updated);
+        }
+        store.putComponent(ref, EntityScaleComponent.getComponentType(), new EntityScaleComponent(0.01f));
+        Velocity velocity = store.getComponent(ref, Velocity.getComponentType());
+        if (velocity == null) {
+            velocity = new Velocity();
+        } else {
+            velocity.set(Vector3d.ZERO);
+        }
+        store.putComponent(ref, Velocity.getComponentType(), velocity);
+    }
+
+    @Nonnull
+    private static Vector3d resolveLivePlayerPosition(
+            @Nonnull Store<EntityStore> store,
+            @Nonnull PlayerSnapshot player
+    ) {
+        if (player.playerRef != null && player.playerRef.isValid()) {
+            TransformComponent liveTransform = store.getComponent(player.playerRef, TRANSFORM);
+            if (liveTransform != null) {
+                return new Vector3d(liveTransform.getPosition());
+            }
+        }
+        return player.position;
+    }
+
+    private static void snapPlayerToLockedPosition(
+            @Nonnull Store<EntityStore> store,
+            @Nonnull PlayerSnapshot player,
+            @Nonnull Vector3d lockedPosition
+    ) {
+        if (player.playerRef == null || !player.playerRef.isValid()) {
+            return;
+        }
+        TransformComponent transform = store.getComponent(player.playerRef, TRANSFORM);
+        if (transform == null) {
+            return;
+        }
+        TransformComponent updated = transform.clone();
+        updated.teleportPosition(new Vector3d(lockedPosition));
+        store.putComponent(player.playerRef, TRANSFORM, updated);
+        Velocity velocity = store.getComponent(player.playerRef, Velocity.getComponentType());
+        if (velocity != null) {
+            velocity.set(Vector3d.ZERO);
+            store.putComponent(player.playerRef, Velocity.getComponentType(), velocity);
+        }
     }
 
     private static boolean isChunkLoaded(@Nonnull World world, double x, double z) {
@@ -1020,7 +1077,7 @@ public final class PotionBrewerWitchBindingSystem extends TickingSystem<EntitySt
         if (playerRef != null && playerRef.isValid()) {
             restoreMovementDefaults(playerRef);
         }
-        removeEntityIfValid(bound.hurtboxRef);
+        softDisableHurtboxRef(bound.hurtboxRef);
         softDisableVisualRef(bound.visualRef);
     }
 
@@ -1145,14 +1202,6 @@ public final class PotionBrewerWitchBindingSystem extends TickingSystem<EntitySt
     }
 
     private static void broadcastToWorld(@Nonnull World world, @Nonnull String text) {
-        Message message = Message.raw(text);
-        UUID worldId = world.getWorldConfig().getUuid();
-        for (PlayerRef playerRef : Universe.get().getPlayers()) {
-            UUID playerWorldId = playerRef.getWorldUuid();
-            if (playerWorldId != null && playerWorldId.equals(worldId)) {
-                playerRef.sendMessage(message);
-            }
-        }
     }
 
     private static final class BindingProjectile {

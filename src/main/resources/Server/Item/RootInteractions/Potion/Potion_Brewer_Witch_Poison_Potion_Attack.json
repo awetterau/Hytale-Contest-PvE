@@ -5,7 +5,7 @@
     ]
   },
   "Cooldown": {
-    "Cooldown": 4.0
+    "Cooldown": 0.25
   },
   "Interactions": [
     "Potion_Brewer_Witch_Poison_Potion"

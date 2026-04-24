@@ -1,0 +1,93 @@
+{
+  "Model": "NPC/intelligent/PotionBrewer/Models/witch.blockymodel",
+  "Texture": "NPC/intelligent/PotionBrewer/Models/Model_Textures/witch.png",
+  "EyeHeight": 2.05,
+  "HitBox": {
+    "Max": {
+      "X": 0.7,
+      "Y": 2.35,
+      "Z": 0.7
+    },
+    "Min": {
+      "X": -0.7,
+      "Y": 0.0,
+      "Z": -0.7
+    }
+  },
+  "MinScale": 1,
+  "MaxScale": 1,
+  "AnimationSets": {
+    "Idle": {
+      "Animations": [
+        {
+          "Animation": "NPC/intelligent/PotionBrewer/Animations/idle.blockyanim",
+          "Looping": true,
+          "Speed": 1.0
+        }
+      ]
+    },
+    "Walk": {
+      "Animations": [
+        {
+          "Animation": "NPC/intelligent/PotionBrewer/Animations/walk.blockyanim",
+          "Looping": true,
+          "Speed": 1.0
+        }
+      ]
+    },
+    "WalkBackward": {
+      "Animations": [
+        {
+          "Animation": "NPC/intelligent/PotionBrewer/Animations/walk.blockyanim",
+          "Looping": true,
+          "Speed": 1.0
+        }
+      ]
+    },
+    "Run": {
+      "Animations": [
+        {
+          "Animation": "NPC/intelligent/PotionBrewer/Animations/walk.blockyanim",
+          "Looping": true,
+          "Speed": 1.35
+        }
+      ]
+    },
+    "Alerted": {
+      "Animations": [
+        {
+          "Animation": "NPC/intelligent/PotionBrewer/Animations/idle.blockyanim",
+          "Looping": true,
+          "Speed": 1.1
+        }
+      ]
+    },
+    "Attack1": {
+      "Animations": [
+        {
+          "Animation": "NPC/intelligent/PotionBrewer/Animations/throwing_potions.blockyanim",
+          "Looping": false,
+          "Speed": 1.5
+        }
+      ]
+    },
+    "Attack2": {
+      "Animations": [
+        {
+          "Animation": "NPC/intelligent/PotionBrewer/Animations/brewing.blockyanim",
+          "Looping": false,
+          "Speed": 1.2
+        }
+      ]
+    },
+    "Attack3": {
+      "Animations": [
+        {
+          "Animation": "NPC/intelligent/PotionBrewer/Animations/shockwave.blockyanim",
+          "Looping": false,
+          "Speed": 1.25
+        }
+      ]
+    }
+  }
+}

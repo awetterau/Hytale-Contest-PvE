@@ -18,12 +18,10 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class PotionBrewerWitchHudSystem extends TickingSystem<EntityStore> {
-    private static final long UPDATE_INTERVAL_MS = 250L;
+    private static final long UPDATE_INTERVAL_MS = 50L;
 
     private final ConcurrentHashMap<UUID, PotionBrewerWitchHud> huds = new ConcurrentHashMap<>();
     private static final java.util.Set<UUID> playersWithActiveHud = java.util.Collections.newSetFromMap(new ConcurrentHashMap<>());
-    private final ConcurrentHashMap<UUID, String> lastStatusText = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<UUID, Integer> lastChargeCount = new ConcurrentHashMap<>();
     private long lastUpdateMs;
 
     public static boolean isPlayerSeeingWitchHud(@Nonnull UUID playerId) {
@@ -80,25 +78,13 @@ public final class PotionBrewerWitchHudSystem extends TickingSystem<EntityStore>
                 return;
             }
 
-            String statusText = buildStatusText(snapshot);
-            int chargeCount = snapshot.brewedCharges.size();
-
             PotionBrewerWitchHud hud = this.huds.computeIfAbsent(playerRef.getUuid(), ignored -> new PotionBrewerWitchHud(playerRef));
-            hud.setTime(dev.hytalemodding.state.run.GameRunDirectorSystem.getFormattedTime(playerRef.getUuid()));
-            hud.setStatusText(statusText);
-            hud.setHealth(snapshot.currentHealth, snapshot.maxHealth);
+            hud.setHealth(snapshot.currentHealth, snapshot.maxHealth, snapshot.bossStage);
             hud.setCharges(snapshot.brewedCharges);
             hud.setVisible(true);
 
-            CustomUIHud current = player.getHudManager().getCustomHud();
-            boolean statusChanged = !statusText.equals(this.lastStatusText.get(playerRef.getUuid())) || chargeCount != this.lastChargeCount.getOrDefault(playerRef.getUuid(), -1);
-
-            if (current != hud || statusChanged) {
-                player.getHudManager().setCustomHud(playerRef, hud);
-                hud.show();
-                this.lastStatusText.put(playerRef.getUuid(), statusText);
-                this.lastChargeCount.put(playerRef.getUuid(), chargeCount);
-            }
+            player.getHudManager().setCustomHud(playerRef, hud);
+            hud.show();
         });
     }
 
@@ -107,8 +93,6 @@ public final class PotionBrewerWitchHudSystem extends TickingSystem<EntityStore>
         if (hud == null) {
             return;
         }
-        this.lastStatusText.remove(playerRef.getUuid());
-        this.lastChargeCount.remove(playerRef.getUuid());
         Ref<EntityStore> ref = playerRef.getReference();
         if (ref == null || !ref.isValid()) {
             return;
@@ -130,14 +114,4 @@ public final class PotionBrewerWitchHudSystem extends TickingSystem<EntityStore>
         });
     }
 
-    @Nonnull
-    private static String buildStatusText(@Nonnull PotionBrewerWitchSystem.HudSnapshot snapshot) {
-        String phase = switch (snapshot.phase) {
-            case "BREWING" -> "Brewing";
-            case "LOADED" -> "Loaded";
-            case "RETURNING" -> "Returning";
-            default -> "Idle";
-        };
-        return String.format(Locale.ROOT, "%s  |  %d charge%s", phase, snapshot.brewedCharges.size(), snapshot.brewedCharges.size() == 1 ? "" : "s");
-    }
 }

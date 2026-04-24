@@ -392,7 +392,7 @@ public final class RooterShockwaveEmitterSystem extends TickingSystem<EntityStor
             @Nonnull Direction direction
     ) {
         Vector3f nextRot = new Vector3f(transform.getRotation());
-        float yaw = (float) Math.atan2(-direction.dirX, direction.dirZ);
+        float yaw = (float) Math.atan2(-direction.dirX, -direction.dirZ);
         nextRot.setYaw(yaw);
         transform.teleportRotation(nextRot);
     }

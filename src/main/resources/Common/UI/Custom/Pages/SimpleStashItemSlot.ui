@@ -1,15 +1,15 @@
 $C = "../Common.ui";
 
 @SlotSize = 50;
-@SlotGap = 2;
-@IconSize = 40;
+@SlotGap = 4;
+@IconSize = 42;
 
 Button {
   Anchor: (Width: @SlotSize, Height: @SlotSize, Right: @SlotGap, Bottom: @SlotGap);
   Style: (
-    Default: (Background: (Color: #172431)),
-    Hovered: (Background: (Color: #24384a)),
-    Pressed: (Background: (Color: #2d8659))
+    Default: (Background: #1a1512),
+    Hovered: (Background: #2c241e),
+    Pressed: (Background: #4a3626)
   );
   TooltipText: "";
   TextTooltipStyle: $C.@DefaultTextTooltipStyle;
@@ -19,8 +19,8 @@ Button {
   }
 
   Label #QuantityLabel {
-    Anchor: (Right: 3, Bottom: 1);
+    Anchor: (Right: 4, Bottom: 2);
     Text: "";
-    Style: (FontSize: 10, TextColor: #ffffff, RenderBold: true, HorizontalAlignment: End, VerticalAlignment: End);
+    Style: (FontSize: 11, TextColor: #ffffff, RenderBold: true, HorizontalAlignment: End, VerticalAlignment: End);
   }
 }

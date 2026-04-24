@@ -11,10 +11,10 @@ final class PotionBrewerWitchReactivePoisonRuntime {
     private PotionBrewerWitchReactivePoisonRuntime() {
     }
 
-    static void markPoisoned(@Nonnull UUID worldId, @Nonnull UUID playerId, long expireAt) {
-        POISONED_PLAYERS_BY_WORLD
-                .computeIfAbsent(worldId, ignored -> new ConcurrentHashMap<>())
-                .merge(playerId, expireAt, Math::max);
+    static boolean markPoisoned(@Nonnull UUID worldId, @Nonnull UUID playerId, long expireAt) {
+        ConcurrentHashMap<UUID, Long> poisoned = POISONED_PLAYERS_BY_WORLD.computeIfAbsent(worldId, ignored -> new ConcurrentHashMap<>());
+        Long previous = poisoned.put(playerId, expireAt);
+        return previous == null || previous < expireAt;
     }
 
     static boolean isPoisoned(@Nonnull UUID worldId, @Nonnull UUID playerId, long now) {

@@ -23,15 +23,7 @@
             },
             "HitEntity": {
               "Interactions": [
-                {
-                  "Type": "Replace",
-                  "DefaultValue": {
-                    "Interactions": [
-                      "Rooter_Man_Burst_Damage"
-                    ]
-                  },
-                  "Var": ""
-                }
+                "Rooter_Man_Burst_Damage"
               ]
             },
             "Next": {

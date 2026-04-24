@@ -2,6 +2,7 @@ package dev.hytalemodding.potion;
 
 import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.RemoveReason;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.math.vector.Vector3d;
@@ -88,14 +89,22 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
     private static final String COMBAT_SHADOW_ASSASSIN = LOADED_SUBSTATE_PREFIX + SHADOW_SYMBOL + "_Assassin";
     private static final String SHADOW_HASTE_EFFECT_ID = "Potion_Brewer_Witch_Shadow_Haste";
     private static final String SHADOW_STUN_EFFECT_ID = "Potion_Brewer_Witch_Shadow_Stun";
-    private static final int BREW_CHARGES = 3;
-    private static final long BREW_DURATION_MS = 3000L;
-    private static final long ACTION_RECOVERY_MS = 300L;
-    private static final long EMPTY_ACTION_RECOVERY_MS = 650L;
+    private static final String REACTIVE_POISON_EFFECT_ID = "Potion_Brewer_Witch_Reactive_Poison";
+    private static final String AUTO_BREW_SUBSTATE = "__AUTO_BREW__";
+    private static final int PHASE_ONE_BREW_CHARGES = 3;
+    private static final int PHASE_TWO_BREW_CHARGES = 4;
+    private static final int PHASE_THREE_BREW_CHARGES = 4;
+    private static final long PHASE_ONE_BREW_DURATION_MS = 6000L;
+    private static final long PHASE_TWO_BREW_DURATION_MS = 6000L;
+    private static final long PHASE_THREE_BREW_DURATION_MS = 0L;
+    private static final long PHASE_ONE_ACTION_RECOVERY_MS = 1000L;
+    private static final long PHASE_TWO_ACTION_RECOVERY_MS = 450L;
+    private static final long PHASE_THREE_ACTION_RECOVERY_MS = 150L;
+    private static final long PHASE_ONE_EMPTY_ACTION_RECOVERY_MS = 1000L;
+    private static final long PHASE_TWO_EMPTY_ACTION_RECOVERY_MS = 450L;
+    private static final long PHASE_THREE_EMPTY_ACTION_RECOVERY_MS = 150L;
     private static final long DEBUG_POSITION_INTERVAL_MS = 2000L;
-    private static final float HEALING_DRAUGHT_HEAL_AMOUNT = 27.5f;
-    private static final float HEAL_ZONE_REGEN_PER_SECOND = 2.5f;
-    private static final long SELF_POISON_DURATION_MS = 9000L;
+    private static final long SELF_POISON_DURATION_MS = 4000L;
     private static final long SHADOW_BUFF_DURATION_MS = 6500L;
     private static final long SHADOW_ASSASSIN_DURATION_MS = 6500L;
     private static final long SHADOW_ASSASSIN_APPROACH_DELAY_MS = 1000L;
@@ -105,9 +114,13 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
     private static final double SHADOW_STUN_RANGE = 16.0d;
     private static final double SHADOW_REPOSITION_DISTANCE = 10.0d;
     private static final double CLOSE_RANGE_SELF_USE_DISTANCE = 5.0d;
+    private static final double DESPAWN_NO_TARGET_RANGE = 96.0d;
     private static final float BREWING_LOOK_DOWN_PITCH = -0.75f;
-    private static final float MAX_HEALTH = 110.0f;
-    private static final float HEAL_FORMULA_BASE = 22.0f;
+    private static final float MAX_HEALTH = 1000.0f;
+    private static final float PHASE_HEALTH = MAX_HEALTH / 3.0f;
+    private static final float PHASE_TWO_TRIGGER_HEALTH = PHASE_HEALTH * 2.0f;
+    private static final float PHASE_THREE_TRIGGER_HEALTH = PHASE_HEALTH;
+    private static final float HEAL_FORMULA_BASE = 100.0f;
     private static final float HEAL_FORMULA_EXPONENT_BASE = 1.5f;
     private static final float HEAL_FORMULA_FLOOR = 1.0f;
     private static final float DRINK_HEALTH_THRESHOLD_PERCENT = 0.6f;
@@ -136,6 +149,7 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
         List<StealthCmd> stealthCmds = new ArrayList<>();
         List<TeleportCmd> teleportCmds = new ArrayList<>();
         List<HealCmd> healCmds = new ArrayList<>();
+        List<DespawnCmd> despawnCmds = new ArrayList<>();
         Map<UUID, Runtime> runtimes;
 
         store.forEachChunk(PLAYER, (chunk, ignored) -> {
@@ -190,11 +204,18 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
                     Runtime runtime = runtimes.computeIfAbsent(bossId, id -> createRuntime(world, initialTransform, stats, id, bossRef));
                     runtime.bossRef = bossRef;
                     runtime.currentPosition = new Vector3d(transform.getPosition());
+                    if (shouldDespawnForNoPlayers(runtime, players)) {
+                        queueBossCleanupAndDespawn(world, runtime, roleState, despawnCmds);
+                        continue;
+                    }
                     syncShadowStealth(world, store, npc, runtime, players, System.currentTimeMillis(), stealthCmds, teleportCmds, stateCmds);
                     updateHudSnapshot(worldId, runtime, roleState, stats);
                     syncBrewingPose(bossRef, transform, roleState, runtime, rotationCmds);
                     logRoleStateChange(world, bossId, runtime, roleState);
-                    updateHealthMessages(world, runtime, transform, stats, players);
+                    updateHealthMessages(world, runtime, transform, stats, players, effectCmds);
+                    if (queueStageTransitionIfNeeded(world, bossRef, npc, roleState, stats, runtime, stealthCmds, stateCmds)) {
+                        continue;
+                    }
                     syncAbilityExecutions(world, bossId, interactionManager, runtime, roleState, players, stateCmds, effectCmds, healCmds);
                     drive(world, bossId, bossRef, stats, roleState, runtime, stateCmds, stealthCmds);
                     debugTick(world, transform, runtime, bossId, roleState);
@@ -229,6 +250,9 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
         }
         for (HealCmd cmd : healCmds) {
             world.execute(() -> applyHeal(world, cmd));
+        }
+        for (DespawnCmd cmd : despawnCmds) {
+            world.execute(() -> applyBossCleanupAndDespawn(world, cmd));
         }
 
         synchronized (this.runtimesByWorld) {
@@ -271,6 +295,13 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
         boolean engaged = roleState != null && roleState.startsWith(COMBAT_PREFIX);
 
         if (!engaged) {
+            if (runtime.phase == Phase.BREWING && runtime.brewAnnounced && runtime.brewingStartedAt > 0L) {
+                if (!COMBAT_BREWING.equals(roleState)) {
+                    stateCmds.add(new StateCmd(bossRef, bossId, BREWING_SUBSTATE));
+                    debug(world, bossId, "restoreBrewingState roleState=" + roleState);
+                }
+                return;
+            }
             clearCycleSelfBuffs(world, runtime, stealthCmds);
             runtime.returnQueued = false;
             runtime.brewAnnounced = false;
@@ -298,15 +329,19 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
             String nextSubState = runtime.pendingRecoverySubState;
             runtime.pendingRecoverySubState = null;
             runtime.waitForChainClearDuringRecovery = true;
-            if (BREWING_SUBSTATE.equals(nextSubState)) {
+            if (AUTO_BREW_SUBSTATE.equals(nextSubState)) {
+                beginAutomaticBrew(world, runtime, stats, stateCmds, "phase_three_auto_brew");
+            } else if (BREWING_SUBSTATE.equals(nextSubState)) {
                 runtime.returnQueued = true;
                 setPhase(world, runtime, Phase.BREWING, "post_action_recovery");
+                stateCmds.add(new StateCmd(bossRef, bossId, nextSubState));
+                debug(world, bossId, "recoverAction nextState=Combat." + nextSubState);
             } else {
                 runtime.returnQueued = false;
                 setPhase(world, runtime, Phase.LOADED, "post_action_recovery");
+                stateCmds.add(new StateCmd(bossRef, bossId, nextSubState));
+                debug(world, bossId, "recoverAction nextState=Combat." + nextSubState);
             }
-            stateCmds.add(new StateCmd(bossRef, bossId, nextSubState));
-            debug(world, bossId, "recoverAction nextState=Combat." + nextSubState);
             return;
         }
 
@@ -332,7 +367,7 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
             if (!runtime.brewAnnounced) {
                 clearCycleSelfBuffs(world, runtime, stealthCmds);
                 placeActiveCauldron(world, runtime);
-                List<String> brewed = brewLoadout(stats);
+                List<String> brewed = brewLoadout(stats, runtime, getBrewCharges(runtime));
                 setLoadout(worldId, bossId, brewed);
                 runtime.brewAnnounced = true;
                 runtime.brewingStartedAt = System.currentTimeMillis();
@@ -341,7 +376,7 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
                 broadcastToWorld(world, "Potion Brewer Witch brewed " + describeBrewList(brewed) + ".");
                 debug(world, bossId, "brewLoadout charges=" + brewed);
             } else if (runtime.brewingStartedAt > 0L
-                    && System.currentTimeMillis() - runtime.brewingStartedAt >= BREW_DURATION_MS) {
+                    && System.currentTimeMillis() - runtime.brewingStartedAt >= getBrewDurationMs(runtime)) {
                 String loadedSubState = getLoadedSubState(worldId, bossId);
                 if (loadedSubState != null) {
                     stateCmds.add(new StateCmd(bossRef, bossId, loadedSubState));
@@ -366,7 +401,7 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
             if (runtime.phase == Phase.LOADED
                     && runtime.pendingRecoverySubState == null
                     && runtime.activeAbilityChains.isEmpty()
-                    && isAtFullHealth(stats)) {
+                    && isAtFullHealth(stats, runtime.bossStage)) {
                 LoadoutState state = getLoadoutState(worldId, bossId);
                 if (state != null && spendBrewedCharge(state, HEALING_DRAUGHT)) {
                     broadcastToWorld(world, "Potion Brewer Witch tosses aside a useless healing draught.");
@@ -377,6 +412,12 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
             }
 
             if (charges <= 0 && !runtime.returnQueued) {
+                if (runtime.bossStage == BossStage.PHASE_THREE) {
+                    runtime.actionRecoveryUntil = now + getEmptyActionRecoveryMs(runtime);
+                    runtime.pendingRecoverySubState = AUTO_BREW_SUBSTATE;
+                    debug(world, bossId, "queueAutoBrew");
+                    return;
+                }
                 runtime.returnQueued = true;
                 setPhase(world, runtime, Phase.BREWING, "charges_empty");
                 stateCmds.add(new StateCmd(bossRef, bossId, BREWING_SUBSTATE));
@@ -387,6 +428,12 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
         }
 
         if (charges <= 0 && !runtime.returnQueued) {
+            if (runtime.bossStage == BossStage.PHASE_THREE) {
+                runtime.actionRecoveryUntil = now + getEmptyActionRecoveryMs(runtime);
+                runtime.pendingRecoverySubState = AUTO_BREW_SUBSTATE;
+                debug(world, bossId, "queueAutoBrew fallback roleState=" + roleState);
+                return;
+            }
             runtime.returnQueued = true;
             setPhase(world, runtime, Phase.BREWING, "combat_state_without_charges");
             stateCmds.add(new StateCmd(bossRef, bossId, BREWING_SUBSTATE));
@@ -519,10 +566,16 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
         runtime.waitForChainClearDuringRecovery = waitForChainClear;
 
         if (state.brewedCharges.isEmpty()) {
-            runtime.actionRecoveryUntil = now + EMPTY_ACTION_RECOVERY_MS;
-            runtime.pendingRecoverySubState = BREWING_SUBSTATE;
-            runtime.returnQueued = true;
-            debug(world, runtime.bossId, "queueRecovery nextState=Combat.Brewing remaining=[]");
+            runtime.actionRecoveryUntil = now + getEmptyActionRecoveryMs(runtime);
+            if (runtime.bossStage == BossStage.PHASE_THREE) {
+                runtime.pendingRecoverySubState = AUTO_BREW_SUBSTATE;
+                runtime.returnQueued = false;
+                debug(world, runtime.bossId, "queueRecovery nextState=AutoBrew remaining=[]");
+            } else {
+                runtime.pendingRecoverySubState = BREWING_SUBSTATE;
+                runtime.returnQueued = true;
+                debug(world, runtime.bossId, "queueRecovery nextState=Combat.Brewing remaining=[]");
+            }
             return;
         }
 
@@ -530,9 +583,87 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
         if (nextSubState == null) {
             return;
         }
-        runtime.actionRecoveryUntil = now + ACTION_RECOVERY_MS;
+        runtime.actionRecoveryUntil = now + getActionRecoveryMs(runtime);
         runtime.pendingRecoverySubState = nextSubState;
         debug(world, runtime.bossId, "queueRecovery nextState=Combat." + nextSubState + " remaining=" + state.brewedCharges);
+    }
+
+    private void beginAutomaticBrew(
+            @Nonnull World world,
+            @Nonnull Runtime runtime,
+            @Nonnull EntityStatMap stats,
+            @Nonnull List<StateCmd> stateCmds,
+            @Nonnull String reason
+    ) {
+        if (runtime.bossRef == null || !runtime.bossRef.isValid()) {
+            return;
+        }
+        clearCycleSelfBuffs(world, runtime, new ArrayList<>());
+        removeActiveCauldron(world, runtime);
+        List<String> brewed = brewLoadout(stats, runtime, getBrewCharges(runtime));
+        setLoadout(world.getWorldConfig().getUuid(), runtime.bossId, brewed);
+        runtime.brewAnnounced = false;
+        runtime.brewingStartedAt = 0L;
+        runtime.pendingRecoverySubState = null;
+        runtime.returnQueued = false;
+        setPhase(world, runtime, Phase.LOADED, reason);
+        String loadedSubState = getLoadedSubState(world.getWorldConfig().getUuid(), runtime.bossId);
+        if (loadedSubState != null) {
+            stateCmds.add(new StateCmd(runtime.bossRef, runtime.bossId, loadedSubState));
+        }
+        debug(world, runtime.bossId, "autoBrew charges=" + brewed + " reason=" + reason);
+    }
+
+    private boolean queueStageTransitionIfNeeded(
+            @Nonnull World world,
+            @Nonnull Ref<EntityStore> bossRef,
+            @Nonnull NPCEntity npc,
+            @Nullable String roleState,
+            @Nonnull EntityStatMap stats,
+            @Nonnull Runtime runtime,
+            @Nonnull List<StealthCmd> stealthCmds,
+            @Nonnull List<StateCmd> stateCmds
+    ) {
+        if (runtime.bossStage == BossStage.PHASE_THREE) {
+            return false;
+        }
+        float currentHealth = readHealth(stats);
+        if (currentHealth < 0.0f || npc.isDespawning()) {
+            return false;
+        }
+
+        BossStage targetStage = null;
+        if (runtime.bossStage == BossStage.PHASE_ONE && currentHealth <= PHASE_TWO_TRIGGER_HEALTH) {
+            targetStage = BossStage.PHASE_TWO;
+        } else if (runtime.bossStage == BossStage.PHASE_TWO && currentHealth <= PHASE_THREE_TRIGGER_HEALTH) {
+            targetStage = BossStage.PHASE_THREE;
+        }
+        if (targetStage == null) {
+            return false;
+        }
+
+        runtime.bossStage = targetStage;
+        runtime.returnQueued = false;
+        runtime.brewAnnounced = false;
+        runtime.brewingStartedAt = 0L;
+        runtime.actionRecoveryUntil = 0L;
+        runtime.pendingRecoverySubState = null;
+        runtime.waitForChainClearDuringRecovery = true;
+        runtime.activeAbilityChains.clear();
+        clearLoadout(world.getWorldConfig().getUuid(), runtime.bossId);
+        clearCycleSelfBuffs(world, runtime, stealthCmds);
+        removeActiveCauldron(world, runtime);
+        if (targetStage == BossStage.PHASE_THREE) {
+            beginAutomaticBrew(world, runtime, stats, stateCmds, "phase_three_transition");
+            debug(world, runtime.bossId, "phaseThreeTransition queued");
+        } else {
+            setPhase(world, runtime, Phase.BREWING, "phase_two_transition");
+            debug(world, runtime.bossId, "phaseTwoTransition queued");
+            if (!COMBAT_BREWING.equals(roleState)) {
+                stateCmds.add(new StateCmd(bossRef, runtime.bossId, BREWING_SUBSTATE));
+            }
+        }
+        return true;
     }
 
     private void applyState(@Nonnull World world, @Nonnull StateCmd cmd) {
@@ -558,7 +689,8 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
             @Nonnull Runtime runtime,
             @Nonnull TransformComponent transform,
             @Nonnull EntityStatMap stats,
-            @Nonnull List<PlayerSnapshot> players
+            @Nonnull List<PlayerSnapshot> players,
+            @Nonnull List<EffectCmd> effectCmds
     ) {
         float currentHealth = readHealth(stats);
         if (runtime.lastHealth < 0.0f) {
@@ -572,7 +704,7 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
         if (delta < 0.0f) {
             long now = System.currentTimeMillis();
             if (runtime.selfPoisonUntil > now) {
-                applyReactivePoison(world, transform.getPosition(), players, now);
+                applyReactivePoison(world, transform.getPosition(), players, now, effectCmds);
             }
             broadcastToWorld(world, String.format(Locale.ROOT, "Potion Brewer Witch takes %.1f damage. Health: %.1f", -delta, currentHealth));
         } else {
@@ -776,19 +908,19 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
         return stats.get(HEALTH_STAT_INDEX).get();
     }
 
-    private static boolean isAtFullHealth(@Nullable EntityStatMap stats) {
+    private static boolean isAtFullHealth(@Nullable EntityStatMap stats, @Nonnull BossStage bossStage) {
         float current = readHealth(stats);
-        return current >= MAX_HEALTH - 0.01f;
+        return current >= getHealCeilingForStage(bossStage) - 0.01f;
     }
 
     @Nonnull
-    private static List<String> brewLoadout(@Nullable EntityStatMap stats) {
-        List<String> brewed = new ArrayList<>(BREW_CHARGES);
+    private static List<String> brewLoadout(@Nullable EntityStatMap stats, @Nonnull Runtime runtime, int brewCharges) {
+        List<String> brewed = new ArrayList<>(brewCharges);
         float current = readHealth(stats);
-        if (current > 0.0f && current < MAX_HEALTH) {
+        if (current > 0.0f && current < getHealCeilingForStage(runtime.bossStage)) {
             brewed.add(HEALING_DRAUGHT);
         }
-        while (brewed.size() < BREW_CHARGES) {
+        while (brewed.size() < brewCharges) {
             brewed.add(randomAttackBrew());
         }
         return brewed;
@@ -895,29 +1027,26 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
             return null;
         }
         StringBuilder key = new StringBuilder(LOADED_SUBSTATE_PREFIX);
-        appendSymbols(key, brewedCharges, HEALING_DRAUGHT, HEALING_SYMBOL);
-        appendSymbols(key, brewedCharges, POISON_POTION, POISON_SYMBOL);
-        appendSymbols(key, brewedCharges, SHADOW_BOLT, SHADOW_SYMBOL);
-        appendSymbols(key, brewedCharges, BLOOD_POTION, BLOOD_SYMBOL);
-        appendSymbols(key, brewedCharges, HOLY_POTION, HOLY_SYMBOL);
-        appendSymbols(key, brewedCharges, BINDING_POTION, BINDING_SYMBOL);
+        appendSymbolIfPresent(key, brewedCharges, HEALING_DRAUGHT, HEALING_SYMBOL);
+        appendSymbolIfPresent(key, brewedCharges, POISON_POTION, POISON_SYMBOL);
+        appendSymbolIfPresent(key, brewedCharges, SHADOW_BOLT, SHADOW_SYMBOL);
+        appendSymbolIfPresent(key, brewedCharges, BLOOD_POTION, BLOOD_SYMBOL);
+        appendSymbolIfPresent(key, brewedCharges, HOLY_POTION, HOLY_SYMBOL);
+        appendSymbolIfPresent(key, brewedCharges, BINDING_POTION, BINDING_SYMBOL);
         return key.toString();
     }
 
-    private static void appendSymbols(
+    private static void appendSymbolIfPresent(
             @Nonnull StringBuilder key,
             @Nonnull Deque<String> brewedCharges,
             @Nonnull String brewedAbility,
             @Nonnull String symbol
     ) {
-        int count = 0;
         for (String entry : brewedCharges) {
             if (brewedAbility.equals(entry)) {
-                count++;
+                key.append(symbol);
+                break;
             }
-        }
-        for (int i = 0; i < count; i++) {
-            key.append(symbol);
         }
     }
 
@@ -977,6 +1106,7 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
                 new Vector3d(position),
                 readHealth(stats),
                 MAX_HEALTH,
+                runtime.bossStage.name(),
                 runtime.phase.name(),
                 roleState == null ? "" : roleState,
                 charges
@@ -1026,14 +1156,75 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
     }
 
     private static void broadcastToWorld(@Nonnull World world, @Nonnull String text) {
-        Message message = Message.raw(text);
-        UUID worldId = world.getWorldConfig().getUuid();
-        for (PlayerRef playerRef : Universe.get().getPlayers()) {
-            UUID playerWorldId = playerRef.getWorldUuid();
-            if (playerWorldId != null && playerWorldId.equals(worldId)) {
-                playerRef.sendMessage(message);
-            }
+    }
+
+    private static int getBrewCharges(@Nonnull Runtime runtime) {
+        return switch (runtime.bossStage) {
+            case PHASE_THREE -> PHASE_THREE_BREW_CHARGES;
+            case PHASE_TWO -> PHASE_TWO_BREW_CHARGES;
+            default -> PHASE_ONE_BREW_CHARGES;
+        };
+    }
+
+    private static long getBrewDurationMs(@Nonnull Runtime runtime) {
+        return switch (runtime.bossStage) {
+            case PHASE_THREE -> PHASE_THREE_BREW_DURATION_MS;
+            case PHASE_TWO -> PHASE_TWO_BREW_DURATION_MS;
+            default -> PHASE_ONE_BREW_DURATION_MS;
+        };
+    }
+
+    private static long getActionRecoveryMs(@Nonnull Runtime runtime) {
+        return switch (runtime.bossStage) {
+            case PHASE_THREE -> PHASE_THREE_ACTION_RECOVERY_MS;
+            case PHASE_TWO -> PHASE_TWO_ACTION_RECOVERY_MS;
+            default -> PHASE_ONE_ACTION_RECOVERY_MS;
+        };
+    }
+
+    private static long getEmptyActionRecoveryMs(@Nonnull Runtime runtime) {
+        return switch (runtime.bossStage) {
+            case PHASE_THREE -> PHASE_THREE_EMPTY_ACTION_RECOVERY_MS;
+            case PHASE_TWO -> PHASE_TWO_EMPTY_ACTION_RECOVERY_MS;
+            default -> PHASE_ONE_EMPTY_ACTION_RECOVERY_MS;
+        };
+    }
+
+    public static float getConfiguredMaxHealth() {
+        return MAX_HEALTH;
+    }
+
+    public static float getPhaseHealth() {
+        return PHASE_HEALTH;
+    }
+
+    public static float getHealCeilingForCurrentHealth(float currentHealth) {
+        if (currentHealth <= PHASE_HEALTH + 0.01f) {
+            return PHASE_HEALTH;
         }
+        if (currentHealth <= PHASE_TWO_TRIGGER_HEALTH + 0.01f) {
+            return PHASE_TWO_TRIGGER_HEALTH;
+        }
+        return MAX_HEALTH;
+    }
+
+    public static float getHealCeilingForStageName(@Nullable String bossStageName) {
+        if (bossStageName == null) {
+            return MAX_HEALTH;
+        }
+        try {
+            return getHealCeilingForStage(BossStage.valueOf(bossStageName));
+        } catch (IllegalArgumentException ignored) {
+            return MAX_HEALTH;
+        }
+    }
+
+    private static float getHealCeilingForStage(@Nonnull BossStage bossStage) {
+        return switch (bossStage) {
+            case PHASE_THREE -> PHASE_HEALTH;
+            case PHASE_TWO -> PHASE_TWO_TRIGGER_HEALTH;
+            default -> MAX_HEALTH;
+        };
     }
 
     private static void debugTick(@Nonnull World world, @Nonnull TransformComponent transform, @Nonnull Runtime runtime, @Nonnull UUID bossId, @Nullable String roleState) {
@@ -1063,16 +1254,100 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
         System.out.println("[PotionWitch][" + world.getName() + "][" + (bossId == null ? "unknown" : bossId) + "] " + text);
     }
 
+    private static boolean shouldDespawnForNoPlayers(
+            @Nonnull Runtime runtime,
+            @Nonnull List<PlayerSnapshot> players
+    ) {
+        if (players.isEmpty()) {
+            return true;
+        }
+        Vector3d origin = runtime.currentPosition == null ? runtime.spawnPosition : runtime.currentPosition;
+        return findNearestPlayer(origin, players, DESPAWN_NO_TARGET_RANGE) == null;
+    }
+
+    private static void queueBossCleanupAndDespawn(
+            @Nonnull World world,
+            @Nonnull Runtime runtime,
+            @Nullable String roleState,
+            @Nonnull List<DespawnCmd> despawnCmds
+    ) {
+        if (runtime.despawnQueued || runtime.bossRef == null || !runtime.bossRef.isValid()) {
+            return;
+        }
+        runtime.despawnQueued = true;
+        runtime.returnQueued = false;
+        runtime.brewAnnounced = false;
+        runtime.brewingStartedAt = 0L;
+        runtime.actionRecoveryUntil = 0L;
+        runtime.pendingRecoverySubState = null;
+        runtime.waitForChainClearDuringRecovery = true;
+        runtime.activeAbilityChains.clear();
+        despawnCmds.add(new DespawnCmd(runtime.bossRef, runtime.bossId));
+        debug(world, runtime.bossId, "queueCleanupDespawn roleState=" + roleState);
+    }
+
+    private void applyBossCleanupAndDespawn(@Nonnull World world, @Nonnull DespawnCmd cmd) {
+        if (cmd.bossRef == null || !cmd.bossRef.isValid()) {
+            return;
+        }
+        UUID worldId = world.getWorldConfig().getUuid();
+        Runtime runtime = getRuntime(worldId, cmd.bossId);
+        if (runtime != null) {
+            removeActiveCauldron(world, runtime);
+        }
+        clearLoadout(worldId, cmd.bossId);
+        clearPhase(worldId, cmd.bossId);
+        clearPendingSuppressions(worldId, cmd.bossId);
+        clearHudSnapshot(worldId, cmd.bossId);
+        PotionBrewerWitchBindingSystem.clearWorld(worldId);
+        PotionBrewerWitchBloodSystem.clearWorld(worldId);
+        PotionBrewerWitchHolySystem.clearSelfHolyShield(worldId, cmd.bossId);
+        PotionBrewerWitchHolySystem.clearWorld(worldId);
+        PotionBrewerWitchProjectileSystem.clearWorld(worldId);
+        PotionBrewerWitchPoisonRuntime.clearWorld(worldId);
+        PotionBrewerWitchReactivePoisonRuntime.clearWorld(worldId);
+        PotionBrewerWitchShockwaveRuntime.clearWorld(worldId);
+        PotionBrewerWitchHealZoneRuntime.clearWorld(worldId);
+        PotionBrewerWitchCrimsonPatchRuntime.clearWorld(worldId);
+
+        Store<EntityStore> store = world.getEntityStore().getStore();
+        NPCEntity npc = store.getComponent(cmd.bossRef, NPC);
+        if (npc == null || npc.isDespawning() || !ROLE_NAME.equals(npc.getRoleName())) {
+            return;
+        }
+        store.removeEntity(cmd.bossRef, RemoveReason.REMOVE);
+        debug(world, cmd.bossId, "cleanupDespawn applied");
+    }
+
+    @Nullable
+    private Runtime getRuntime(@Nonnull UUID worldId, @Nullable UUID bossId) {
+        if (bossId == null) {
+            return null;
+        }
+        synchronized (this.runtimesByWorld) {
+            Map<UUID, Runtime> runtimes = this.runtimesByWorld.get(worldId);
+            if (runtimes == null) {
+                return null;
+            }
+            synchronized (runtimes) {
+                return runtimes.get(bossId);
+            }
+        }
+    }
+
     private void applyReactivePoison(
             @Nonnull World world,
             @Nonnull Vector3d bossPosition,
             @Nonnull List<PlayerSnapshot> players,
-            long now
+            long now,
+            @Nonnull List<EffectCmd> effectCmds
     ) {
         UUID worldId = world.getWorldConfig().getUuid();
         for (PlayerSnapshot player : players) {
             if (distance(player.position, bossPosition) <= SELF_POISON_TRIGGER_RANGE) {
-                PotionBrewerWitchReactivePoisonRuntime.markPoisoned(worldId, player.playerId, now + SELF_POISON_DURATION_MS);
+                if (PotionBrewerWitchReactivePoisonRuntime.markPoisoned(worldId, player.playerId, now + SELF_POISON_DURATION_MS)) {
+                    effectCmds.add(new EffectCmd(player.playerRef, player.playerId, REACTIVE_POISON_EFFECT_ID));
+                }
             }
         }
     }
@@ -1097,7 +1372,7 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
         if (SHADOW_BOLT.equals(brewedAbility)) {
             queueProjectileSuppression(worldId, runtime.bossId, brewedAbility);
             // Clear any lingering effects before starting assassin mode
-            PotionBrewerWitchBindingSystem.clearAllBindingZones(worldId, runtime.bossId);
+            world.execute(() -> PotionBrewerWitchBindingSystem.clearAllBindingZones(worldId, runtime.bossId));
             PotionBrewerWitchHolySystem.clearSelfHolyShield(worldId, runtime.bossId);
 
             runtime.shadowBuffUntil = now + SHADOW_ASSASSIN_DURATION_MS;
@@ -1261,11 +1536,12 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
             return;
         }
         float currentHealth = readHealth(stats);
-        if (currentHealth < 0.0f || currentHealth >= MAX_HEALTH) {
+        float healCeiling = getHealCeilingForCurrentHealth(currentHealth);
+        if (currentHealth < 0.0f || currentHealth >= healCeiling) {
             return;
         }
         EntityStatMap updated = stats.clone();
-        updated.addStatValue(HEALTH_STAT_INDEX, Math.min(cmd.amount, MAX_HEALTH - currentHealth));
+        updated.addStatValue(HEALTH_STAT_INDEX, Math.min(cmd.amount, healCeiling - currentHealth));
         store.putComponent(cmd.bossRef, STATS, updated);
     }
 
@@ -1319,7 +1595,7 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
             @Nonnull Runtime runtime
     ) {
         if (HEALING_DRAUGHT.equals(brewedAbility)) {
-            if (runtime.lastHealth < MAX_HEALTH * DRINK_HEALTH_THRESHOLD_PERCENT) {
+            if (runtime.lastHealth < getHealCeilingForStage(runtime.bossStage) * DRINK_HEALTH_THRESHOLD_PERCENT) {
                 return Mode.SELF;
             } else {
                 return Mode.THROWN;
@@ -1634,6 +1910,12 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
         LOADED
     }
 
+    private enum BossStage {
+        PHASE_ONE,
+        PHASE_TWO,
+        PHASE_THREE
+    }
+
     private enum Mode {
         SELF,
         THROWN
@@ -1646,6 +1928,7 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
         private float lastHealth = -1.0f;
         private int missingTicks;
         private Phase phase = Phase.IDLE;
+        private BossStage bossStage = BossStage.PHASE_ONE;
         private boolean returnQueued;
         private boolean brewAnnounced;
         private boolean brewingLookApplied;
@@ -1654,6 +1937,7 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
         private long lastDebugPositionAt;
         private long selfPoisonUntil;
         private long shadowBuffUntil;
+        private boolean despawnQueued;
         private boolean shadowStunCharged;
         private boolean shadowHiddenApplied;
         private boolean shadowRepositionPending;
@@ -1689,6 +1973,7 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
         public final Vector3d position;
         public final float currentHealth;
         public final float maxHealth;
+        public final String bossStage;
         public final String phase;
         public final String roleState;
         public final List<String> brewedCharges;
@@ -1698,6 +1983,7 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
                 @Nonnull Vector3d position,
                 float currentHealth,
                 float maxHealth,
+                @Nonnull String bossStage,
                 @Nonnull String phase,
                 @Nonnull String roleState,
                 @Nonnull List<String> brewedCharges
@@ -1706,6 +1992,7 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
             this.position = position;
             this.currentHealth = currentHealth;
             this.maxHealth = maxHealth;
+            this.bossStage = bossStage;
             this.phase = phase;
             this.roleState = roleState;
             this.brewedCharges = List.copyOf(brewedCharges);
@@ -1797,6 +2084,16 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
             this.bossRef = bossRef;
             this.bossId = bossId;
             this.amount = amount;
+        }
+    }
+
+    private static final class DespawnCmd {
+        private final Ref<EntityStore> bossRef;
+        private final UUID bossId;
+
+        private DespawnCmd(@Nonnull Ref<EntityStore> bossRef, @Nonnull UUID bossId) {
+            this.bossRef = bossRef;
+            this.bossId = bossId;
         }
     }
 

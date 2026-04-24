@@ -1,6 +1,6 @@
 {
   "Type": "Generic",
-  "Appearance": "Crimson_Witch",
+  "Appearance": "Potion_Brewer_Witch",
   "CombatConfig": "CAE_Potion_Brewer_Witch",
   "StartState": "Idle",
   "DefaultPlayerAttitude": "Hostile",
@@ -8,7 +8,7 @@
   "DisableDamageGroups": [
     "Self"
   ],
-  "MaxHealth": 110,
+  "MaxHealth": 1000,
   "MotionControllerList": [
     {
       "Type": "Walk",
@@ -115,7 +115,14 @@
                       },
                       "BodyMotion": {
                         "Type": "Nothing"
-                      }
+                      },
+                      "Actions": [
+                        {
+                          "Type": "PlayAnimation",
+                          "Slot": "Action",
+                          "Animation": "Attack2"
+                        }
+                      ]
                     }
                   ]
                 },
@@ -1202,6 +1209,201 @@
                   "Sensor": {
                     "Type": "State",
                     "State": ".Loaded_NNN",
+                    "IgnoreMissingSetState": true
+                  },
+                  "Instructions": [
+                    {
+                      "Reference": "Component_Instruction_Potion_Loaded_Combat",
+                      "Modify": {}
+                    }
+                  ]
+                },
+                {
+                  "Sensor": {
+                    "Type": "State",
+                    "State": ".Loaded_HPSB",
+                    "IgnoreMissingSetState": true
+                  },
+                  "Instructions": [
+                    {
+                      "Reference": "Component_Instruction_Potion_Loaded_Combat",
+                      "Modify": {}
+                    }
+                  ]
+                },
+                {
+                  "Sensor": {
+                    "Type": "State",
+                    "State": ".Loaded_HPSL",
+                    "IgnoreMissingSetState": true
+                  },
+                  "Instructions": [
+                    {
+                      "Reference": "Component_Instruction_Potion_Loaded_Combat",
+                      "Modify": {}
+                    }
+                  ]
+                },
+                {
+                  "Sensor": {
+                    "Type": "State",
+                    "State": ".Loaded_HPSN",
+                    "IgnoreMissingSetState": true
+                  },
+                  "Instructions": [
+                    {
+                      "Reference": "Component_Instruction_Potion_Loaded_Combat",
+                      "Modify": {}
+                    }
+                  ]
+                },
+                {
+                  "Sensor": {
+                    "Type": "State",
+                    "State": ".Loaded_HPBL",
+                    "IgnoreMissingSetState": true
+                  },
+                  "Instructions": [
+                    {
+                      "Reference": "Component_Instruction_Potion_Loaded_Combat",
+                      "Modify": {}
+                    }
+                  ]
+                },
+                {
+                  "Sensor": {
+                    "Type": "State",
+                    "State": ".Loaded_HPBN",
+                    "IgnoreMissingSetState": true
+                  },
+                  "Instructions": [
+                    {
+                      "Reference": "Component_Instruction_Potion_Loaded_Combat",
+                      "Modify": {}
+                    }
+                  ]
+                },
+                {
+                  "Sensor": {
+                    "Type": "State",
+                    "State": ".Loaded_HPLN",
+                    "IgnoreMissingSetState": true
+                  },
+                  "Instructions": [
+                    {
+                      "Reference": "Component_Instruction_Potion_Loaded_Combat",
+                      "Modify": {}
+                    }
+                  ]
+                },
+                {
+                  "Sensor": {
+                    "Type": "State",
+                    "State": ".Loaded_HSBL",
+                    "IgnoreMissingSetState": true
+                  },
+                  "Instructions": [
+                    {
+                      "Reference": "Component_Instruction_Potion_Loaded_Combat",
+                      "Modify": {}
+                    }
+                  ]
+                },
+                {
+                  "Sensor": {
+                    "Type": "State",
+                    "State": ".Loaded_HSBN",
+                    "IgnoreMissingSetState": true
+                  },
+                  "Instructions": [
+                    {
+                      "Reference": "Component_Instruction_Potion_Loaded_Combat",
+                      "Modify": {}
+                    }
+                  ]
+                },
+                {
+                  "Sensor": {
+                    "Type": "State",
+                    "State": ".Loaded_HSLN",
+                    "IgnoreMissingSetState": true
+                  },
+                  "Instructions": [
+                    {
+                      "Reference": "Component_Instruction_Potion_Loaded_Combat",
+                      "Modify": {}
+                    }
+                  ]
+                },
+                {
+                  "Sensor": {
+                    "Type": "State",
+                    "State": ".Loaded_HBLN",
+                    "IgnoreMissingSetState": true
+                  },
+                  "Instructions": [
+                    {
+                      "Reference": "Component_Instruction_Potion_Loaded_Combat",
+                      "Modify": {}
+                    }
+                  ]
+                },
+                {
+                  "Sensor": {
+                    "Type": "State",
+                    "State": ".Loaded_PSBL",
+                    "IgnoreMissingSetState": true
+                  },
+                  "Instructions": [
+                    {
+                      "Reference": "Component_Instruction_Potion_Loaded_Combat",
+                      "Modify": {}
+                    }
+                  ]
+                },
+                {
+                  "Sensor": {
+                    "Type": "State",
+                    "State": ".Loaded_PSBN",
+                    "IgnoreMissingSetState": true
+                  },
+                  "Instructions": [
+                    {
+                      "Reference": "Component_Instruction_Potion_Loaded_Combat",
+                      "Modify": {}
+                    }
+                  ]
+                },
+                {
+                  "Sensor": {
+                    "Type": "State",
+                    "State": ".Loaded_PSLN",
+                    "IgnoreMissingSetState": true
+                  },
+                  "Instructions": [
+                    {
+                      "Reference": "Component_Instruction_Potion_Loaded_Combat",
+                      "Modify": {}
+                    }
+                  ]
+                },
+                {
+                  "Sensor": {
+                    "Type": "State",
+                    "State": ".Loaded_PBLN",
+                    "IgnoreMissingSetState": true
+                  },
+                  "Instructions": [
+                    {
+                      "Reference": "Component_Instruction_Potion_Loaded_Combat",
+                      "Modify": {}
+                    }
+                  ]
+                },
+                {
+                  "Sensor": {
+                    "Type": "State",
+                    "State": ".Loaded_SBLN",
                     "IgnoreMissingSetState": true
                   },
                   "Instructions": [

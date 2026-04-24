@@ -1,0 +1,50 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.Stash_Chest.name"
+  },
+  "PlayerAnimationsId": "Block",
+  "Categories": [
+    "Furniture.Containers"
+  ],
+  "Icon": "Icons/ItemsGenerated/Furniture_Dungeon_Chest_Legendary_Large.png",
+  "BlockType": {
+    "BlockParticleSetId": "Wood",
+    "BlockSoundSetId": "Wood",
+    "CustomModel": "Blocks/Dungeons/Chest_Legendary.blockymodel",
+    "CustomModelTexture": [
+      {
+        "Texture": "Blocks/Dungeons/Chest_Legendary_Texture.png",
+        "Weight": 1
+      }
+    ],
+    "DrawType": "Model",
+    "Flags": {
+      "IsUsable": true,
+      "IsHighlightable": true,
+      "HasCollision": true
+    },
+    "HitboxType": "Chest_Large_Legendary",
+    "Material": "Solid",
+    "Opacity": "Transparent",
+    "VariantRotation": "NESW",
+    "Interactions": {
+      "Use": {
+        "Interactions": [
+          {
+            "Type": "stash_chest_use_interaction"
+          }
+        ]
+      }
+    }
+  },
+  "Tags": {
+    "Type": [
+      "Furniture"
+    ],
+    "Family": [
+      "Dungeon"
+    ]
+  },
+  "Scale": 0.6,
+  "ItemSoundSetId": "ISS_Blocks_Wood"
+}

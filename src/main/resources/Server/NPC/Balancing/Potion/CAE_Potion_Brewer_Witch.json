@@ -752,6 +752,126 @@
         "Actions": [
           "BindingPotion"
         ]
+      },
+      "Loaded_HPSB": {
+        "Actions": [
+          "HealingDraught",
+          "PoisonPotion",
+          "ShadowBolt",
+          "BloodPotion"
+        ]
+      },
+      "Loaded_HPSL": {
+        "Actions": [
+          "HealingDraught",
+          "PoisonPotion",
+          "ShadowBolt",
+          "HolyPotion"
+        ]
+      },
+      "Loaded_HPSN": {
+        "Actions": [
+          "HealingDraught",
+          "PoisonPotion",
+          "ShadowBolt",
+          "BindingPotion"
+        ]
+      },
+      "Loaded_HPBL": {
+        "Actions": [
+          "HealingDraught",
+          "PoisonPotion",
+          "BloodPotion",
+          "HolyPotion"
+        ]
+      },
+      "Loaded_HPBN": {
+        "Actions": [
+          "HealingDraught",
+          "PoisonPotion",
+          "BloodPotion",
+          "BindingPotion"
+        ]
+      },
+      "Loaded_HPLN": {
+        "Actions": [
+          "HealingDraught",
+          "PoisonPotion",
+          "HolyPotion",
+          "BindingPotion"
+        ]
+      },
+      "Loaded_HSBL": {
+        "Actions": [
+          "HealingDraught",
+          "ShadowBolt",
+          "BloodPotion",
+          "HolyPotion"
+        ]
+      },
+      "Loaded_HSBN": {
+        "Actions": [
+          "HealingDraught",
+          "ShadowBolt",
+          "BloodPotion",
+          "BindingPotion"
+        ]
+      },
+      "Loaded_HSLN": {
+        "Actions": [
+          "HealingDraught",
+          "ShadowBolt",
+          "HolyPotion",
+          "BindingPotion"
+        ]
+      },
+      "Loaded_HBLN": {
+        "Actions": [
+          "HealingDraught",
+          "BloodPotion",
+          "HolyPotion",
+          "BindingPotion"
+        ]
+      },
+      "Loaded_PSBL": {
+        "Actions": [
+          "PoisonPotion",
+          "ShadowBolt",
+          "BloodPotion",
+          "HolyPotion"
+        ]
+      },
+      "Loaded_PSBN": {
+        "Actions": [
+          "PoisonPotion",
+          "ShadowBolt",
+          "BloodPotion",
+          "BindingPotion"
+        ]
+      },
+      "Loaded_PSLN": {
+        "Actions": [
+          "PoisonPotion",
+          "ShadowBolt",
+          "HolyPotion",
+          "BindingPotion"
+        ]
+      },
+      "Loaded_PBLN": {
+        "Actions": [
+          "PoisonPotion",
+          "BloodPotion",
+          "HolyPotion",
+          "BindingPotion"
+        ]
+      },
+      "Loaded_SBLN": {
+        "Actions": [
+          "ShadowBolt",
+          "BloodPotion",
+          "HolyPotion",
+          "BindingPotion"
+        ]
       }
     }
   }

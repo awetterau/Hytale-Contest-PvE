@@ -62,9 +62,9 @@ public final class PotionBrewerWitchBloodSystem extends TickingSystem<EntityStor
     private static final String BLOOD_SPIKE_BLOCK_ID = RedWaveConfig.CRIMSON_BLOCK_ID;
     private static final int HEALTH_STAT_INDEX = DefaultEntityStatTypes.getHealth();
 
-    private static final float BLOOD_THROW_DAMAGE = 14.0f;
-    private static final float BLOOD_SPIKE_DAMAGE = 9.0f;
-    private static final float BLOOD_SELF_COST = 8.0f;
+    private static final float BLOOD_THROW_DAMAGE = 30.0f;
+    private static final float BLOOD_SPIKE_DAMAGE = 20.0f;
+    private static final float BLOOD_SELF_COST = 36.0f;
     private static final float BLOOD_HEAL_RATIO = 0.5f;
     private static final double BLOOD_PROJECTILE_HIT_RADIUS = 1.35d;
     private static final double BLOOD_SPIKE_HIT_RADIUS = 1.05d;
@@ -721,8 +721,13 @@ public final class PotionBrewerWitchBloodSystem extends TickingSystem<EntityStor
         if (stats == null) {
             return;
         }
+        float currentHealth = readHealth(store, ownerRef);
+        float healCeiling = PotionBrewerWitchSystem.getHealCeilingForCurrentHealth(currentHealth);
+        if (currentHealth < 0.0f || currentHealth >= healCeiling) {
+            return;
+        }
         EntityStatMap updated = stats.clone();
-        updated.addStatValue(HEALTH_STAT_INDEX, amount);
+        updated.addStatValue(HEALTH_STAT_INDEX, Math.min(amount, healCeiling - currentHealth));
         store.putComponent(ownerRef, STATS, updated);
     }
 
@@ -744,14 +749,6 @@ public final class PotionBrewerWitchBloodSystem extends TickingSystem<EntityStor
     }
 
     private static void broadcastToWorld(@Nonnull World world, @Nonnull String text) {
-        Message message = Message.raw(text);
-        UUID worldId = world.getWorldConfig().getUuid();
-        for (PlayerRef playerRef : Universe.get().getPlayers()) {
-            UUID playerWorldId = playerRef.getWorldUuid();
-            if (playerWorldId != null && playerWorldId.equals(worldId)) {
-                playerRef.sendMessage(message);
-            }
-        }
     }
 
     private static final class BloodProjectile {

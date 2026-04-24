@@ -1,0 +1,11 @@
+{
+  "Duration": 4.0,
+  "OverlapBehavior": "Overwrite",
+  "ApplicationEffects": {
+    "EntityTopTint": "#66d96f",
+    "EntityBottomTint": "#14361a",
+    "LocalSoundEventId": "SFX_Effect_Poison_Local"
+  },
+  "Debuff": true,
+  "StatusEffectIcon": "UI/StatusEffects/Crimson_Poison.png"
+}

@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class PotionBrewerWitchPoisonDamageSystem extends EntityTickingSystem<EntityStore> {
     private static final float DAMAGE_INTERVAL_SECONDS = 0.5f;
-    private static final float DAMAGE_PER_TICK = 4.0f;
+    private static final float DAMAGE_PER_TICK = 8.0f;
     private static final float RETALIATION_DAMAGE_PER_TICK = 2.0f;
 
     private static final ComponentType<EntityStore, Player> PLAYER = Player.getComponentType();

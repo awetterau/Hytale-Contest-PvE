@@ -58,6 +58,8 @@ import dev.hytalemodding.commands.run.RunChunkSelectionCommand;
 import dev.hytalemodding.commands.run.SpawnStartTriggerCommand;
 import dev.hytalemodding.commands.run.SpawnUiCommand;
 import dev.hytalemodding.domain.housing.BaseHousingManager;
+import dev.hytalemodding.stash.StashChestUseInteraction;
+import dev.hytalemodding.quest.QuestBoardUseInteraction;
 import dev.hytalemodding.crimson.CrimsonWitchHelperSummonSystem;
 import dev.hytalemodding.crimson.CrimsonWitchGroundTrapProjectileSystem;
 import dev.hytalemodding.crimson.CrimsonWitchEnvironmentalPressureSystem;
@@ -242,6 +244,16 @@ public class ExamplePlugin extends JavaPlugin {
                 "base_plot_use_interaction",
                 BasePlotUseInteraction.class,
                 BasePlotUseInteraction.CODEC
+        );
+        this.getCodecRegistry(Interaction.CODEC).register(
+                "quest_board_use_interaction",
+                QuestBoardUseInteraction.class,
+                QuestBoardUseInteraction.CODEC
+        );
+        this.getCodecRegistry(Interaction.CODEC).register(
+                "stash_chest_use_interaction",
+                StashChestUseInteraction.class,
+                StashChestUseInteraction.CODEC
         );
         this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, GameSessionManager.get()::onPlayerReady);
         this.getEventRegistry().registerGlobal(PlayerReadyEvent.class, this::onStashPlayerReady);

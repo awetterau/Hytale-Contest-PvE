@@ -5,7 +5,7 @@
     ]
   },
   "Cooldown": {
-    "Cooldown": 2.0
+    "Cooldown": 0.25
   },
   "Interactions": [
     "Potion_Brewer_Witch_Shadow_Bolt"

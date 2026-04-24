@@ -21,11 +21,8 @@ import java.util.UUID;
 
 public final class RooterShockwaveDamageSystem extends EntityTickingSystem<EntityStore> {
     private static final float SHOCKWAVE_DAMAGE = 18.0f;
-    private static final float MELEE_DAMAGE = 22.0f;
-    private static final double WAVE_KNOCKBACK_XZ = 0.55;
-    private static final double WAVE_KNOCKBACK_Y = 0.26;
-    private static final double MELEE_KNOCKBACK_XZ = 1.05;
-    private static final double MELEE_KNOCKBACK_Y = 0.33;
+    private static final double WAVE_KNOCKBACK_XZ = 0.01;
+    private static final double WAVE_KNOCKBACK_Y = 0.005;
     private static final ComponentType<EntityStore, Player> PLAYER = Player.getComponentType();
     private static final ComponentType<EntityStore, TransformComponent> TRANSFORM = TransformComponent.getComponentType();
     private final Query<EntityStore> query = Query.and(PLAYER, TRANSFORM);
@@ -52,8 +49,7 @@ public final class RooterShockwaveDamageSystem extends EntityTickingSystem<Entit
         UUID worldId = store.getExternalData().getWorld().getWorldConfig().getUuid();
         long now = System.currentTimeMillis();
         List<RooterShockwaveRuntime.WaveEvent> waves = RooterShockwaveRuntime.getActiveWaves(worldId, now);
-        List<RooterShockwaveRuntime.MeleeEvent> meleeEvents = RooterShockwaveRuntime.getActiveMelee(worldId, now);
-        if (waves.isEmpty() && meleeEvents.isEmpty()) {
+        if (waves.isEmpty()) {
             return;
         }
 
@@ -88,29 +84,6 @@ public final class RooterShockwaveDamageSystem extends EntityTickingSystem<Entit
             DamageSystems.executeDamage(index, archetypeChunk, commandBuffer, damage);
             applyKnockback(commandBuffer, playerRef, wave.dirX, wave.dirZ, WAVE_KNOCKBACK_XZ, WAVE_KNOCKBACK_Y);
             wave.hitPlayers.put(playerRef, true);
-        }
-
-        for (RooterShockwaveRuntime.MeleeEvent melee : meleeEvents) {
-            if (melee.hitPlayers.containsKey(playerRef)) {
-                continue;
-            }
-            double relX = px - melee.originX;
-            double relZ = pz - melee.originZ;
-            double forward = (relX * melee.dirX) + (relZ * melee.dirZ);
-            if (forward < -0.45 || forward > melee.range) {
-                continue;
-            }
-            double sideX = -melee.dirZ;
-            double sideZ = melee.dirX;
-            double lateral = Math.abs((relX * sideX) + (relZ * sideZ));
-            if (lateral > (melee.lateralWidth + 0.35)) {
-                continue;
-            }
-
-            Damage damage = new Damage(Damage.NULL_SOURCE, RootDamageCause.causeIndex(), MELEE_DAMAGE);
-            DamageSystems.executeDamage(index, archetypeChunk, commandBuffer, damage);
-            applyKnockback(commandBuffer, playerRef, melee.dirX, melee.dirZ, MELEE_KNOCKBACK_XZ, MELEE_KNOCKBACK_Y);
-            melee.hitPlayers.put(playerRef, true);
         }
     }
 

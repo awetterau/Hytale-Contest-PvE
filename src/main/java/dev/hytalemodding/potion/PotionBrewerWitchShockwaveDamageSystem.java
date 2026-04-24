@@ -26,7 +26,7 @@ public final class PotionBrewerWitchShockwaveDamageSystem extends EntityTickingS
     private static final double SHOCKWAVE_KNOCKBACK_XZ = 0.7d;
     private static final double SHOCKWAVE_KNOCKBACK_Y = 0.28d;
     private static final long RIPPLE_STEP_DELAY_MS = 140L;
-    private static final long SHOCKWAVE_STUN_MS = 1000L;
+    private static final long SHOCKWAVE_STUN_MS = 3000L;
     private static final double RIPPLE_VISUAL_SPEED_BLOCKS_PER_SECOND = 1000.0d / RIPPLE_STEP_DELAY_MS;
     private static final double RIPPLE_HIT_BAND = 1.3d;
     private static final ComponentType<EntityStore, Player> PLAYER = Player.getComponentType();

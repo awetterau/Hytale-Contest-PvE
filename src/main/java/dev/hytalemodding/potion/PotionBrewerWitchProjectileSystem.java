@@ -679,14 +679,6 @@ public final class PotionBrewerWitchProjectileSystem extends TickingSystem<Entit
     }
 
     private static void broadcastToWorld(@Nonnull World world, @Nonnull String text) {
-        Message message = Message.raw(text);
-        UUID worldId = world.getWorldConfig().getUuid();
-        for (PlayerRef playerRef : Universe.get().getPlayers()) {
-            UUID playerWorldId = playerRef.getWorldUuid();
-            if (playerWorldId != null && playerWorldId.equals(worldId)) {
-                playerRef.sendMessage(message);
-            }
-        }
     }
 
     @Nonnull

@@ -63,3 +63,5 @@ server.npcRoles.Farmer_Goat_Objective.name=Lost Goat
 server.npcRoles.Farmer_Chicken_Base.name=Chicken
 server.npcRoles.Farmer_Calf_Base.name=Calf
 server.npcRoles.Farmer_Goat_Base.name=Goat
+server.items.Quest_Board.name=Quest Board
+server.items.Stash_Chest.name=Stash Chest

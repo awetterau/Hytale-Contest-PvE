@@ -229,7 +229,6 @@ public final class RooterManManager {
         int roleIndex = npcPlugin.getIndex(roleName);
         BuilderInfo roleInfo = npcPlugin.getRoleBuilderInfo(roleIndex);
         if (roleInfo == null || !roleInfo.getBuilder().isSpawnable()) {
-            System.out.println("[RooterMan] Role unavailable or not spawnable: " + roleName);
             return null;
         }
 

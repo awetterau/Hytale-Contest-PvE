@@ -43,7 +43,6 @@ public final class PotionBrewerWitchHolySystem extends TickingSystem<EntityStore
     private static final String HOLY_TRACK_PARTICLE_ID = "Potion_Brewer_Witch_Holy_Track";
     private static final String HOLY_EXPLOSION_PARTICLE_ID = "Potion_Brewer_Witch_Holy_Explosion";
     private static final int HEALTH_STAT_INDEX = DefaultEntityStatTypes.getHealth();
-    private static final float MAX_HEALTH = 110.0f;
     private static final float HOLY_SHIELD_RATIO = 0.22f;
     private static final long HOLY_SHIELD_DURATION_MS = 8000L;
     private static final long HOLY_TRACK_DURATION_MS = 1800L;
@@ -51,7 +50,7 @@ public final class PotionBrewerWitchHolySystem extends TickingSystem<EntityStore
     private static final long HOLY_VISUAL_INTERVAL_MS = 90L;
     private static final long HOLY_EXPLOSION_VISUAL_MS = 650L;
     private static final double HOLY_EXPLOSION_RADIUS = 3.4d;
-    private static final float HOLY_EXPLOSION_DAMAGE = 16.0f;
+    private static final float HOLY_EXPLOSION_DAMAGE = 35.0f;
 
     private static final Map<UUID, List<PendingHolyCast>> PENDING_CASTS_BY_WORLD = new HashMap<>();
     private static final Map<UUID, List<TrackingMarker>> TRACKERS_BY_WORLD = new HashMap<>();
@@ -111,7 +110,7 @@ public final class PotionBrewerWitchHolySystem extends TickingSystem<EntityStore
         long now = System.currentTimeMillis();
         synchronized (SHIELDS_BY_WORLD) {
             SHIELDS_BY_WORLD.computeIfAbsent(worldId, ignored -> new HashMap<>())
-                    .put(ownerBossId, new HolyShield(MAX_HEALTH * HOLY_SHIELD_RATIO, now + HOLY_SHIELD_DURATION_MS));
+                    .put(ownerBossId, new HolyShield(PotionBrewerWitchSystem.getConfiguredMaxHealth() * HOLY_SHIELD_RATIO, now + HOLY_SHIELD_DURATION_MS));
         }
         world.execute(() -> {
             if (ownerRef == null || !ownerRef.isValid()) {
@@ -409,9 +408,21 @@ public final class PotionBrewerWitchHolySystem extends TickingSystem<EntityStore
         if (stats == null) {
             return;
         }
+        float currentHealth = readHealth(stats);
+        float healCeiling = PotionBrewerWitchSystem.getHealCeilingForCurrentHealth(currentHealth);
+        if (currentHealth < 0.0f || currentHealth >= healCeiling) {
+            return;
+        }
         EntityStatMap updated = stats.clone();
-        updated.addStatValue(HEALTH_STAT_INDEX, cmd.healAmount);
+        updated.addStatValue(HEALTH_STAT_INDEX, Math.min(cmd.healAmount, healCeiling - currentHealth));
         store.putComponent(cmd.bossRef, STATS, updated);
+    }
+
+    private static float readHealth(@Nullable EntityStatMap stats) {
+        if (stats == null || HEALTH_STAT_INDEX < 0 || stats.get(HEALTH_STAT_INDEX) == null) {
+            return -1.0f;
+        }
+        return stats.get(HEALTH_STAT_INDEX).get();
     }
 
     private static boolean isInExplosion(@Nonnull Vector3d playerPos, double x, double y, double z) {
@@ -438,13 +449,6 @@ public final class PotionBrewerWitchHolySystem extends TickingSystem<EntityStore
         return new Vector3d(playerPos.getX(), Math.floor(playerPos.getY()) + 0.12d, playerPos.getZ());
     }
 
-    private static float readHealth(@Nullable EntityStatMap stats) {
-        if (stats == null || HEALTH_STAT_INDEX < 0 || stats.get(HEALTH_STAT_INDEX) == null) {
-            return -1.0f;
-        }
-        return stats.get(HEALTH_STAT_INDEX).get();
-    }
-
     @Nullable
     private static UUID getEntityUuid(@Nonnull Store<EntityStore> store, @Nullable Ref<EntityStore> ref) {
         if (ref == null || !ref.isValid()) {
@@ -464,14 +468,6 @@ public final class PotionBrewerWitchHolySystem extends TickingSystem<EntityStore
     }
 
     private static void broadcastToWorld(@Nonnull World world, @Nonnull String text) {
-        Message message = Message.raw(text);
-        UUID worldId = world.getWorldConfig().getUuid();
-        for (PlayerRef playerRef : Universe.get().getPlayers()) {
-            UUID playerWorldId = playerRef.getWorldUuid();
-            if (playerWorldId != null && playerWorldId.equals(worldId)) {
-                playerRef.sendMessage(message);
-            }
-        }
     }
 
     private static final class PendingHolyCast {

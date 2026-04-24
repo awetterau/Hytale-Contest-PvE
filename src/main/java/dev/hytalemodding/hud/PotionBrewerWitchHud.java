@@ -7,20 +7,21 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 public final class PotionBrewerWitchHud extends CustomUIHud {
-    private static final int MAX_SLOTS = 3;
+    private static final int MAX_SLOTS = 4;
+    private static final float HEALTH_ANIMATION_SPEED_PER_SECOND = 1.0f;
 
     private boolean visible;
-    @Nonnull
-    private String statusText = "";
-    @Nonnull
-    private String healthText = "";
-    private float healthRatio;
+    private float targetRedRatio = 1.0f;
+    private float displayedRedRatio = 1.0f;
+    private float targetPurpleRatio = 1.0f;
+    private float displayedPurpleRatio = 1.0f;
+    private float targetBlueRatio = 1.0f;
+    private float displayedBlueRatio = 1.0f;
+    private long lastAnimationAtMs;
     @Nonnull
     private List<String> chargeTypes = List.of();
-    private String timeString = "05:00";
 
     public PotionBrewerWitchHud(@Nonnull PlayerRef playerRef) {
         super(playerRef);
@@ -33,17 +34,16 @@ public final class PotionBrewerWitchHud extends CustomUIHud {
         }
 
         ui.append("PotionBrewerWitchHud.ui");
-        ui.set("#TimerLabel.Text", this.timeString);
-        ui.set("#StatusLabel.Text", this.statusText);
-        ui.set("#HealthLabel.Text", this.healthText);
-        ui.set("#HealthBar.Value", this.healthRatio);
+        advanceDisplayedHealthRatios();
+        ui.set("#PhaseThreeBar.Value", this.displayedBlueRatio);
+        ui.set("#PhaseTwoBar.Value", this.displayedPurpleRatio);
+        ui.set("#HealthBar.Value", this.displayedRedRatio);
 
         for (int i = 0; i < MAX_SLOTS; i++) {
             int slot = i + 1;
             boolean active = i < this.chargeTypes.size();
-            ui.set("#ChargeRow" + slot + ".Visible", active);
             String potionType = active ? this.chargeTypes.get(i) : "";
-            ui.set("#ChargeText" + slot + ".Text", active ? displayName(potionType) : "");
+            ui.set("#ChargeSlot" + slot + ".Visible", active);
             setSwatch(ui, slot, potionType);
         }
     }
@@ -52,23 +52,63 @@ public final class PotionBrewerWitchHud extends CustomUIHud {
         this.visible = visible;
     }
 
-    public void setTime(@Nonnull String timeString) {
-        this.timeString = timeString;
-    }
-
-    public void setStatusText(@Nonnull String statusText) {
-        this.statusText = statusText;
-    }
-
-    public void setHealth(float currentHealth, float maxHealth) {
-        float clampedMax = Math.max(1.0f, maxHealth);
+    public void setHealth(float currentHealth, float maxHealth, @Nonnull String bossStage) {
         float clampedCurrent = Math.max(0.0f, currentHealth);
-        this.healthRatio = Math.max(0.0f, Math.min(1.0f, clampedCurrent / clampedMax));
-        this.healthText = String.format(Locale.ROOT, "Health %.0f / %.0f", clampedCurrent, clampedMax);
+        float phaseHealth = Math.max(1.0f, maxHealth / 3.0f);
+        if ("PHASE_THREE".equals(bossStage)) {
+            this.targetRedRatio = 0.0f;
+            this.targetPurpleRatio = 0.0f;
+            this.targetBlueRatio = Math.max(0.0f, Math.min(1.0f, Math.min(phaseHealth, clampedCurrent) / phaseHealth));
+        } else if ("PHASE_TWO".equals(bossStage)) {
+            this.targetRedRatio = 0.0f;
+            this.targetPurpleRatio = Math.max(0.0f, Math.min(1.0f, (clampedCurrent - phaseHealth) / phaseHealth));
+            this.targetBlueRatio = 1.0f;
+        } else {
+            this.targetRedRatio = Math.max(0.0f, Math.min(1.0f, (clampedCurrent - (phaseHealth * 2.0f)) / phaseHealth));
+            this.targetPurpleRatio = 1.0f;
+            this.targetBlueRatio = 1.0f;
+        }
+        if (this.lastAnimationAtMs == 0L) {
+            this.displayedRedRatio = this.targetRedRatio;
+            this.displayedPurpleRatio = this.targetPurpleRatio;
+            this.displayedBlueRatio = this.targetBlueRatio;
+            return;
+        }
+        if (this.targetRedRatio >= this.displayedRedRatio) {
+            this.displayedRedRatio = this.targetRedRatio;
+        }
+        if (this.targetPurpleRatio >= this.displayedPurpleRatio) {
+            this.displayedPurpleRatio = this.targetPurpleRatio;
+        }
+        if (this.targetBlueRatio >= this.displayedBlueRatio) {
+            this.displayedBlueRatio = this.targetBlueRatio;
+        }
     }
 
     public void setCharges(@Nonnull List<String> chargeTypes) {
         this.chargeTypes = List.copyOf(new ArrayList<>(chargeTypes).subList(0, Math.min(MAX_SLOTS, chargeTypes.size())));
+    }
+
+    private void advanceDisplayedHealthRatios() {
+        long now = System.currentTimeMillis();
+        if (this.lastAnimationAtMs == 0L) {
+            this.lastAnimationAtMs = now;
+            return;
+        }
+        float dt = Math.max(0.0f, (now - this.lastAnimationAtMs) / 1000.0f);
+        this.lastAnimationAtMs = now;
+        if (this.displayedRedRatio > this.targetRedRatio) {
+            float maxStep = HEALTH_ANIMATION_SPEED_PER_SECOND * dt;
+            this.displayedRedRatio = Math.max(this.targetRedRatio, this.displayedRedRatio - maxStep);
+        }
+        if (this.displayedPurpleRatio > this.targetPurpleRatio) {
+            float maxStep = HEALTH_ANIMATION_SPEED_PER_SECOND * dt;
+            this.displayedPurpleRatio = Math.max(this.targetPurpleRatio, this.displayedPurpleRatio - maxStep);
+        }
+        if (this.displayedBlueRatio > this.targetBlueRatio) {
+            float maxStep = HEALTH_ANIMATION_SPEED_PER_SECOND * dt;
+            this.displayedBlueRatio = Math.max(this.targetBlueRatio, this.displayedBlueRatio - maxStep);
+        }
     }
 
     private static void setSwatch(@Nonnull UICommandBuilder ui, int slot, @Nonnull String potionType) {
@@ -93,16 +133,4 @@ public final class PotionBrewerWitchHud extends CustomUIHud {
         }
     }
 
-    @Nonnull
-    private static String displayName(@Nonnull String potionType) {
-        return switch (potionType) {
-            case "poison potion" -> "Poison Potion";
-            case "shadow bolt" -> "Shadow Bolt";
-            case "blood potion" -> "Blood Potion";
-            case "holy potion" -> "Holy Potion";
-            case "binding potion" -> "Binding Potion";
-            case "healing draught" -> "Healing Draught";
-            default -> potionType;
-        };
-    }
 }

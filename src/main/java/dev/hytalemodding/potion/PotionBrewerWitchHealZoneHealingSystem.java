@@ -21,9 +21,8 @@ import java.util.UUID;
 
 public final class PotionBrewerWitchHealZoneHealingSystem extends EntityTickingSystem<EntityStore> {
     private static final float HEAL_INTERVAL_SECONDS = 0.5f;
-    private static final float HEAL_PER_SECOND = 2.5f;
+    private static final float HEAL_PER_SECOND = 11.5f;
     private static final int HEALTH_STAT_INDEX = DefaultEntityStatTypes.getHealth();
-    private static final float MAX_HEALTH = 110.0f;
 
     private static final ComponentType<EntityStore, NPCEntity> NPC = NPCEntity.getComponentType();
     private static final ComponentType<EntityStore, TransformComponent> TRANSFORM = TransformComponent.getComponentType();
@@ -79,9 +78,10 @@ public final class PotionBrewerWitchHealZoneHealingSystem extends EntityTickingS
             EntityStatMap stats = archetypeChunk.getComponent(index, STATS);
             if (stats != null) {
                 float currentHealth = readHealth(stats);
-                if (currentHealth >= 0 && currentHealth < MAX_HEALTH) {
+                float healCeiling = PotionBrewerWitchSystem.getHealCeilingForCurrentHealth(currentHealth);
+                if (currentHealth >= 0 && currentHealth < healCeiling) {
                     EntityStatMap updated = stats.clone();
-                    updated.addStatValue(HEALTH_STAT_INDEX, Math.min(healAmount, MAX_HEALTH - currentHealth));
+                    updated.addStatValue(HEALTH_STAT_INDEX, Math.min(healAmount, healCeiling - currentHealth));
                     commandBuffer.putComponent(npcRef, STATS, updated);
                 }
             }

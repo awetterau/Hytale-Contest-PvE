@@ -33,6 +33,7 @@ public class SimpleStashPage extends InteractiveCustomUIPage<SimpleStashPage.Dat
     private List<ItemGroup> inventoryGroups = List.of();
     private boolean fullStackMode = true;
     private int customAmount = 1;
+    private String searchFilter = "";
 
     public static class Data {
         @Nullable
@@ -144,6 +145,9 @@ public class SimpleStashPage extends InteractiveCustomUIPage<SimpleStashPage.Dat
             case "toggle_full_stack" -> {
                 this.fullStackMode = !this.fullStackMode;
             }
+            case "search_changed" -> {
+                this.searchFilter = data.search != null ? data.search : "";
+            }
             case "amount_changed" -> {
                 this.fullStackMode = false;
                 this.customAmount = parsePositiveAmount(data.amount, this.customAmount);
@@ -175,7 +179,7 @@ public class SimpleStashPage extends InteractiveCustomUIPage<SimpleStashPage.Dat
     }
 
     private void refreshGrids(@Nonnull UICommandBuilder ui, @Nonnull UIEventBuilder events, @Nonnull Inventory inventory) {
-        this.stashGroups = aggregate(List.of(new ContainerView(this.stash)), "");
+        this.stashGroups = aggregate(List.of(new ContainerView(this.stash)), this.searchFilter);
         this.inventoryGroups = mapToGroups(List.of(
                 new ContainerView(inventory.getStorage()),
                 new ContainerView(inventory.getHotbar())
@@ -183,26 +187,29 @@ public class SimpleStashPage extends InteractiveCustomUIPage<SimpleStashPage.Dat
 
         rebuildGroupGrid(ui, events, "#StashGrid", this.stashGroups, GroupSide.STASH);
         rebuildGroupGrid(ui, events, "#InventoryGrid", this.inventoryGroups, GroupSide.INVENTORY);
-        ui.set("#StashCountLabel.Text", countItems(this.stashGroups) + " items");
-        ui.set("#InventoryCountLabel.Text", countItems(this.inventoryGroups) + " items");
+        ui.set("#StashCountLabel.Text", countItems(this.stashGroups) + " items in stash");
+        ui.set("#InventoryCountLabel.Text", countItems(this.inventoryGroups) + " items in inventory");
         ui.set("#StatusLabel.Text", this.fullStackMode
-                ? "Click items to transfer one full stack"
+                ? "Click items to transfer a full stack"
                 : "Click items to transfer " + this.customAmount);
-        ui.set("#FullStackLabel.Text", this.fullStackMode ? "Full Stack: ON" : "Full Stack: OFF");
+        ui.set("#FullStackLabel.Text", this.fullStackMode ? "FULL STACK: ON" : "FULL STACK: OFF");
+        ui.set("#AmountLabel.Visible", !this.fullStackMode);
         ui.set("#AmountInput.Visible", !this.fullStackMode);
         ui.set("#AmountInput.Value", Integer.toString(this.customAmount));
-        ui.set("#DecreaseButton.Visible", !this.fullStackMode);
-        ui.set("#IncreaseButton.Visible", !this.fullStackMode);
     }
 
     private void bindAmountControls(@Nonnull UIEventBuilder events) {
         events.addEventBinding(CustomUIEventBindingType.Activating, "#FullStackButton", EventData.of("Action", "toggle_full_stack"), false);
-        events.addEventBinding(CustomUIEventBindingType.Activating, "#DecreaseButton", EventData.of("Action", "amount_decrease"), false);
-        events.addEventBinding(CustomUIEventBindingType.Activating, "#IncreaseButton", EventData.of("Action", "amount_increase"), false);
         events.addEventBinding(
                 CustomUIEventBindingType.ValueChanged,
                 "#AmountInput",
                 new EventData().append("Action", "amount_changed").append("@Amount", "#AmountInput.Value"),
+                false
+        );
+        events.addEventBinding(
+                CustomUIEventBindingType.ValueChanged,
+                "#StashSearch",
+                new EventData().append("Action", "search_changed").append("@Search", "#StashSearch.Value"),
                 false
         );
     }

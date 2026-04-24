@@ -163,7 +163,23 @@
     "Attack3": {
       "Animations": [
         {
+          "Animation": "NPC/intelligent/Rooter/Animations/attack3.blockyanim",
+          "Looping": false
+        }
+      ]
+    },
+    "Roar": {
+      "Animations": [
+        {
           "Animation": "NPC/intelligent/Rooter/Animations/roar.blockyanim",
+          "Looping": false
+        }
+      ]
+    },
+    "Death": {
+      "Animations": [
+        {
+          "Animation": "NPC/intelligent/Rooter/Animations/death_rootman.blockyanim",
           "Looping": false
         }
       ]

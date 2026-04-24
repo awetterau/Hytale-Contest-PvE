@@ -7,10 +7,10 @@
   },
   "DamageEffects": {
     "Knockback": {
-      "Force": 2.5,
+      "Force": 0.02,
       "RelativeX": 0,
-      "RelativeZ": -5,
-      "VelocityY": 6,
+      "RelativeZ": -0.05,
+      "VelocityY": 0.01,
       "VelocityType": "Set"
     },
     "WorldSoundEventId": "SFX_Unarmed_Impact",

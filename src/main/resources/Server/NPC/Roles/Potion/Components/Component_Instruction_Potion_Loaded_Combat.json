@@ -43,6 +43,11 @@
         "ActionsBlocking": false,
         "Actions": [
           {
+            "Type": "PlayAnimation",
+            "Slot": "Action",
+            "Animation": "Attack1"
+          },
+          {
             "Type": "CombatAbility"
           }
         ]

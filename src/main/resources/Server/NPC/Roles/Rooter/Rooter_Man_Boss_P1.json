@@ -13,7 +13,7 @@
   "MotionControllerList": [
     {
       "Type": "Walk",
-      "MaxWalkSpeed": 5.2,
+      "MaxWalkSpeed": 5.8,
       "MinWalkSpeed": 0,
       "Gravity": 10,
       "MaxFallSpeed": 20,
@@ -24,32 +24,6 @@
   "Instructions": [
     {
       "Instructions": [
-        {
-          "Sensor": {
-            "Type": "Self",
-            "Once": true,
-            "Filters": [
-              {
-                "Type": "Stat",
-                "StatTarget": "Value",
-                "RelativeTo": "Health",
-                "Stat": "Health",
-                "RelativeToTarget": "Max",
-                "ValueRange": [
-                  0,
-                  0.66
-                ]
-              }
-            ]
-          },
-          "Actions": [
-            {
-              "Type": "Role",
-              "Once": true,
-              "Role": "Rooter_Man_Boss_P2"
-            }
-          ]
-        },
         {
           "Sensor": {
             "Type": "State",
@@ -126,27 +100,63 @@
                         "TargetInRange": true
                       },
                       "HeadMotion": {
-                        "Type": "Watch"
+                        "Type": "Aim"
                       },
                       "BodyMotion": {
                         "Type": "MaintainDistance",
                         "DesiredDistanceRange": [
-                          1.8,
-                          4.8
+                          1.4,
+                          4.6
                         ],
                         "StrafingDurationRange": [
-                          0.7,
-                          1.2
+                          0.45,
+                          0.8
                         ],
                         "StrafingFrequencyRange": [
-                          1.2,
-                          2.0
+                          1.0,
+                          1.6
                         ],
-                        "RelativeForwardsSpeed": 0.9,
-                        "RelativeBackwardsSpeed": 0.2
+                        "RelativeForwardsSpeed": 0.86,
+                        "RelativeBackwardsSpeed": 0.14
                       },
                       "ActionsBlocking": false,
-                      "Actions": [                         {                           "Type": "CombatAbility"                         }                       ]
+                      "Actions": [
+                        {
+                          "Type": "CombatAbility"
+                        }
+                      ]
+                    },
+                    {
+                      "Continue": true,
+                      "Sensor": {
+                        "Type": "Target",
+                        "Range": 2.6,
+                        "Filters": [
+                          {
+                            "Type": "LineOfSight"
+                          }
+                        ]
+                      },
+                      "HeadMotion": {
+                        "Type": "Aim"
+                      },
+                      "BodyMotion": {
+                        "Type": "MaintainDistance",
+                        "DesiredDistanceRange": [
+                          1.35,
+                          2.2
+                        ],
+                        "StrafingDurationRange": [
+                          0.0,
+                          0.15
+                        ],
+                        "StrafingFrequencyRange": [
+                          0.7,
+                          1.1
+                        ],
+                        "RelativeForwardsSpeed": 0.95,
+                        "RelativeBackwardsSpeed": 0.08
+                      }
                     },
                     {
                       "Sensor": {
@@ -158,47 +168,11 @@
                       },
                       "BodyMotion": {
                         "Type": "Seek",
-                        "SlowDownDistance": 4.8,
-                        "StopDistance": 3.2,
+                        "SlowDownDistance": 4.0,
+                        "StopDistance": 2.4,
+                        "RelativeSpeed": 0.96,
                         "UsePathfinder": true
                       }
-                    }
-                  ]
-                },
-                {
-                  "Sensor": {
-                    "Type": "State",
-                    "State": ".BurrowShort",
-                    "IgnoreMissingSetState": true
-                  },
-                  "Instructions": [
-                    {
-                      "Sensor": {
-                        "Type": "Any"
-                      },
-                      "BodyMotion": {
-                        "Type": "Nothing"
-                      },
-                      "HeadMotion": { "Type": "Nothing" },
-                      "ActionsBlocking": true,
-                      "Actions": [
-                        {
-                          "Type": "PlayAnimation",
-                          "Slot": "Action",
-                          "Animation": "Attack2"
-                        },
-                        {
-                          "Type": "Timeout",
-                          "Delay": [
-                            0.55,
-                            0.75
-                          ]
-                        },
-                        {
-                          "Type": "State",
-                          "State": ".Default"
-                        }
-                      ]
                     }
                   ]
                 },
@@ -216,26 +190,28 @@
                       "BodyMotion": {
                         "Type": "Nothing"
                       },
-                      "HeadMotion": { "Type": "Nothing" },
+                      "HeadMotion": {
+                        "Type": "Nothing"
+                      },
                       "ActionsBlocking": true,
                       "Actions": [
                         {
                           "Type": "PlayAnimation",
                           "Slot": "Action",
-                          "Animation": "Attack2"
+                          "Animation": "Attack1"
                         },
                         {
                           "Type": "Timeout",
                           "Delay": [
-                            0.4,
-                            0.55
+                            0.42,
+                            0.42
                           ]
                         },
                         {
                           "Type": "Timeout",
                           "Delay": [
-                            0.22,
-                            0.34
+                            0.16,
+                            0.22
                           ]
                         },
                         {
@@ -260,58 +236,28 @@
                       "BodyMotion": {
                         "Type": "Nothing"
                       },
-                      "HeadMotion": { "Type": "Nothing" },
+                      "HeadMotion": {
+                        "Type": "Nothing"
+                      },
                       "ActionsBlocking": true,
                       "Actions": [
                         {
                           "Type": "PlayAnimation",
                           "Slot": "Action",
-                          "Animation": "Attack3"
+                          "Animation": "Roar"
                         },
                         {
                           "Type": "Timeout",
                           "Delay": [
-                            0.72,
-                            0.92
+                            0.56,
+                            0.74
                           ]
                         },
                         {
                           "Type": "Timeout",
                           "Delay": [
-                            0.24,
-                            0.36
-                          ]
-                        },
-                        {
-                          "Type": "State",
-                          "State": ".Default"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "Sensor": {
-                    "Type": "State",
-                    "State": ".BurrowedLong",
-                    "IgnoreMissingSetState": true
-                  },
-                  "Instructions": [
-                    {
-                      "Sensor": {
-                        "Type": "Any"
-                      },
-                      "BodyMotion": {
-                        "Type": "Nothing"
-                      },
-                      "HeadMotion": { "Type": "Nothing" },
-                      "ActionsBlocking": true,
-                      "Actions": [
-                        {
-                          "Type": "Timeout",
-                          "Delay": [
-                            0.38,
-                            0.55
+                            0.2,
+                            0.3
                           ]
                         },
                         {
@@ -339,9 +285,3 @@
   ],
   "NameTranslationKey": "server.npcRoles.Rooter_Man_Boss.name"
 }
-
-
-
-
-
-

@@ -72,12 +72,10 @@ public final class RooterConfig {
         Properties properties = new Properties();
         try (InputStream in = RooterConfig.class.getClassLoader().getResourceAsStream(RESOURCE_PATH)) {
             if (in == null) {
-                System.out.println("[RooterConfig] Resource not found: " + RESOURCE_PATH);
                 return;
             }
             properties.load(in);
         } catch (IOException e) {
-            System.out.println("[RooterConfig] Failed to load: " + e.getMessage());
             return;
         }
 
@@ -91,11 +89,6 @@ public final class RooterConfig {
         this.spawnOffset.setX(readDouble(properties.getProperty("rooter.spawn.offsetX"), this.spawnOffset.getX()));
         this.spawnOffset.setY(readDouble(properties.getProperty("rooter.spawn.offsetY"), this.spawnOffset.getY()));
         this.spawnOffset.setZ(readDouble(properties.getProperty("rooter.spawn.offsetZ"), this.spawnOffset.getZ()));
-
-        System.out.println(
-                "[RooterConfig] Loaded config for role=" + this.bossRole
-                        + ", vulnerableRole=" + this.vulnerableBossRole
-        );
     }
 
     @Nonnull
