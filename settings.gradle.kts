@@ -22,7 +22,7 @@ hytale {
 
     manifest {
         Group = "HytaleModding"
-        Name = "ExamplePlugin"
+        Name = "Blightfall_Crimson_Veil"
         Main = "dev.hytalemodding.ExamplePlugin"
     }
 }
