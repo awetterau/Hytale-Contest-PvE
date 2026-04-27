@@ -1,18 +1,36 @@
 {
     "Group": "HytaleModding",
-    "Name": "Blightfall_Crimson_Veil",
-    "Version": "0.0.0",
+    "Name": "Blighfall_Crimson_Veil",
+    "Version": "0.1.0",
     "Description": "Description of your plugin",
     "Authors": [
         {
-            "Name": "Your Name",
-            "Email": "your.email@example.com",
-            "Url": "https://your-website.com"
+            "Name": "darlak97",
+            "Email": "darlak97games@gmail.com",
+            "Url": "https://x.com/darlak97"
+        },
+        {
+            "Name": "CoLoLrizer"
+        },
+        {
+            "Name": "RHAIS"
+        },
+        {
+            "Name": "EinHonigtee"
+        },
+        {
+            "Name": "Konur"
+        },
+        {
+            "Name": "Parade"
+        },
+        {
+            "Name": "Trident"
         }
     ],
-    "Website": "https://your-plugin-website.com",
+    "Website": "https://x.com/darlak97",
     "DisabledByDefault": false,
-    "IncludesAssetPack": true,
+    "IncludesAssetPack": false,
     "Dependencies": {
         "Hytale:NPC": "*"
     },

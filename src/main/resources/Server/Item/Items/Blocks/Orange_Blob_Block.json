@@ -12,11 +12,6 @@
     "DrawType": "Cube",
     "Group": "Cloth",
     "Flags": {},
-    "Gathering": {
-      "Breaking": {
-        "GatherType": "SoftBlocks"
-      }
-    },
     "Textures": [
       {
         "Weight": 1,

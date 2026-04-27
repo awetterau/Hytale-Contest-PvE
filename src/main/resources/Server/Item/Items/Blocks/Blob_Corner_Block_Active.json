@@ -20,11 +20,6 @@
     "VariantRotation": "NESW",
     "CustomModelAnimation": "Blocks/d97's/Extraction/Block_Rebound.blockyanim",
     "Looping": true,
-    "Gathering": {
-      "Breaking": {
-        "GatherType": "SoftBlocks"
-      }
-    },
     "BlockParticleSetId": "Dust",
     "BlockSoundSetId": "Cloth",
     "ParticleColor": "#4c4740"

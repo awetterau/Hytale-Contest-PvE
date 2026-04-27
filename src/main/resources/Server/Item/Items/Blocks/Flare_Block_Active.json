@@ -12,11 +12,6 @@
     "DrawType": "Model",
     "Group": "Dirt",
     "Flags": {},
-    "Gathering": {
-      "Breaking": {
-        "GatherType": "SoftBlocks"
-      }
-    },
     "BlockSoundSetId": "Stone",
     "CustomModel": "Blocks/d97's/Extraction/Flare_Block.blockymodel",
     "CustomModelTexture": [

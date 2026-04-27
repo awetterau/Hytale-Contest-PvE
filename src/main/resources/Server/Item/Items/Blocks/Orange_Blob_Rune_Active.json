@@ -12,11 +12,6 @@
     "DrawType": "Model",
     "Group": "Dirt",
     "Flags": {},
-    "Gathering": {
-      "Breaking": {
-        "GatherType": "SoftBlocks"
-      }
-    },
     "BlockParticleSetId": "Stone",
     "CustomModel": "Blocks/d97's/Extraction/Blob_Rune.blockymodel",
     "CustomModelTexture": [

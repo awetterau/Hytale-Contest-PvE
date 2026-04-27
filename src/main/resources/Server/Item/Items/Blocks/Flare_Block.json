@@ -11,11 +11,6 @@
     "DrawType": "Model",
     "Group": "Cloth",
     "Flags": {},
-    "Gathering": {
-      "Breaking": {
-        "GatherType": "SoftBlocks"
-      }
-    },
     "BlockParticleSetId": "Dust",
     "BlockSoundSetId": "Cloth",
     "ParticleColor": "#5f3912",

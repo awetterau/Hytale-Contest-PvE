@@ -32,11 +32,6 @@
     "VariantRotation": "NESW",
     "CustomModelAnimation": "Blocks/d97's/Extraction/Blob_Rocks.blockyanim",
     "Looping": true,
-    "Gathering": {
-      "Breaking": {
-        "GatherType": "SoftBlocks"
-      }
-    },
     "BlockParticleSetId": "Dust",
     "BlockSoundSetId": "Cloth",
     "ParticleColor": "#4c4740",

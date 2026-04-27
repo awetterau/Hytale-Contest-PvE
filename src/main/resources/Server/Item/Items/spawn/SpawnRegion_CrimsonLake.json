@@ -18,7 +18,7 @@
       }
     },
     "DrawType": "Cube",
-    "HitboxType": "Block_Three_Quarter",
+    "HitboxType": "No_Hitbox",
     "Support": {
       "Down": [
         {}
@@ -31,7 +31,7 @@
     "CubeShadingMode": "Flat",
     "Textures": [
       {
-        "All": "BlockTextures/Editor_Empty_Enemy_Spawn.png"
+        "All": "BlockTextures/Editor_Empty.png"
       }
     ]
   },

@@ -1,0 +1,19 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.Barrier.name",
+    "Description": "server.items.Barrier.description"
+  },
+  "BlockType": {
+    "Material": "Solid",
+    "DrawType": "Empty",
+    "Opacity": "Transparent",
+    "ParticleColor": "#2f5529"
+  },
+  "Categories": [
+    "Tool.PrefabEditing"
+  ],
+  "SubCategory": "PrefabBlocks",
+  "Quality": "Technical",
+  "PlayerAnimationsId": "Block",
+  "Icon": "Icons/ItemsGenerated/Editor_Empty.png"
+}
