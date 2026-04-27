@@ -133,6 +133,9 @@ public class RedWaveBlockSweepSystem extends TickingSystem<EntityStore> {
         if (lowerId.contains("crimson")) {
             return null;
         }
+        if (lowerId.contains("barrier")) {
+            return null;
+        }
         if (lowerId.contains("water")) {
             return ReplacementDecision.withoutRotation(RedWaveConfig.CRIMSON_FLUID_BLOCK_ID);
         }
