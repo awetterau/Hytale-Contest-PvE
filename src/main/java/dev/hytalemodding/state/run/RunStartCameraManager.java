@@ -12,12 +12,15 @@ import com.hypixel.hytale.protocol.PositionDistanceOffsetType;
 import com.hypixel.hytale.protocol.PositionType;
 import com.hypixel.hytale.protocol.RotationType;
 import com.hypixel.hytale.protocol.ServerCameraSettings;
+import com.hypixel.hytale.protocol.SoundCategory;
 import com.hypixel.hytale.protocol.packets.camera.SetServerCamera;
 import com.hypixel.hytale.protocol.packets.interface_.HudComponent;
 import com.hypixel.hytale.protocol.packets.interface_.Page;
 import com.hypixel.hytale.server.core.asset.common.BlockyAnimationCache;
+import com.hypixel.hytale.server.core.asset.type.soundevent.config.SoundEvent;
 import com.hypixel.hytale.server.core.entity.AnimationUtils;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.universe.world.SoundUtil;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -28,6 +31,7 @@ import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -36,20 +40,27 @@ public final class RunStartCameraManager {
     private static final long INTRO_DELAY_FROM_RUN_START_MS = 0L;
     private static final long INTRO_MIN_DURATION_MS = 250L;
     private static final long INTRO_CAMERA_END_OFFSET_FROM_ANIMATION_MS = 200L;
-    private static final String INTRO_PLAYER_ANIMATION_PATH = "Characters/Animations/Default/Player_Anim_LargeRope_A.blockyanim";
     private static final double CAMERA_DISTANCE = 2.4D;
     private static final double CAMERA_HEIGHT_OFFSET = 0.7D;
     private static final double PLAYER_LOOK_TARGET_HEIGHT = 1.3D;
-    private static final String INTRO_PLAYER_ANIMATION = "Player_Anim_LargeRope_A";
+    private static final List<String> INTRO_PLAYER_ANIMATIONS = List.of(
+            "Player_Anim_LargeRope_A",
+            "Player_Anim_LargeRope_B",
+            "Player_Anim_LargeRope_C",
+            "Player_Anim_LargeRope_D",
+            "Player_Anim_LargeRope_E"
+    );
     private static final String INTRO_ROPE_BLOCK_ID = "Large_Rope";
     private static final String INTRO_ROPE_UP_BLOCK_ID = "Large_Rope_UP";
     private static final String EMPTY_BLOCK_ID = "Empty";
-    private static final long INTRO_ROPE_SWAP_AFTER_END_MS = 4_000L;
-    private static final long INTRO_ROPE_REMOVE_AFTER_END_MS = 5_000L;
+    private static final String INTRO_SOUND_EVENT_ID = "SFX_Blightfall_Skirmish";
+    private static final long INTRO_ROPE_SWAP_AFTER_END_MS = 0L;
+    private static final long INTRO_ROPE_REMOVE_AFTER_RUN_START_MS = 4_000L;
     private static final long INTRO_ROPE_SYNC_RETRY_MS = 250L;
     private static final long CAMERA_REAPPLY_DELAY_MS = 1_600L;
     private static final RunStartCameraManager INSTANCE = new RunStartCameraManager();
     private static volatile long introEndFromRunStartMs = -1L;
+    private static volatile int introSoundEventIndex = Integer.MIN_VALUE;
 
     private final ConcurrentHashMap<UUID, IntroSession> introByPlayer = new ConcurrentHashMap<>();
 
@@ -71,10 +82,13 @@ public final class RunStartCameraManager {
             return cached;
         }
 
-        BlockyAnimationCache.BlockyAnimation animation = BlockyAnimationCache.getNow(INTRO_PLAYER_ANIMATION_PATH);
-        long animationDurationMs = animation == null
-                ? 3_000L
-                : Math.round(animation.getDurationMillis());
+        long animationDurationMs = 3_000L;
+        for (String animationId : INTRO_PLAYER_ANIMATIONS) {
+            BlockyAnimationCache.BlockyAnimation animation = BlockyAnimationCache.getNow(toAnimationPath(animationId));
+            if (animation != null) {
+                animationDurationMs = Math.max(animationDurationMs, Math.round(animation.getDurationMillis()));
+            }
+        }
         long cameraDurationMs = Math.max(INTRO_MIN_DURATION_MS, animationDurationMs - INTRO_CAMERA_END_OFFSET_FROM_ANIMATION_MS);
         long resolved = INTRO_DELAY_FROM_RUN_START_MS + cameraDurationMs;
         introEndFromRunStartMs = resolved;
@@ -97,8 +111,10 @@ public final class RunStartCameraManager {
         this.introByPlayer.put(
                 playerRef.getUuid(),
                 new IntroSession(
+                        runStartedAtMs,
                         runStartedAtMs + INTRO_DELAY_FROM_RUN_START_MS,
-                        runStartedAtMs + getIntroEndFromRunStartMs()
+                        runStartedAtMs + getIntroEndFromRunStartMs(),
+                        pickRandomIntroAnimation()
                 )
         );
     }
@@ -278,7 +294,7 @@ public final class RunStartCameraManager {
                 playerRefHandle,
                 AnimationSlot.Movement,
                 null,
-                INTRO_PLAYER_ANIMATION,
+                session.introAnimation,
                 true,
                 playerRefHandle.getStore()
         );
@@ -286,10 +302,11 @@ public final class RunStartCameraManager {
                 playerRefHandle,
                 AnimationSlot.Action,
                 null,
-                INTRO_PLAYER_ANIMATION,
+                session.introAnimation,
                 true,
                 playerRefHandle.getStore()
         );
+        playIntroSound(playerRef);
 
         Transform transform = playerRef.getTransform();
         int blockX = (int) Math.floor(transform.getPosition().getX());
@@ -314,6 +331,8 @@ public final class RunStartCameraManager {
 
         String currentId = blockId(world, session.ropeX, session.ropeY, session.ropeZ);
         if (!session.ropeUpApplied && elapsedAfterIntroMs >= INTRO_ROPE_SWAP_AFTER_END_MS) {
+            refreshRopeCoordinates(world, session);
+            currentId = blockId(world, session.ropeX, session.ropeY, session.ropeZ);
             if (isRopeBlock(currentId)) {
                 world.setBlock(session.ropeX, session.ropeY, session.ropeZ, INTRO_ROPE_UP_BLOCK_ID);
                 session.ropeUpApplied = true;
@@ -322,12 +341,66 @@ public final class RunStartCameraManager {
                 session.ropeUpApplied = true;
             }
         }
-        if (!session.ropeRemoved && elapsedAfterIntroMs >= INTRO_ROPE_REMOVE_AFTER_END_MS) {
+        long elapsedFromRunStartMs = now - session.runStartedAtMs;
+        if (!session.ropeRemoved && elapsedFromRunStartMs >= INTRO_ROPE_REMOVE_AFTER_RUN_START_MS) {
+            refreshRopeCoordinates(world, session);
+            currentId = blockId(world, session.ropeX, session.ropeY, session.ropeZ);
             if (isRopeBlock(currentId) || isRopeUpBlock(currentId)) {
                 world.setBlock(session.ropeX, session.ropeY, session.ropeZ, EMPTY_BLOCK_ID);
             }
             session.ropeRemoved = true;
         }
+    }
+
+    private static void refreshRopeCoordinates(@Nonnull World world, @Nonnull IntroSession session) {
+        String currentId = blockId(world, session.ropeX, session.ropeY, session.ropeZ);
+        if (isRopeBlock(currentId) || isRopeUpBlock(currentId)) {
+            return;
+        }
+        int searchRadius = 2;
+        for (int x = session.ropeX - searchRadius; x <= session.ropeX + searchRadius; x++) {
+            for (int y = session.ropeY - 1; y <= session.ropeY + 1; y++) {
+                for (int z = session.ropeZ - searchRadius; z <= session.ropeZ + searchRadius; z++) {
+                    String foundId = blockId(world, x, y, z);
+                    if (isRopeBlock(foundId) || isRopeUpBlock(foundId)) {
+                        session.ropeX = x;
+                        session.ropeY = y;
+                        session.ropeZ = z;
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    @Nonnull
+    private static String pickRandomIntroAnimation() {
+        return INTRO_PLAYER_ANIMATIONS.get(ThreadLocalRandom.current().nextInt(INTRO_PLAYER_ANIMATIONS.size()));
+    }
+
+    @Nonnull
+    private static String toAnimationPath(@Nonnull String animationId) {
+        return "Characters/Animations/Default/" + animationId + ".blockyanim";
+    }
+
+    private static void playIntroSound(@Nonnull PlayerRef playerRef) {
+        int soundEventIndex = resolveIntroSoundEventIndex();
+        if (soundEventIndex == Integer.MIN_VALUE) {
+            return;
+        }
+        SoundUtil.playSoundEvent2dToPlayer(playerRef, soundEventIndex, SoundCategory.SFX);
+    }
+
+    private static int resolveIntroSoundEventIndex() {
+        int cached = introSoundEventIndex;
+        if (cached != Integer.MIN_VALUE) {
+            return cached;
+        }
+        int resolved = SoundEvent.getAssetMap().getIndex(INTRO_SOUND_EVENT_ID);
+        if (resolved != Integer.MIN_VALUE) {
+            introSoundEventIndex = resolved;
+        }
+        return resolved;
     }
 
     private static String blockId(@Nonnull World world, int x, int y, int z) {
@@ -349,6 +422,8 @@ public final class RunStartCameraManager {
     private static final class IntroSession {
         private final long startsAtMs;
         private final long endsAtMs;
+        private final long runStartedAtMs;
+        private final String introAnimation;
         private Vector3d cameraOffset;
         private boolean cameraApplied;
         private boolean cameraReapplied;
@@ -361,13 +436,15 @@ public final class RunStartCameraManager {
         private boolean ropeRemoved;
         private long nextRopeSyncAtMs;
 
-        private IntroSession(long startsAtMs, long endsAtMs) {
+        private IntroSession(long runStartedAtMs, long startsAtMs, long endsAtMs, @Nonnull String introAnimation) {
+            this.runStartedAtMs = runStartedAtMs;
             this.startsAtMs = startsAtMs;
             this.endsAtMs = endsAtMs;
+            this.introAnimation = introAnimation;
         }
 
         private boolean isFullyDone(long now) {
-            if (now < this.endsAtMs + INTRO_ROPE_REMOVE_AFTER_END_MS) {
+            if (now < this.runStartedAtMs + INTRO_ROPE_REMOVE_AFTER_RUN_START_MS) {
                 return false;
             }
             return !this.ropePlaced || this.ropeRemoved;

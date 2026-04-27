@@ -1,0 +1,15 @@
+{
+  "Conditions": {
+    "WeatherIds": [
+      "Run_Fog"
+    ]
+  },
+  "Music": {
+    "Tracks": [
+      "Music/Blightfall/Blightfall_Murky_Fen.ogg",
+      "Music/Blightfall/Blightfall_Skirmish.ogg"
+    ],
+    "Volume": -3.64
+  },
+  "Priority": 90
+}

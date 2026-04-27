@@ -1,0 +1,154 @@
+{
+  "WaterTint": "#a11818",
+  "SpawnDensity": 222,
+  "Tags": {
+    "Crimson": [],
+    "Surface": []
+  },
+  "WeatherForecasts": {
+    "0": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "1": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "2": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "3": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "4": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "5": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "6": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "7": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "8": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "9": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "10": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "11": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "12": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "13": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "14": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "15": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "16": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "17": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "18": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "19": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "20": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "21": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "22": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ],
+    "23": [
+      {
+        "WeatherId": "Run_Fog_Hazard",
+        "Weight": 100
+      }
+    ]
+  }
+}

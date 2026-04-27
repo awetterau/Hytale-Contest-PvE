@@ -2,7 +2,7 @@
   "TranslationProperties": {
     "Name": "server.items.SpawnRegion_CrimsonLake.name"
   },
-  "Icon": "Icons/ItemsGenerated/SpawnPoint_Block.png",
+  "Icon": "Icons/ItemsGenerated/SpawnRegion_Ravine.png",
   "BlockType": {
     "ParticleColor": "#c7dbf7",
     "BlockEntity": {
@@ -31,7 +31,7 @@
     "CubeShadingMode": "Flat",
     "Textures": [
       {
-        "All": "BlockTextures/Editor_Empty_Crimson_Core.png"
+        "All": "BlockTextures/Editor_Empty_Enemy_Spawn.png"
       }
     ]
   },

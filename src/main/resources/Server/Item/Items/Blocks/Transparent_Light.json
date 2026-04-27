@@ -3,7 +3,6 @@
     "Material": "Empty",
     "DrawType": "Empty",
     "Opacity": "Transparent",
-
     "Light": {
       "Color": "#888"
     },
@@ -14,14 +13,13 @@
         }
       ]
     },
-
     "Gathering": {
       "Soft": {
         "ItemId": "Furniture_Crude_Torch"
       }
-    }
+    },
+    "HitboxType": "No_Hitbox"
   },
-
   "PlayerAnimationsId": "Block",
   "Icon": "Icons/ItemsGenerated/Furniture_Crude_Torch.png",
   "Categories": [

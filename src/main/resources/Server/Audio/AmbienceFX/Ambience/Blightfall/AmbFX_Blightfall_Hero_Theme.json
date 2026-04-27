@@ -1,0 +1,20 @@
+{
+  "AmbientBed": {
+    "Track": "Sounds/Environments/Blightfall/Blightfall_Hero_Theme.ogg",
+    "Volume": -0.12,
+    "TransitionSpeed": "Default"
+  },
+  "Conditions": {
+    "WeatherIds": [
+      "Test"
+    ],
+    "Altitude": {
+      "Min": 160,
+      "Max": 300
+    },
+    "EnvironmentIds": [
+      "Env_Default_Flat"
+    ]
+  },
+  "Priority": 90
+}

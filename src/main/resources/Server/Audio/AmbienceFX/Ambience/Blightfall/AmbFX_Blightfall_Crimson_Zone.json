@@ -1,0 +1,14 @@
+{
+  "Conditions": {
+    "WeatherIds": [
+      "Run_Fog_Hazard"
+    ]
+  },
+  "Priority": 89,
+  "Music": {
+    "Tracks": [
+      "Music/Blightfall/Blightfall_Crimson_Blight.ogg"
+    ],
+    "Volume": -1
+  }
+}

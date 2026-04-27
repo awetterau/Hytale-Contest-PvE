@@ -11,6 +11,11 @@
   "PlayerAnimationsId": "Block",
   "BlockType": {
     "Material": "Solid",
+    "BlockEntity": {
+      "Components": {
+        "Arena_activation_State": {}
+      }
+    },
     "DrawType": "Cube",
     "Group": "Crimson",
     "Flags": {},
@@ -22,19 +27,18 @@
     "BlockParticleSetId": "Dust",
     "Textures": [
       {
-        "Down": "BlockTextures/Soil_Hive_Corrupted.png",
-        "Sides": "BlockTextures/Soil_Volcanic_Gravel.png",
-        "Up": "BlockTextures/Soil_Grass_Dry_Side_Full_GS.png",
-        "Weight": 1
+        "Down": "BlockTextures/Crimson_Layer_01_Texture.png",
+        "Sides": "BlockTextures/Crimson_Layer_03_Texture.png",
+        "Up": "BlockTextures/Crimson_Layer_00_Texture.png",
+        "Weight": 6
       }
     ],
     "BlockSoundSetId": "Stone",
     "BiomeTintUp": 15,
     "TextureSideMask": "BlockTextures/Soil_Grass_Wet_Side_GS.png",
     "TintUp": [
-      "#5c0b0b"
+      "#7c3030"
     ],
-    "TransitionTexture": "BlockTextures/Transition_Soil_Dirt_Dry.png",
     "TransitionToGroups": [
       "Stone",
       "Dirt",

@@ -11,6 +11,11 @@
     "DrawType": "Model",
     "Opacity": "Transparent",
     "CustomModel": "Blocks/Foliage/Plants/Mushroom_Fox.blockymodel",
+    "BlockEntity": {
+      "Components": {
+        "Crimson_Mushroom_Fox_State": {}
+      }
+    },
     "CustomModelTexture": [
       {
         "Texture": "Blocks/d97's/Crimson_Ambience/Crimson_Mushroom_Fox.png",

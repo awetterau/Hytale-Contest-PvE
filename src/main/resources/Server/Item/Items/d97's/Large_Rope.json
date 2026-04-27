@@ -23,9 +23,9 @@
     },
     "MaxSupportDistance": 4,
     "CubeShadingMode": "Flat",
-    "CustomModelAnimation": "Blocks/d97's/Large_Rope_Anim_A.blockyanim",
+    "CustomModelAnimation": "Blocks/d97's/Rope_Down.blockyanim",
     "Looping": false,
-    "ParticleColor": "#78523f"
+    "ParticleColor": "#9e7662"
   },
   "Tags": {
     "Type": [

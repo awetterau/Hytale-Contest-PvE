@@ -9,18 +9,33 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.RefSystem;
 import com.hypixel.hytale.math.util.ChunkUtil;
+import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.modules.block.BlockModule;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.ChunkStore;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.server.npc.NPCPlugin;
+import com.hypixel.hytale.server.npc.asset.builder.BuilderInfo;
+import com.hypixel.hytale.server.npc.entities.NPCEntity;
+import it.unimi.dsi.fastutil.Pair;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 public final class InfectionCoreDetectionSystem extends RefSystem<ChunkStore> {
     private static final ComponentType<ChunkStore, BlockModule.BlockStateInfo> BLOCK_STATE_INFO = BlockModule.BlockStateInfo.getComponentType();
+    private static final int ARENA_ACTIVATION_RADIUS_BLOCKS = 22;
+    private static final List<String> CRIMSON_MUSHROOM_FOX_SPAWN_ROLES = List.of(
+            "Wolf_Black",
+            "Spider_Cave",
+            "Crawler_Void"
+    );
 
     @Override
     public void onEntityAdded(@Nonnull Ref<ChunkStore> ref, @Nonnull AddReason reason, @Nonnull Store<ChunkStore> store, @Nonnull CommandBuffer<ChunkStore> commandBuffer) {
@@ -66,6 +81,8 @@ public final class InfectionCoreDetectionSystem extends RefSystem<ChunkStore> {
         if (!adding) {
             InfectionCoreRegistry.unregisterWeakCore(worldId, pos);
             InfectionCoreRegistry.unregisterCore(worldId, pos);
+            InfectionCoreRegistry.unregisterCrimsonMushroomPoison(worldId, pos);
+            InfectionCoreRegistry.unregisterArenaActivation(worldId, pos);
             return;
         }
 
@@ -85,6 +102,54 @@ public final class InfectionCoreDetectionSystem extends RefSystem<ChunkStore> {
         }
         if (matchesBlockEntityState(rawBlockId, normalizedBlockId, InfectionCoreRegistry.CORE_BLOCK_ID, InfectionCoreRegistry.CORE_BLOCK_ENTITY_STATE_ID)) {
             InfectionCoreRegistry.registerCore(worldId, pos);
+            return;
+        }
+        if (matchesBlockEntityState(
+                rawBlockId,
+                normalizedBlockId,
+                InfectionCoreRegistry.CRIMSON_MUSHROOM_POISON_BLOCK_ID,
+                InfectionCoreRegistry.CRIMSON_MUSHROOM_POISON_BLOCK_ENTITY_STATE_ID
+        )) {
+            InfectionCoreRegistry.registerCrimsonMushroomPoison(worldId, pos);
+            return;
+        }
+        if (matchesBlockEntityState(
+                rawBlockId,
+                normalizedBlockId,
+                InfectionCoreRegistry.ARENA_ACTIVATION_BLOCK_ID,
+                InfectionCoreRegistry.ARENA_ACTIVATION_BLOCK_ENTITY_STATE_ID
+        )) {
+            InfectionCoreRegistry.registerArenaActivation(worldId, pos);
+            RunEnvironmentPainter.paintArenaEnvironmentZone(world, pos.x, pos.y, pos.z, ARENA_ACTIVATION_RADIUS_BLOCKS);
+            return;
+        }
+        if (matchesBlockEntityState(
+                rawBlockId,
+                normalizedBlockId,
+                InfectionCoreRegistry.CRIMSON_MUSHROOM_FOX_BLOCK_ID,
+                InfectionCoreRegistry.CRIMSON_MUSHROOM_FOX_BLOCK_ENTITY_STATE_ID
+        )) {
+            spawnRandomCrimsonMushroomFoxMob(world, pos);
+        }
+    }
+
+    private static void spawnRandomCrimsonMushroomFoxMob(@Nonnull World world, @Nonnull Vector3i pos) {
+        if (CRIMSON_MUSHROOM_FOX_SPAWN_ROLES.isEmpty()) {
+            return;
+        }
+        String selectedRole = CRIMSON_MUSHROOM_FOX_SPAWN_ROLES.get(ThreadLocalRandom.current().nextInt(CRIMSON_MUSHROOM_FOX_SPAWN_ROLES.size()));
+        Store<EntityStore> entityStore = world.getEntityStore().getStore();
+        NPCPlugin npcPlugin = NPCPlugin.get();
+        int roleIndex = npcPlugin.getIndex(selectedRole);
+        BuilderInfo roleInfo = npcPlugin.getRoleBuilderInfo(roleIndex);
+        if (roleInfo == null || roleInfo.getBuilder() == null || !roleInfo.getBuilder().isSpawnable()) {
+            return;
+        }
+        Vector3d spawnPos = new Vector3d(pos.x + 0.5d, pos.y + 1.0d, pos.z + 0.5d);
+        Vector3f spawnRot = new Vector3f(0.0f, ThreadLocalRandom.current().nextFloat() * 360.0f, 0.0f);
+        Pair<Ref<EntityStore>, NPCEntity> spawned = npcPlugin.spawnEntity(entityStore, roleIndex, spawnPos, spawnRot, null, null);
+        if (spawned == null || spawned.first() == null || !spawned.first().isValid()) {
+            System.out.println("[InfectionCoreDetection] Failed to spawn fox mushroom mob role=" + selectedRole + " at " + pos.x + "," + pos.y + "," + pos.z);
         }
     }
 

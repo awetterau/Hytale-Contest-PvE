@@ -1,0 +1,18 @@
+{
+  "Conditions": {
+    "WeatherIds": [
+      "Skylands_Rapids_Marsh_Cloudy_Medium",
+      "Default_Flat"
+    ],
+    "EnvironmentIds": [
+      "Env_Default_Flat"
+    ]
+  },
+  "Priority": 90,
+  "Music": {
+    "Tracks": [
+      "Music/Blightfall/Blightfall_Cathedral_Hub.ogg"
+    ],
+    "Volume": -1.88
+  }
+}

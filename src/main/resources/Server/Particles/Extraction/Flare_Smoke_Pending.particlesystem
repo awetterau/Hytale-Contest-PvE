@@ -3,7 +3,7 @@
     {
       "SpawnerId": "Flare_Smoke_B",
       "FixedRotation": true,
-      "StartDelay": 0,
+      "StartDelay": 1,
       "PositionOffset": {
         "Y": -0.01,
         "X": -0.04,
@@ -12,7 +12,7 @@
     },
     {
       "FixedRotation": true,
-      "StartDelay": 1,
+      "StartDelay": 2,
       "SpawnerId": "Flare_Smoke_A",
       "PositionOffset": {
         "Y": -0.01,

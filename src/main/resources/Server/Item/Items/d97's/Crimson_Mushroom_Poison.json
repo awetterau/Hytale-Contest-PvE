@@ -17,6 +17,11 @@
         "Weight": 1
       }
     ],
+    "BlockEntity": {
+      "Components": {
+        "Crimson_Mushroom_Poison_State": {}
+      }
+    },
     "Group": "Plant",
     "HitboxType": "Plant_Large",
     "Flags": {

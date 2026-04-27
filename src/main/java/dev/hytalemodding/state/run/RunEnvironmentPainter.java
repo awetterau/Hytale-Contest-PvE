@@ -16,10 +16,13 @@ import java.util.UUID;
 public final class RunEnvironmentPainter {
     private static final int HEIGHT_BLOCKS = 5;
     private static final String CRIMSON_ENVIRONMENT_ID = "Env_Crimson";
+    private static final String CRIMSON_ARENA_ENVIRONMENT_ID = "Env_Crimson_Arena";
     private static final String RUN_WORLD_ENVIRONMENT_ID = "Env_Blightfall_Run";
     private static volatile boolean crimsonZoneEnvironmentEnabled = true;
     @Nullable
     private static volatile Integer cachedCrimsonEnvironmentIndex;
+    @Nullable
+    private static volatile Integer cachedArenaEnvironmentIndex;
     @Nullable
     private static volatile Integer cachedRunDefaultEnvironmentIndex;
 
@@ -35,11 +38,71 @@ public final class RunEnvironmentPainter {
             return;
         }
 
-        int environmentIndex = resolveEnvironmentIndex(CRIMSON_ENVIRONMENT_ID, true);
+        int environmentIndex = resolveEnvironmentIndex(CRIMSON_ENVIRONMENT_ID, 0);
         if (environmentIndex == Integer.MIN_VALUE) {
             return;
         }
 
+        long chunkIndex = ChunkUtil.indexChunkFromBlock(x, z);
+        Ref<ChunkStore> chunkRef = world.getChunkStore().getChunkReference(chunkIndex);
+        if (chunkRef == null || !chunkRef.isValid()) {
+            return;
+        }
+
+        Store<ChunkStore> store = chunkRef.getStore();
+        if (store == null) {
+            return;
+        }
+
+        EnvironmentChunk environmentChunk = store.getComponent(chunkRef, EnvironmentChunk.getComponentType());
+        if (environmentChunk == null) {
+            environmentChunk = new EnvironmentChunk(environmentIndex);
+        }
+
+        int localX = ChunkUtil.localCoordinate(x);
+        int localZ = ChunkUtil.localCoordinate(z);
+        int minY = ChunkUtil.MIN_Y;
+        int maxY = ChunkUtil.MIN_Y + ChunkUtil.HEIGHT - 1;
+        boolean changed = false;
+
+        for (int yy = y; yy <= y + HEIGHT_BLOCKS; yy++) {
+            if (yy < minY || yy > maxY) {
+                continue;
+            }
+            changed |= environmentChunk.set(localX, yy, localZ, environmentIndex);
+        }
+
+        if (changed) {
+            store.putComponent(chunkRef, EnvironmentChunk.getComponentType(), environmentChunk);
+        }
+    }
+
+    public static void paintArenaEnvironmentZone(@Nonnull World world, int centerX, int centerY, int centerZ, int radiusBlocks) {
+        if (radiusBlocks < 0) {
+            return;
+        }
+        UUID worldId = world.getWorldConfig().getUuid();
+        if (!GameSessionManager.get().isActiveRunWorldCandidate(worldId, world.getName())) {
+            return;
+        }
+        int environmentIndex = resolveEnvironmentIndex(CRIMSON_ARENA_ENVIRONMENT_ID, 1);
+        if (environmentIndex == Integer.MIN_VALUE) {
+            return;
+        }
+        int radiusSquared = radiusBlocks * radiusBlocks;
+        for (int x = centerX - radiusBlocks; x <= centerX + radiusBlocks; x++) {
+            for (int z = centerZ - radiusBlocks; z <= centerZ + radiusBlocks; z++) {
+                int dx = x - centerX;
+                int dz = z - centerZ;
+                if ((dx * dx) + (dz * dz) > radiusSquared) {
+                    continue;
+                }
+                paintColumnEnvironment(world, x, centerY, z, environmentIndex);
+            }
+        }
+    }
+
+    private static void paintColumnEnvironment(@Nonnull World world, int x, int y, int z, int environmentIndex) {
         long chunkIndex = ChunkUtil.indexChunkFromBlock(x, z);
         Ref<ChunkStore> chunkRef = world.getChunkStore().getChunkReference(chunkIndex);
         if (chunkRef == null || !chunkRef.isValid()) {
@@ -82,7 +145,7 @@ public final class RunEnvironmentPainter {
         if (!chunkRef.isValid()) {
             return;
         }
-        int environmentIndex = resolveEnvironmentIndex(RUN_WORLD_ENVIRONMENT_ID, false);
+        int environmentIndex = resolveEnvironmentIndex(RUN_WORLD_ENVIRONMENT_ID, 2);
         if (environmentIndex == Integer.MIN_VALUE) {
             return;
         }
@@ -110,13 +173,26 @@ public final class RunEnvironmentPainter {
         return crimsonZoneEnvironmentEnabled;
     }
 
-    private static int resolveEnvironmentIndex(@Nonnull String environmentId, boolean crimsonLookup) {
-        Integer cached = crimsonLookup ? cachedCrimsonEnvironmentIndex : cachedRunDefaultEnvironmentIndex;
+    private static int resolveEnvironmentIndex(@Nonnull String environmentId, int cacheSlot) {
+        Integer cached;
+        if (cacheSlot == 0) {
+            cached = cachedCrimsonEnvironmentIndex;
+        } else if (cacheSlot == 1) {
+            cached = cachedArenaEnvironmentIndex;
+        } else {
+            cached = cachedRunDefaultEnvironmentIndex;
+        }
         if (cached != null) {
             return cached;
         }
         synchronized (RunEnvironmentPainter.class) {
-            cached = crimsonLookup ? cachedCrimsonEnvironmentIndex : cachedRunDefaultEnvironmentIndex;
+            if (cacheSlot == 0) {
+                cached = cachedCrimsonEnvironmentIndex;
+            } else if (cacheSlot == 1) {
+                cached = cachedArenaEnvironmentIndex;
+            } else {
+                cached = cachedRunDefaultEnvironmentIndex;
+            }
             if (cached != null) {
                 return cached;
             }
@@ -144,8 +220,10 @@ public final class RunEnvironmentPainter {
                 System.out.println("[RunEnvironmentPainter] Environment not found: " + environmentId + ".");
                 return Integer.MIN_VALUE;
             }
-            if (crimsonLookup) {
+            if (cacheSlot == 0) {
                 cachedCrimsonEnvironmentIndex = index;
+            } else if (cacheSlot == 1) {
+                cachedArenaEnvironmentIndex = index;
             } else {
                 cachedRunDefaultEnvironmentIndex = index;
             }

@@ -2,7 +2,7 @@
   "TranslationProperties": {
     "Name": "server.items.SpawnRegion_Ravine.name"
   },
-  "Icon": "Icons/ItemsGenerated/SpawnPoint_Block.png",
+  "Icon": "Icons/ItemsGenerated/SpawnRegion_Ravine.png",
   "BlockType": {
     "ParticleColor": "#c7dbf7",
     "BlockEntity": {
@@ -31,7 +31,7 @@
     "CubeShadingMode": "Flat",
     "Textures": [
       {
-        "All": "BlockTextures/Editor_Empty_Crimson_Core.png"
+        "All": "BlockTextures/Editor_Empty_Enemy_Spawn.png"
       }
     ]
   },
@@ -47,11 +47,11 @@
   "ItemSoundSetId": "ISS_Items_Foliage",
   "PlayerAnimationsId": "Block",
   "IconProperties": {
-    "Scale": 0.54,
+    "Scale": 0.5,
     "Rotation": [
-      22.5,
-      45,
-      22.5
+      18,
+      51,
+      18
     ],
     "Translation": [
       0,

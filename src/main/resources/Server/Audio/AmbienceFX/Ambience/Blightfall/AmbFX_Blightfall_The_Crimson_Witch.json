@@ -1,0 +1,13 @@
+{
+  "Conditions": {
+    "WeatherIds": [
+      "Run_Arena"
+    ]
+  },
+  "Music": {
+    "Tracks": [
+      "Music/Blightfall/Blightfall_The_Crimson_Witch.ogg"
+    ]
+  },
+  "Priority": 100
+}

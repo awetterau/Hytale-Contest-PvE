@@ -2,7 +2,8 @@
   "WaterTint": "#a11818",
   "SpawnDensity": 222,
   "Tags": {
-    "Crimson": []
+    "Crimson": [],
+    "Surface": []
   },
   "WeatherForecasts": {
     "0": [

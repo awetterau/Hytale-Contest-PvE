@@ -687,5 +687,11 @@
       "Hour": 17,
       "Color": "#ffffff"
     }
-  ]
+  ],
+  "Particle": {
+    "SystemId": "Magic_Sparks_Heavy_GS",
+    "OvergroundOnly": false,
+    "Color": "#8b0000",
+    "Scale": 0.5
+  }
 }

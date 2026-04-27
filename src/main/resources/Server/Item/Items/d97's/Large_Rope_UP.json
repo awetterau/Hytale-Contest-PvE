@@ -12,7 +12,7 @@
     "CustomModelTexture": [
       {
         "Weight": 1,
-        "Texture": "Blocks/Farming/Sticks_Pile_Texture.png"
+        "Texture": "Blocks/Farming/Rope_Diagonal_Texture.png"
       }
     ],
     "HitboxType": "Rope",
@@ -23,9 +23,9 @@
     },
     "MaxSupportDistance": 4,
     "CubeShadingMode": "Flat",
-    "CustomModelAnimation": "Blocks/d97's/Large_Rope_Anim_A.blockyanim",
+    "CustomModelAnimation": "Blocks/d97's/Rope_Up.blockyanim",
     "Looping": false,
-    "ParticleColor": "#41311e"
+    "ParticleColor": "#a07f58"
   },
   "Tags": {
     "Type": [

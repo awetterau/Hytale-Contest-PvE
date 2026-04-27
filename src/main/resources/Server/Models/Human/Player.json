@@ -1290,6 +1290,38 @@
           "Looping": false
         }
       ]
+    },
+    "Player_Anim_LargeRope_B": {
+      "Animations": [
+        {
+          "Animation": "Characters/Animations/Default/Player_Anim_LargeRope_B.blockyanim",
+          "Looping": false
+        }
+      ]
+    },
+    "Player_Anim_LargeRope_C": {
+      "Animations": [
+        {
+          "Animation": "Characters/Animations/Default/Player_Anim_LargeRope_C.blockyanim",
+          "Looping": false
+        }
+      ]
+    },
+    "Player_Anim_LargeRope_D": {
+      "Animations": [
+        {
+          "Animation": "Characters/Animations/Default/Player_Anim_LargeRope_D.blockyanim",
+          "Looping": false
+        }
+      ]
+    },
+    "Player_Anim_LargeRope_E": {
+      "Animations": [
+        {
+          "Animation": "Characters/Animations/Default/Player_Anim_LargeRope_E.blockyanim",
+          "Looping": false
+        }
+      ]
     }
   },
   "DefaultAttachments": [

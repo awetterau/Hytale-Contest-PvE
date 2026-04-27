@@ -3,7 +3,7 @@
     {
       "id": "1",
       "name": "origin",
-      "position": {"x": 0, "y": 6, "z": 0},
+      "position": {"x": 0, "y": 0, "z": 0},
       "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
       "shape": {
         "type": "none",
@@ -21,12 +21,12 @@
       "children": [
         {
           "id": "2",
-          "name": "Rope_15",
-          "position": {"x": 0, "y": 475, "z": 0},
+          "name": "Rope_25",
+          "position": {"x": 0, "y": 832, "z": 0},
           "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
           "shape": {
             "type": "box",
-            "offset": {"x": 0, "y": 16, "z": 0},
+            "offset": {"x": 0, "y": -16, "z": 0},
             "stretch": {"x": 1, "y": 1, "z": 1},
             "settings": {
               "isPiece": false,
@@ -72,12 +72,12 @@
           "children": [
             {
               "id": "3",
-              "name": "Rope_14",
-              "position": {"x": 0, "y": -48, "z": 0},
+              "name": "Rope_24",
+              "position": {"x": 0, "y": -16, "z": 0},
               "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
               "shape": {
                 "type": "box",
-                "offset": {"x": 0, "y": 16, "z": 0},
+                "offset": {"x": 0, "y": -16, "z": 0},
                 "stretch": {"x": 1, "y": 1, "z": 1},
                 "settings": {
                   "isPiece": false,
@@ -123,12 +123,12 @@
               "children": [
                 {
                   "id": "4",
-                  "name": "Rope_13",
-                  "position": {"x": 0, "y": -48, "z": 0},
+                  "name": "Rope_23",
+                  "position": {"x": 0, "y": -16, "z": 0},
                   "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
                   "shape": {
                     "type": "box",
-                    "offset": {"x": 0, "y": 16, "z": 0},
+                    "offset": {"x": 0, "y": -16, "z": 0},
                     "stretch": {"x": 1, "y": 1, "z": 1},
                     "settings": {
                       "isPiece": false,
@@ -174,12 +174,12 @@
                   "children": [
                     {
                       "id": "5",
-                      "name": "Rope_12",
-                      "position": {"x": 0, "y": -48, "z": 0},
+                      "name": "Rope_22",
+                      "position": {"x": 0, "y": -16, "z": 0},
                       "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
                       "shape": {
                         "type": "box",
-                        "offset": {"x": 0, "y": 16, "z": 0},
+                        "offset": {"x": 0, "y": -16, "z": 0},
                         "stretch": {"x": 1, "y": 1, "z": 1},
                         "settings": {
                           "isPiece": false,
@@ -225,12 +225,12 @@
                       "children": [
                         {
                           "id": "6",
-                          "name": "Rope_11",
-                          "position": {"x": 0, "y": -48, "z": 0},
+                          "name": "Rope_21",
+                          "position": {"x": 0, "y": -16, "z": 0},
                           "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
                           "shape": {
                             "type": "box",
-                            "offset": {"x": 0, "y": 16, "z": 0},
+                            "offset": {"x": 0, "y": -16, "z": 0},
                             "stretch": {"x": 1, "y": 1, "z": 1},
                             "settings": {
                               "isPiece": false,
@@ -276,12 +276,12 @@
                           "children": [
                             {
                               "id": "7",
-                              "name": "Rope_10",
-                              "position": {"x": 0, "y": -48, "z": 0},
+                              "name": "Rope_20",
+                              "position": {"x": 0, "y": -16, "z": 0},
                               "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
                               "shape": {
                                 "type": "box",
-                                "offset": {"x": 0, "y": 16, "z": 0},
+                                "offset": {"x": 0, "y": -16, "z": 0},
                                 "stretch": {"x": 1, "y": 1, "z": 1},
                                 "settings": {
                                   "isPiece": false,
@@ -327,12 +327,12 @@
                               "children": [
                                 {
                                   "id": "8",
-                                  "name": "Rope_09",
-                                  "position": {"x": 0, "y": -48, "z": 0},
+                                  "name": "Rope_19",
+                                  "position": {"x": 0, "y": -16, "z": 0},
                                   "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
                                   "shape": {
                                     "type": "box",
-                                    "offset": {"x": 0, "y": 16, "z": 0},
+                                    "offset": {"x": 0, "y": -16, "z": 0},
                                     "stretch": {"x": 1, "y": 1, "z": 1},
                                     "settings": {
                                       "isPiece": false,
@@ -378,12 +378,12 @@
                                   "children": [
                                     {
                                       "id": "9",
-                                      "name": "Rope_08",
-                                      "position": {"x": 0, "y": -48, "z": 0},
+                                      "name": "Rope_18",
+                                      "position": {"x": 0, "y": -16, "z": 0},
                                       "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
                                       "shape": {
                                         "type": "box",
-                                        "offset": {"x": 0, "y": 16, "z": 0},
+                                        "offset": {"x": 0, "y": -16, "z": 0},
                                         "stretch": {"x": 1, "y": 1, "z": 1},
                                         "settings": {
                                           "isPiece": false,
@@ -429,12 +429,12 @@
                                       "children": [
                                         {
                                           "id": "10",
-                                          "name": "Rope_07",
-                                          "position": {"x": 0, "y": -49, "z": 0},
+                                          "name": "Rope_17",
+                                          "position": {"x": 0, "y": -16, "z": 0},
                                           "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
                                           "shape": {
                                             "type": "box",
-                                            "offset": {"x": 0, "y": 16, "z": 0},
+                                            "offset": {"x": 0, "y": -16, "z": 0},
                                             "stretch": {"x": 1, "y": 1, "z": 1},
                                             "settings": {
                                               "isPiece": false,
@@ -480,12 +480,12 @@
                                           "children": [
                                             {
                                               "id": "11",
-                                              "name": "Rope_06",
-                                              "position": {"x": 0, "y": -48, "z": 0},
+                                              "name": "Rope_16",
+                                              "position": {"x": 0, "y": -16, "z": 0},
                                               "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
                                               "shape": {
                                                 "type": "box",
-                                                "offset": {"x": 0, "y": 16, "z": 0},
+                                                "offset": {"x": 0, "y": -16, "z": 0},
                                                 "stretch": {"x": 1, "y": 1, "z": 1},
                                                 "settings": {
                                                   "isPiece": false,
@@ -531,12 +531,12 @@
                                               "children": [
                                                 {
                                                   "id": "12",
-                                                  "name": "Rope_05",
-                                                  "position": {"x": 0, "y": -48, "z": 0},
+                                                  "name": "Rope_15",
+                                                  "position": {"x": 0, "y": -16, "z": 0},
                                                   "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
                                                   "shape": {
                                                     "type": "box",
-                                                    "offset": {"x": 0, "y": 16, "z": 0},
+                                                    "offset": {"x": 0, "y": -16, "z": 0},
                                                     "stretch": {"x": 1, "y": 1, "z": 1},
                                                     "settings": {
                                                       "isPiece": false,
@@ -582,12 +582,12 @@
                                                   "children": [
                                                     {
                                                       "id": "13",
-                                                      "name": "Rope_04",
-                                                      "position": {"x": 0, "y": -48, "z": 0},
+                                                      "name": "Rope_14",
+                                                      "position": {"x": 0, "y": -16, "z": 0},
                                                       "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
                                                       "shape": {
                                                         "type": "box",
-                                                        "offset": {"x": 0, "y": 16, "z": 0},
+                                                        "offset": {"x": 0, "y": -16, "z": 0},
                                                         "stretch": {"x": 1, "y": 1, "z": 1},
                                                         "settings": {
                                                           "isPiece": false,
@@ -633,12 +633,12 @@
                                                       "children": [
                                                         {
                                                           "id": "14",
-                                                          "name": "Rope_03",
-                                                          "position": {"x": 0, "y": -48, "z": 0},
+                                                          "name": "Rope_13",
+                                                          "position": {"x": 0, "y": -16, "z": 0},
                                                           "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
                                                           "shape": {
                                                             "type": "box",
-                                                            "offset": {"x": 0, "y": 16, "z": 0},
+                                                            "offset": {"x": 0, "y": -16, "z": 0},
                                                             "stretch": {"x": 1, "y": 1, "z": 1},
                                                             "settings": {
                                                               "isPiece": false,
@@ -684,12 +684,12 @@
                                                           "children": [
                                                             {
                                                               "id": "15",
-                                                              "name": "Rope_02",
-                                                              "position": {"x": 0, "y": -48, "z": 0},
+                                                              "name": "Rope_12",
+                                                              "position": {"x": 0, "y": -16, "z": 0},
                                                               "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
                                                               "shape": {
                                                                 "type": "box",
-                                                                "offset": {"x": 0, "y": 16, "z": 0},
+                                                                "offset": {"x": 0, "y": -16, "z": 0},
                                                                 "stretch": {"x": 1, "y": 1, "z": 1},
                                                                 "settings": {
                                                                   "isPiece": false,
@@ -735,12 +735,12 @@
                                                               "children": [
                                                                 {
                                                                   "id": "16",
-                                                                  "name": "Rope_01",
-                                                                  "position": {"x": 0, "y": -48, "z": 0},
+                                                                  "name": "Rope_11",
+                                                                  "position": {"x": 0, "y": -16, "z": 0},
                                                                   "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
                                                                   "shape": {
                                                                     "type": "box",
-                                                                    "offset": {"x": 0, "y": 16, "z": 0},
+                                                                    "offset": {"x": 0, "y": -16, "z": 0},
                                                                     "stretch": {"x": 1, "y": 1, "z": 1},
                                                                     "settings": {
                                                                       "isPiece": false,
@@ -786,12 +786,12 @@
                                                                   "children": [
                                                                     {
                                                                       "id": "17",
-                                                                      "name": "Rope_00",
-                                                                      "position": {"x": 0, "y": -48, "z": 0},
+                                                                      "name": "Rope_10",
+                                                                      "position": {"x": 0, "y": -16, "z": 0},
                                                                       "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
                                                                       "shape": {
                                                                         "type": "box",
-                                                                        "offset": {"x": 0, "y": 16, "z": 0},
+                                                                        "offset": {"x": 0, "y": -16, "z": 0},
                                                                         "stretch": {"x": 1, "y": 1, "z": 1},
                                                                         "settings": {
                                                                           "isPiece": false,
@@ -833,7 +833,537 @@
                                                                         "visible": true,
                                                                         "doubleSided": false,
                                                                         "shadingMode": "flat"
-                                                                      }
+                                                                      },
+                                                                      "children": [
+                                                                        {
+                                                                          "id": "18",
+                                                                          "name": "Rope_09",
+                                                                          "position": {"x": 0, "y": -16, "z": 0},
+                                                                          "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
+                                                                          "shape": {
+                                                                            "type": "box",
+                                                                            "offset": {"x": 0, "y": -16, "z": 0},
+                                                                            "stretch": {"x": 1, "y": 1, "z": 1},
+                                                                            "settings": {
+                                                                              "isPiece": false,
+                                                                              "size": {"x": 5, "y": 32, "z": 5}
+                                                                            },
+                                                                            "textureLayout": {
+                                                                              "back": {
+                                                                                "offset": {"x": 0, "y": 0},
+                                                                                "mirror": {"x": false, "y": false},
+                                                                                "angle": 0
+                                                                              },
+                                                                              "right": {
+                                                                                "offset": {"x": 0, "y": 0},
+                                                                                "mirror": {"x": false, "y": false},
+                                                                                "angle": 0
+                                                                              },
+                                                                              "front": {
+                                                                                "offset": {"x": 0, "y": 0},
+                                                                                "mirror": {"x": false, "y": false},
+                                                                                "angle": 0
+                                                                              },
+                                                                              "left": {
+                                                                                "offset": {"x": 0, "y": 0},
+                                                                                "mirror": {"x": false, "y": false},
+                                                                                "angle": 0
+                                                                              },
+                                                                              "top": {
+                                                                                "offset": {"x": 9, "y": 0},
+                                                                                "mirror": {"x": false, "y": false},
+                                                                                "angle": 0
+                                                                              },
+                                                                              "bottom": {
+                                                                                "offset": {"x": 9, "y": 0},
+                                                                                "mirror": {"x": false, "y": false},
+                                                                                "angle": 0
+                                                                              }
+                                                                            },
+                                                                            "unwrapMode": "custom",
+                                                                            "visible": true,
+                                                                            "doubleSided": false,
+                                                                            "shadingMode": "flat"
+                                                                          },
+                                                                          "children": [
+                                                                            {
+                                                                              "id": "19",
+                                                                              "name": "Rope_08",
+                                                                              "position": {"x": 0, "y": -16, "z": 0},
+                                                                              "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
+                                                                              "shape": {
+                                                                                "type": "box",
+                                                                                "offset": {"x": 0, "y": -16, "z": 0},
+                                                                                "stretch": {"x": 1, "y": 1, "z": 1},
+                                                                                "settings": {
+                                                                                  "isPiece": false,
+                                                                                  "size": {"x": 5, "y": 32, "z": 5}
+                                                                                },
+                                                                                "textureLayout": {
+                                                                                  "back": {
+                                                                                    "offset": {"x": 0, "y": 0},
+                                                                                    "mirror": {"x": false, "y": false},
+                                                                                    "angle": 0
+                                                                                  },
+                                                                                  "right": {
+                                                                                    "offset": {"x": 0, "y": 0},
+                                                                                    "mirror": {"x": false, "y": false},
+                                                                                    "angle": 0
+                                                                                  },
+                                                                                  "front": {
+                                                                                    "offset": {"x": 0, "y": 0},
+                                                                                    "mirror": {"x": false, "y": false},
+                                                                                    "angle": 0
+                                                                                  },
+                                                                                  "left": {
+                                                                                    "offset": {"x": 0, "y": 0},
+                                                                                    "mirror": {"x": false, "y": false},
+                                                                                    "angle": 0
+                                                                                  },
+                                                                                  "top": {
+                                                                                    "offset": {"x": 9, "y": 0},
+                                                                                    "mirror": {"x": false, "y": false},
+                                                                                    "angle": 0
+                                                                                  },
+                                                                                  "bottom": {
+                                                                                    "offset": {"x": 9, "y": 0},
+                                                                                    "mirror": {"x": false, "y": false},
+                                                                                    "angle": 0
+                                                                                  }
+                                                                                },
+                                                                                "unwrapMode": "custom",
+                                                                                "visible": true,
+                                                                                "doubleSided": false,
+                                                                                "shadingMode": "flat"
+                                                                              },
+                                                                              "children": [
+                                                                                {
+                                                                                  "id": "20",
+                                                                                  "name": "Rope_07",
+                                                                                  "position": {"x": 0, "y": -16, "z": 0},
+                                                                                  "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
+                                                                                  "shape": {
+                                                                                    "type": "box",
+                                                                                    "offset": {"x": 0, "y": -16, "z": 0},
+                                                                                    "stretch": {"x": 1, "y": 1, "z": 1},
+                                                                                    "settings": {
+                                                                                      "isPiece": false,
+                                                                                      "size": {"x": 5, "y": 32, "z": 5}
+                                                                                    },
+                                                                                    "textureLayout": {
+                                                                                      "back": {
+                                                                                        "offset": {"x": 0, "y": 0},
+                                                                                        "mirror": {"x": false, "y": false},
+                                                                                        "angle": 0
+                                                                                      },
+                                                                                      "right": {
+                                                                                        "offset": {"x": 0, "y": 0},
+                                                                                        "mirror": {"x": false, "y": false},
+                                                                                        "angle": 0
+                                                                                      },
+                                                                                      "front": {
+                                                                                        "offset": {"x": 0, "y": 0},
+                                                                                        "mirror": {"x": false, "y": false},
+                                                                                        "angle": 0
+                                                                                      },
+                                                                                      "left": {
+                                                                                        "offset": {"x": 0, "y": 0},
+                                                                                        "mirror": {"x": false, "y": false},
+                                                                                        "angle": 0
+                                                                                      },
+                                                                                      "top": {
+                                                                                        "offset": {"x": 9, "y": 0},
+                                                                                        "mirror": {"x": false, "y": false},
+                                                                                        "angle": 0
+                                                                                      },
+                                                                                      "bottom": {
+                                                                                        "offset": {"x": 9, "y": 0},
+                                                                                        "mirror": {"x": false, "y": false},
+                                                                                        "angle": 0
+                                                                                      }
+                                                                                    },
+                                                                                    "unwrapMode": "custom",
+                                                                                    "visible": true,
+                                                                                    "doubleSided": false,
+                                                                                    "shadingMode": "flat"
+                                                                                  },
+                                                                                  "children": [
+                                                                                    {
+                                                                                      "id": "21",
+                                                                                      "name": "Rope_06",
+                                                                                      "position": {"x": 0, "y": -16, "z": 0},
+                                                                                      "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
+                                                                                      "shape": {
+                                                                                        "type": "box",
+                                                                                        "offset": {"x": 0, "y": -16, "z": 0},
+                                                                                        "stretch": {"x": 1, "y": 1, "z": 1},
+                                                                                        "settings": {
+                                                                                          "isPiece": false,
+                                                                                          "size": {"x": 5, "y": 32, "z": 5}
+                                                                                        },
+                                                                                        "textureLayout": {
+                                                                                          "back": {
+                                                                                            "offset": {"x": 0, "y": 0},
+                                                                                            "mirror": {"x": false, "y": false},
+                                                                                            "angle": 0
+                                                                                          },
+                                                                                          "right": {
+                                                                                            "offset": {"x": 0, "y": 0},
+                                                                                            "mirror": {"x": false, "y": false},
+                                                                                            "angle": 0
+                                                                                          },
+                                                                                          "front": {
+                                                                                            "offset": {"x": 0, "y": 0},
+                                                                                            "mirror": {"x": false, "y": false},
+                                                                                            "angle": 0
+                                                                                          },
+                                                                                          "left": {
+                                                                                            "offset": {"x": 0, "y": 0},
+                                                                                            "mirror": {"x": false, "y": false},
+                                                                                            "angle": 0
+                                                                                          },
+                                                                                          "top": {
+                                                                                            "offset": {"x": 9, "y": 0},
+                                                                                            "mirror": {"x": false, "y": false},
+                                                                                            "angle": 0
+                                                                                          },
+                                                                                          "bottom": {
+                                                                                            "offset": {"x": 9, "y": 0},
+                                                                                            "mirror": {"x": false, "y": false},
+                                                                                            "angle": 0
+                                                                                          }
+                                                                                        },
+                                                                                        "unwrapMode": "custom",
+                                                                                        "visible": true,
+                                                                                        "doubleSided": false,
+                                                                                        "shadingMode": "flat"
+                                                                                      },
+                                                                                      "children": [
+                                                                                        {
+                                                                                          "id": "22",
+                                                                                          "name": "Rope_05",
+                                                                                          "position": {"x": 0, "y": -16, "z": 0},
+                                                                                          "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
+                                                                                          "shape": {
+                                                                                            "type": "box",
+                                                                                            "offset": {"x": 0, "y": -16, "z": 0},
+                                                                                            "stretch": {"x": 1, "y": 1, "z": 1},
+                                                                                            "settings": {
+                                                                                              "isPiece": false,
+                                                                                              "size": {"x": 5, "y": 32, "z": 5}
+                                                                                            },
+                                                                                            "textureLayout": {
+                                                                                              "back": {
+                                                                                                "offset": {"x": 0, "y": 0},
+                                                                                                "mirror": {"x": false, "y": false},
+                                                                                                "angle": 0
+                                                                                              },
+                                                                                              "right": {
+                                                                                                "offset": {"x": 0, "y": 0},
+                                                                                                "mirror": {"x": false, "y": false},
+                                                                                                "angle": 0
+                                                                                              },
+                                                                                              "front": {
+                                                                                                "offset": {"x": 0, "y": 0},
+                                                                                                "mirror": {"x": false, "y": false},
+                                                                                                "angle": 0
+                                                                                              },
+                                                                                              "left": {
+                                                                                                "offset": {"x": 0, "y": 0},
+                                                                                                "mirror": {"x": false, "y": false},
+                                                                                                "angle": 0
+                                                                                              },
+                                                                                              "top": {
+                                                                                                "offset": {"x": 9, "y": 0},
+                                                                                                "mirror": {"x": false, "y": false},
+                                                                                                "angle": 0
+                                                                                              },
+                                                                                              "bottom": {
+                                                                                                "offset": {"x": 9, "y": 0},
+                                                                                                "mirror": {"x": false, "y": false},
+                                                                                                "angle": 0
+                                                                                              }
+                                                                                            },
+                                                                                            "unwrapMode": "custom",
+                                                                                            "visible": true,
+                                                                                            "doubleSided": false,
+                                                                                            "shadingMode": "flat"
+                                                                                          },
+                                                                                          "children": [
+                                                                                            {
+                                                                                              "id": "23",
+                                                                                              "name": "Rope_04",
+                                                                                              "position": {"x": 0, "y": -16, "z": 0},
+                                                                                              "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
+                                                                                              "shape": {
+                                                                                                "type": "box",
+                                                                                                "offset": {"x": 0, "y": -16, "z": 0},
+                                                                                                "stretch": {"x": 1, "y": 1, "z": 1},
+                                                                                                "settings": {
+                                                                                                  "isPiece": false,
+                                                                                                  "size": {"x": 5, "y": 32, "z": 5}
+                                                                                                },
+                                                                                                "textureLayout": {
+                                                                                                  "back": {
+                                                                                                    "offset": {"x": 0, "y": 0},
+                                                                                                    "mirror": {"x": false, "y": false},
+                                                                                                    "angle": 0
+                                                                                                  },
+                                                                                                  "right": {
+                                                                                                    "offset": {"x": 0, "y": 0},
+                                                                                                    "mirror": {"x": false, "y": false},
+                                                                                                    "angle": 0
+                                                                                                  },
+                                                                                                  "front": {
+                                                                                                    "offset": {"x": 0, "y": 0},
+                                                                                                    "mirror": {"x": false, "y": false},
+                                                                                                    "angle": 0
+                                                                                                  },
+                                                                                                  "left": {
+                                                                                                    "offset": {"x": 0, "y": 0},
+                                                                                                    "mirror": {"x": false, "y": false},
+                                                                                                    "angle": 0
+                                                                                                  },
+                                                                                                  "top": {
+                                                                                                    "offset": {"x": 9, "y": 0},
+                                                                                                    "mirror": {"x": false, "y": false},
+                                                                                                    "angle": 0
+                                                                                                  },
+                                                                                                  "bottom": {
+                                                                                                    "offset": {"x": 9, "y": 0},
+                                                                                                    "mirror": {"x": false, "y": false},
+                                                                                                    "angle": 0
+                                                                                                  }
+                                                                                                },
+                                                                                                "unwrapMode": "custom",
+                                                                                                "visible": true,
+                                                                                                "doubleSided": false,
+                                                                                                "shadingMode": "flat"
+                                                                                              },
+                                                                                              "children": [
+                                                                                                {
+                                                                                                  "id": "24",
+                                                                                                  "name": "Rope_03",
+                                                                                                  "position": {"x": 0, "y": -16, "z": 0},
+                                                                                                  "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
+                                                                                                  "shape": {
+                                                                                                    "type": "box",
+                                                                                                    "offset": {"x": 0, "y": -16, "z": 0},
+                                                                                                    "stretch": {"x": 1, "y": 1, "z": 1},
+                                                                                                    "settings": {
+                                                                                                      "isPiece": false,
+                                                                                                      "size": {"x": 5, "y": 32, "z": 5}
+                                                                                                    },
+                                                                                                    "textureLayout": {
+                                                                                                      "back": {
+                                                                                                        "offset": {"x": 0, "y": 0},
+                                                                                                        "mirror": {"x": false, "y": false},
+                                                                                                        "angle": 0
+                                                                                                      },
+                                                                                                      "right": {
+                                                                                                        "offset": {"x": 0, "y": 0},
+                                                                                                        "mirror": {"x": false, "y": false},
+                                                                                                        "angle": 0
+                                                                                                      },
+                                                                                                      "front": {
+                                                                                                        "offset": {"x": 0, "y": 0},
+                                                                                                        "mirror": {"x": false, "y": false},
+                                                                                                        "angle": 0
+                                                                                                      },
+                                                                                                      "left": {
+                                                                                                        "offset": {"x": 0, "y": 0},
+                                                                                                        "mirror": {"x": false, "y": false},
+                                                                                                        "angle": 0
+                                                                                                      },
+                                                                                                      "top": {
+                                                                                                        "offset": {"x": 9, "y": 0},
+                                                                                                        "mirror": {"x": false, "y": false},
+                                                                                                        "angle": 0
+                                                                                                      },
+                                                                                                      "bottom": {
+                                                                                                        "offset": {"x": 9, "y": 0},
+                                                                                                        "mirror": {"x": false, "y": false},
+                                                                                                        "angle": 0
+                                                                                                      }
+                                                                                                    },
+                                                                                                    "unwrapMode": "custom",
+                                                                                                    "visible": true,
+                                                                                                    "doubleSided": false,
+                                                                                                    "shadingMode": "flat"
+                                                                                                  },
+                                                                                                  "children": [
+                                                                                                    {
+                                                                                                      "id": "25",
+                                                                                                      "name": "Rope_02",
+                                                                                                      "position": {"x": 0, "y": -16, "z": 0},
+                                                                                                      "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
+                                                                                                      "shape": {
+                                                                                                        "type": "box",
+                                                                                                        "offset": {"x": 0, "y": -16, "z": 0},
+                                                                                                        "stretch": {"x": 1, "y": 1, "z": 1},
+                                                                                                        "settings": {
+                                                                                                          "isPiece": false,
+                                                                                                          "size": {"x": 5, "y": 32, "z": 5}
+                                                                                                        },
+                                                                                                        "textureLayout": {
+                                                                                                          "back": {
+                                                                                                            "offset": {"x": 0, "y": 0},
+                                                                                                            "mirror": {"x": false, "y": false},
+                                                                                                            "angle": 0
+                                                                                                          },
+                                                                                                          "right": {
+                                                                                                            "offset": {"x": 0, "y": 0},
+                                                                                                            "mirror": {"x": false, "y": false},
+                                                                                                            "angle": 0
+                                                                                                          },
+                                                                                                          "front": {
+                                                                                                            "offset": {"x": 0, "y": 0},
+                                                                                                            "mirror": {"x": false, "y": false},
+                                                                                                            "angle": 0
+                                                                                                          },
+                                                                                                          "left": {
+                                                                                                            "offset": {"x": 0, "y": 0},
+                                                                                                            "mirror": {"x": false, "y": false},
+                                                                                                            "angle": 0
+                                                                                                          },
+                                                                                                          "top": {
+                                                                                                            "offset": {"x": 9, "y": 0},
+                                                                                                            "mirror": {"x": false, "y": false},
+                                                                                                            "angle": 0
+                                                                                                          },
+                                                                                                          "bottom": {
+                                                                                                            "offset": {"x": 9, "y": 0},
+                                                                                                            "mirror": {"x": false, "y": false},
+                                                                                                            "angle": 0
+                                                                                                          }
+                                                                                                        },
+                                                                                                        "unwrapMode": "custom",
+                                                                                                        "visible": true,
+                                                                                                        "doubleSided": false,
+                                                                                                        "shadingMode": "flat"
+                                                                                                      },
+                                                                                                      "children": [
+                                                                                                        {
+                                                                                                          "id": "26",
+                                                                                                          "name": "Rope_01",
+                                                                                                          "position": {"x": 0, "y": -16, "z": 0},
+                                                                                                          "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
+                                                                                                          "shape": {
+                                                                                                            "type": "box",
+                                                                                                            "offset": {"x": 0, "y": -16, "z": 0},
+                                                                                                            "stretch": {"x": 1, "y": 1, "z": 1},
+                                                                                                            "settings": {
+                                                                                                              "isPiece": false,
+                                                                                                              "size": {"x": 5, "y": 32, "z": 5}
+                                                                                                            },
+                                                                                                            "textureLayout": {
+                                                                                                              "back": {
+                                                                                                                "offset": {"x": 0, "y": 0},
+                                                                                                                "mirror": {"x": false, "y": false},
+                                                                                                                "angle": 0
+                                                                                                              },
+                                                                                                              "right": {
+                                                                                                                "offset": {"x": 0, "y": 0},
+                                                                                                                "mirror": {"x": false, "y": false},
+                                                                                                                "angle": 0
+                                                                                                              },
+                                                                                                              "front": {
+                                                                                                                "offset": {"x": 0, "y": 0},
+                                                                                                                "mirror": {"x": false, "y": false},
+                                                                                                                "angle": 0
+                                                                                                              },
+                                                                                                              "left": {
+                                                                                                                "offset": {"x": 0, "y": 0},
+                                                                                                                "mirror": {"x": false, "y": false},
+                                                                                                                "angle": 0
+                                                                                                              },
+                                                                                                              "top": {
+                                                                                                                "offset": {"x": 9, "y": 0},
+                                                                                                                "mirror": {"x": false, "y": false},
+                                                                                                                "angle": 0
+                                                                                                              },
+                                                                                                              "bottom": {
+                                                                                                                "offset": {"x": 9, "y": 0},
+                                                                                                                "mirror": {"x": false, "y": false},
+                                                                                                                "angle": 0
+                                                                                                              }
+                                                                                                            },
+                                                                                                            "unwrapMode": "custom",
+                                                                                                            "visible": true,
+                                                                                                            "doubleSided": false,
+                                                                                                            "shadingMode": "flat"
+                                                                                                          },
+                                                                                                          "children": [
+                                                                                                            {
+                                                                                                              "id": "27",
+                                                                                                              "name": "Rope_00",
+                                                                                                              "position": {"x": 0, "y": -16, "z": 0},
+                                                                                                              "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
+                                                                                                              "shape": {
+                                                                                                                "type": "box",
+                                                                                                                "offset": {"x": 0, "y": -16, "z": 0},
+                                                                                                                "stretch": {"x": 1, "y": 1, "z": 1},
+                                                                                                                "settings": {
+                                                                                                                  "isPiece": false,
+                                                                                                                  "size": {"x": 5, "y": 32, "z": 5}
+                                                                                                                },
+                                                                                                                "textureLayout": {
+                                                                                                                  "back": {
+                                                                                                                    "offset": {"x": 0, "y": 0},
+                                                                                                                    "mirror": {"x": false, "y": false},
+                                                                                                                    "angle": 0
+                                                                                                                  },
+                                                                                                                  "right": {
+                                                                                                                    "offset": {"x": 0, "y": 0},
+                                                                                                                    "mirror": {"x": false, "y": false},
+                                                                                                                    "angle": 0
+                                                                                                                  },
+                                                                                                                  "front": {
+                                                                                                                    "offset": {"x": 0, "y": 0},
+                                                                                                                    "mirror": {"x": false, "y": false},
+                                                                                                                    "angle": 0
+                                                                                                                  },
+                                                                                                                  "left": {
+                                                                                                                    "offset": {"x": 0, "y": 0},
+                                                                                                                    "mirror": {"x": false, "y": false},
+                                                                                                                    "angle": 0
+                                                                                                                  },
+                                                                                                                  "top": {
+                                                                                                                    "offset": {"x": 9, "y": 0},
+                                                                                                                    "mirror": {"x": false, "y": false},
+                                                                                                                    "angle": 0
+                                                                                                                  },
+                                                                                                                  "bottom": {
+                                                                                                                    "offset": {"x": 9, "y": 0},
+                                                                                                                    "mirror": {"x": false, "y": false},
+                                                                                                                    "angle": 0
+                                                                                                                  }
+                                                                                                                },
+                                                                                                                "unwrapMode": "custom",
+                                                                                                                "visible": true,
+                                                                                                                "doubleSided": false,
+                                                                                                                "shadingMode": "flat"
+                                                                                                              }
+                                                                                                            }
+                                                                                                          ]
+                                                                                                        }
+                                                                                                      ]
+                                                                                                    }
+                                                                                                  ]
+                                                                                                }
+                                                                                              ]
+                                                                                            }
+                                                                                          ]
+                                                                                        }
+                                                                                      ]
+                                                                                    }
+                                                                                  ]
+                                                                                }
+                                                                              ]
+                                                                            }
+                                                                          ]
+                                                                        }
+                                                                      ]
                                                                     }
                                                                   ]
                                                                 }
@@ -864,6 +1394,25 @@
               ]
             }
           ]
+        },
+        {
+          "id": "28",
+          "name": "Pelvis",
+          "position": {"x": 0, "y": 51, "z": 0},
+          "orientation": {"x": 0, "y": 0, "z": 0, "w": 1},
+          "shape": {
+            "type": "none",
+            "offset": {"x": 0, "y": 0, "z": 0},
+            "stretch": {"x": 1, "y": 1, "z": 1},
+            "settings": {
+              "isPiece": false
+            },
+            "textureLayout": {},
+            "unwrapMode": "custom",
+            "visible": true,
+            "doubleSided": false,
+            "shadingMode": "flat"
+          }
         }
       ]
     }

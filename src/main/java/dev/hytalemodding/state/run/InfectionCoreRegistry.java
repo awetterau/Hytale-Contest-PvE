@@ -15,9 +15,17 @@ public final class InfectionCoreRegistry {
     public static final String CORE_BLOCK_ID = "Spawn_Crimson_Core_Block";
     public static final String WEAK_CORE_BLOCK_ENTITY_STATE_ID = "Spawn_Crimson_Core_Weak_State";
     public static final String CORE_BLOCK_ENTITY_STATE_ID = "Spawn_Crimson_Core_State";
+    public static final String CRIMSON_MUSHROOM_POISON_BLOCK_ID = "Crimson_Mushroom_Poison";
+    public static final String CRIMSON_MUSHROOM_POISON_BLOCK_ENTITY_STATE_ID = "Crimson_Mushroom_Poison_State";
+    public static final String CRIMSON_MUSHROOM_FOX_BLOCK_ID = "Crimson_Mushroom_Fox";
+    public static final String CRIMSON_MUSHROOM_FOX_BLOCK_ENTITY_STATE_ID = "Crimson_Mushroom_Fox_State";
+    public static final String ARENA_ACTIVATION_BLOCK_ID = "Arena_activation";
+    public static final String ARENA_ACTIVATION_BLOCK_ENTITY_STATE_ID = "Arena_activation_State";
 
     private static final ConcurrentHashMap<UUID, Set<Long>> WEAK_CORE_POSITIONS_BY_WORLD = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, Set<Long>> CORE_POSITIONS_BY_WORLD = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, Set<Long>> CRIMSON_MUSHROOM_POISON_POSITIONS_BY_WORLD = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, Set<Long>> ARENA_ACTIVATION_POSITIONS_BY_WORLD = new ConcurrentHashMap<>();
 
     private InfectionCoreRegistry() {
     }
@@ -64,6 +72,43 @@ public final class InfectionCoreRegistry {
         return entries == null ? 0 : entries.size();
     }
 
+    public static void registerCrimsonMushroomPoison(@Nonnull UUID worldId, @Nonnull Vector3i pos) {
+        CRIMSON_MUSHROOM_POISON_POSITIONS_BY_WORLD.computeIfAbsent(worldId, ignored -> ConcurrentHashMap.newKeySet())
+                .add(pack(pos));
+    }
+
+    public static void unregisterCrimsonMushroomPoison(@Nonnull UUID worldId, @Nonnull Vector3i pos) {
+        Set<Long> entries = CRIMSON_MUSHROOM_POISON_POSITIONS_BY_WORLD.get(worldId);
+        if (entries == null) {
+            return;
+        }
+        entries.remove(pack(pos));
+        if (entries.isEmpty()) {
+            CRIMSON_MUSHROOM_POISON_POSITIONS_BY_WORLD.remove(worldId, entries);
+        }
+    }
+
+    public static int getCrimsonMushroomPoisonCount(@Nonnull UUID worldId) {
+        Set<Long> entries = CRIMSON_MUSHROOM_POISON_POSITIONS_BY_WORLD.get(worldId);
+        return entries == null ? 0 : entries.size();
+    }
+
+    public static void registerArenaActivation(@Nonnull UUID worldId, @Nonnull Vector3i pos) {
+        ARENA_ACTIVATION_POSITIONS_BY_WORLD.computeIfAbsent(worldId, ignored -> ConcurrentHashMap.newKeySet())
+                .add(pack(pos));
+    }
+
+    public static void unregisterArenaActivation(@Nonnull UUID worldId, @Nonnull Vector3i pos) {
+        Set<Long> entries = ARENA_ACTIVATION_POSITIONS_BY_WORLD.get(worldId);
+        if (entries == null) {
+            return;
+        }
+        entries.remove(pack(pos));
+        if (entries.isEmpty()) {
+            ARENA_ACTIVATION_POSITIONS_BY_WORLD.remove(worldId, entries);
+        }
+    }
+
     @Nonnull
     public static List<Vector3i> snapshotWeakPositions(@Nonnull UUID worldId) {
         return unpackSnapshot(WEAK_CORE_POSITIONS_BY_WORLD.get(worldId));
@@ -72,6 +117,16 @@ public final class InfectionCoreRegistry {
     @Nonnull
     public static List<Vector3i> snapshotCorePositions(@Nonnull UUID worldId) {
         return unpackSnapshot(CORE_POSITIONS_BY_WORLD.get(worldId));
+    }
+
+    @Nonnull
+    public static List<Vector3i> snapshotCrimsonMushroomPoisonPositions(@Nonnull UUID worldId) {
+        return unpackSnapshot(CRIMSON_MUSHROOM_POISON_POSITIONS_BY_WORLD.get(worldId));
+    }
+
+    @Nonnull
+    public static List<Vector3i> snapshotArenaActivationPositions(@Nonnull UUID worldId) {
+        return unpackSnapshot(ARENA_ACTIVATION_POSITIONS_BY_WORLD.get(worldId));
     }
 
     @Nonnull

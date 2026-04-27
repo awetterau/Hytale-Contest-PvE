@@ -63,7 +63,7 @@
     ],
     "AmbientSoundEventId": "SFX_Torch_Default_Loop",
     "Light": {
-      "Color": "#ebd",
+      "Color": "#a2a",
       "Radius": 0
     },
     "CustomModelScale": 1.3
