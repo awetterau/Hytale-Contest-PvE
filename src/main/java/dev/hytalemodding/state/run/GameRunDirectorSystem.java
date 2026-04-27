@@ -296,17 +296,18 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
 
         int growthRadius = Math.max(1, action.radius());
         float targetSeconds = Math.max(0.1f, action.ticksPerBlock() / 20.0f);
-        sendRunWorldMessage(
-                worldId,
-                "[GrowDebug] tier=" + action.coreTier()
-                        + " selectedCore=" + target.x + "," + target.y + "," + target.z
-                        + " activeBeforeReset=" + (activeBeforeReset != null)
-                        + " activeRadiusBeforeReset=" + activeRadiusBeforeReset
-                        + " requestedRadius=" + action.radius()
-                        + " appliedRadius=" + growthRadius
-                        + " ticksPerBlock=" + action.ticksPerBlock()
-                        + " appliedSeconds=" + targetSeconds
-        );
+        // Disabled noisy GrowDebug.
+        // sendRunWorldMessage(
+        //         worldId,
+        //         "[GrowDebug] tier=" + action.coreTier()
+        //                 + " selectedCore=" + target.x + "," + target.y + "," + target.z
+        //                 + " activeBeforeReset=" + (activeBeforeReset != null)
+        //                 + " activeRadiusBeforeReset=" + activeRadiusBeforeReset
+        //                 + " requestedRadius=" + action.radius()
+        //                 + " appliedRadius=" + growthRadius
+        //                 + " ticksPerBlock=" + action.ticksPerBlock()
+        //                 + " appliedSeconds=" + targetSeconds
+        // );
         sendStatusIfEnabled(worldId, "[InfectionAction] Grow restarted core at " + target.x + "," + target.y + "," + target.z + " targetRadius=" + growthRadius + ".");
         if (RedWaveManager.isUndoRecordingEnabled()) {
             RedWaveManager.beginUndoSession(worldId, target);
