@@ -1,5 +1,5 @@
 {
-  "Parent": "Kweebec_Sapling",
+  "Parent": "Player",
   "Texture": "NPC/intelligent/Game_Start_Trigger/transparent.png",
   "DefaultAttachments": []
 }

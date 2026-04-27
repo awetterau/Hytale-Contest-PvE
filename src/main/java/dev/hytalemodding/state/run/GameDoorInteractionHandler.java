@@ -342,7 +342,8 @@ public final class GameDoorInteractionHandler {
         if (worldName == null || worldName.isBlank()) {
             return false;
         }
-        return GameFlowConfigManager.get().getHubWorldName().equalsIgnoreCase(worldName);
+        String hub = GameFlowConfigManager.get().getHubWorldName();
+        return hub.equalsIgnoreCase(worldName) || "hub".equalsIgnoreCase(worldName);
     }
 
     private static boolean isGameDoorBlock(@Nonnull World world, @Nonnull Vector3i target) {

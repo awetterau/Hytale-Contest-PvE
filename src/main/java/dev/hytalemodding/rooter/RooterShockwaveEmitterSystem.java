@@ -97,10 +97,14 @@ public final class RooterShockwaveEmitterSystem extends TickingSystem<EntityStor
                 Tracker tracker = this.trackers.computeIfAbsent(npcRef, ignoredRef -> new Tracker());
                 boolean enteredRootWave = isState(state, ROOT_WAVE_STATE) && !isState(tracker.lastStateName, ROOT_WAVE_STATE);
                 if (enteredRootWave && (now - tracker.lastWaveTriggerMs) >= MIN_WAVE_TRIGGER_INTERVAL_MS) {
+                    tracker.pendingWaveFireMs = now + 500L;
+                    tracker.lastWaveTriggerMs = now;
+                }
+                if (tracker.pendingWaveFireMs > 0 && now >= tracker.pendingWaveFireMs) {
                     Direction direction = resolveAttackDirection(store, transform);
                     setFacing(transform, direction);
                     triggerShockwave(world, worldId, transform, direction, now);
-                    tracker.lastWaveTriggerMs = now;
+                    tracker.pendingWaveFireMs = 0L;
                 }
 
                 boolean meleeNow = isState(state, ROOT_MELEE_STATE_A) || isState(state, ROOT_MELEE_STATE_B);
@@ -134,9 +138,9 @@ public final class RooterShockwaveEmitterSystem extends TickingSystem<EntityStor
                 pos.getZ(),
                 direction.dirX,
                 direction.dirZ,
-                now,
-                now + 480L,
-                3.3,
+                now + 500L,
+                now + 500L + 480L,
+                6.6,
                 2.05
         ));
     }
@@ -433,6 +437,7 @@ public final class RooterShockwaveEmitterSystem extends TickingSystem<EntityStor
         private String lastStateName;
         private long lastWaveTriggerMs;
         private long lastMeleeTriggerMs;
+        private long pendingWaveFireMs;
     }
 
     private static final class ClosestTarget {

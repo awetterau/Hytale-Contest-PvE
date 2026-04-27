@@ -36,7 +36,7 @@ public class BasePlotTerminalPage extends InteractiveCustomUIPage<BasePlotTermin
 
     public BasePlotTerminalPage(@Nonnull PlayerRef playerRef, @Nonnull String worldName) {
         super(playerRef, CustomPageLifetime.CanDismissOrCloseThroughInteraction, PageData.CODEC);
-        this.worldName = worldName;
+        this.worldName = "hub".equalsIgnoreCase(worldName.trim()) ? "default" : worldName.trim();
     }
 
     @Override

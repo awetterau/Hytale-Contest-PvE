@@ -4,7 +4,7 @@
   "Modify": {
     "Appearance": "Crawler_Void",
     "AttitudeGroup": "Void",
-    "DropList": "Drop_Crawler_Void",
+    "DropList": "",
     "MaxHealth": 74,
     "MaxSpeed": 8,
     "WanderRadius": 12,

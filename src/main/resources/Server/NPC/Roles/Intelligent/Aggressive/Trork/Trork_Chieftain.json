@@ -3,7 +3,7 @@
   "Reference": "Template_Trork_Chieftain",
   "Modify": {
     "Appearance": "Trork_Chieftain",
-    "DropList": "Drop_Trork_Chieftain",
+    "DropList": "",
     "MaxHealth": 124,
     "IsMemory": true,
     "MemoriesCategory": "Trork",

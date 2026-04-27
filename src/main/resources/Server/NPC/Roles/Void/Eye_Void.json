@@ -3,7 +3,7 @@
   "Reference": "Template_Eye",
   "Modify": {
     "Appearance": "Eye_Void",
-    "DropList": "Drop_Eye_Void",
+    "DropList": "",
     "AttackSequence": "Component_Instruction_Attack_Sequence_Eye_Void",
     "MaxHealth": 61,
     "IsMemory": true,

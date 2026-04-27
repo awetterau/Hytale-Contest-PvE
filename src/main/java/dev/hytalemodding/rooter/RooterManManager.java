@@ -60,7 +60,6 @@ public final class RooterManManager {
         UUID worldId = world.getWorldConfig().getUuid();
 
         discoverBossSessions(store, worldId, config.getBossRole());
-        emitPhaseChangeFeedback(store, worldId);
         cleanupExpiredSessions(worldId);
 
         GameSessionManager.ActiveSessionSnapshot snapshot = GameSessionManager.get().getActiveSession();
@@ -91,7 +90,7 @@ public final class RooterManManager {
         if (bossId != null) {
             this.sessions.putIfAbsent(bossId, new BossSession(playerRef.getWorldUuid(), bossId, bossRef, true));
         }
-        sendWorldMessage(playerRef.getWorldUuid(), "Rooter Man emerges.");
+        sendWorldMessage(playerRef.getWorldUuid(), "A Rooter Man has emerged.");
         return true;
     }
 
@@ -104,11 +103,7 @@ public final class RooterManManager {
             int size = chunk.size();
             for (int i = 0; i < size; i++) {
                 NPCEntity npc = chunk.getComponent(i, NPCEntity.getComponentType());
-                if (npc == null) {
-                    continue;
-                }
-                String roleName = npc.getRoleName();
-                if (!bossRole.equals(roleName) && !isRooterBossRole(roleName)) {
+                if (npc == null || !bossRole.equals(npc.getRoleName())) {
                     continue;
                 }
 
@@ -130,43 +125,6 @@ public final class RooterManManager {
                 }
             }
         });
-    }
-
-    private void emitPhaseChangeFeedback(@Nonnull Store<EntityStore> store, @Nonnull UUID worldId) {
-        for (BossSession session : this.sessions.values()) {
-            if (!worldId.equals(session.worldId) || session.bossRef == null || !session.bossRef.isValid()) {
-                continue;
-            }
-
-            NPCEntity npc;
-            try {
-                npc = store.getComponent(session.bossRef, NPCEntity.getComponentType());
-            } catch (IllegalStateException ignored) {
-                continue;
-            }
-            if (npc == null) {
-                continue;
-            }
-
-            String roleName = npc.getRoleName();
-            if (!isRooterBossRole(roleName)) {
-                continue;
-            }
-
-            if (session.lastObservedRoleName == null) {
-                session.lastObservedRoleName = roleName;
-                continue;
-            }
-            if (session.lastObservedRoleName.equals(roleName)) {
-                continue;
-            }
-
-            session.lastObservedRoleName = roleName;
-            String phaseLabel = phaseLabelForRole(roleName);
-            if (phaseLabel != null) {
-                sendWorldMessage(worldId, "Rooter Man shifts into " + phaseLabel + ".");
-            }
-        }
     }
 
     private void cleanupExpiredSessions(@Nonnull UUID worldId) {

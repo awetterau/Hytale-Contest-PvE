@@ -174,11 +174,12 @@ public final class RegionSpawnManager {
             }
         }
 
-        if (tier == config.rooterTier() && !state.rooterSpawned) {
-            if (trySpawnRooter(store, state, debugStats)) {
-                spawned++;
-                state.rooterSpawned = true;
-                sendRunWorldMessage(worldId, "Rooter Man rises near the deepest corruption.");
+        if (tier == config.rooterTier() && state.rooterSpawnedCount < 2) {
+            int newSpawns = trySpawnRooter(store, state, debugStats);
+            if (newSpawns > 0) {
+                spawned += newSpawns;
+                state.rooterSpawnedCount += newSpawns;
+                sendRunWorldMessage(worldId, "Rooter Men rise near the deepest corruption.");
             } else {
                 skipped++;
                 System.out.println("[RegionSpawn] Rooterman spawn skipped; no valid T3 marker point.");
@@ -197,7 +198,7 @@ public final class RegionSpawnManager {
                 + " failedRoles=" + debugStats.failedRoles);
     }
 
-    private boolean trySpawnRooter(
+    private int trySpawnRooter(
             @Nonnull Store<EntityStore> store,
             @Nonnull RunSpawnState state,
             @Nonnull SpawnDebugStats debugStats
@@ -218,18 +219,22 @@ public final class RegionSpawnManager {
         }
         if (candidates.isEmpty()) {
             debugStats.missingMarkerPool++;
-            return false;
+            return 0;
         }
 
-        for (int i = 0; i < candidates.size(); i++) {
-            RegionSpawnMarkerRegistry.Marker marker = candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
+        Collections.shuffle(candidates, ThreadLocalRandom.current());
+        int spawned = 0;
+        for (RegionSpawnMarkerRegistry.Marker marker : candidates) {
+            if (spawned >= 2) {
+                break;
+            }
             Vector3d spawnPos = markerToSpawnPosition(marker.position(), debugStats);
             if (spawnNpc(store, config.rooterRole(), spawnPos)) {
                 debugStats.spawnedByRole.merge(config.rooterRole(), 1, Integer::sum);
-                return true;
+                spawned++;
             }
         }
-        return false;
+        return spawned;
     }
 
     @Nonnull
@@ -428,7 +433,7 @@ public final class RegionSpawnManager {
         private final ArrayList<RegionSpawnMarkerRegistry.Marker> markers = new ArrayList<>();
         private final Set<Integer> spawnedTiers = new HashSet<>();
         private boolean initialized;
-        private boolean rooterSpawned;
+        private int rooterSpawnedCount;
         private long nextMissingMarkerLogAt;
     }
 

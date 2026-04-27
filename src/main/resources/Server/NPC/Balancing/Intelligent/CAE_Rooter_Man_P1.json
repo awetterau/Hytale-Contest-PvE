@@ -100,6 +100,19 @@
     },
     "ActionSets": {
       "Default": {
+        "BasicAttacks": {
+          "Attacks": [
+            "Root_NPC_Golem_Firesteel_Attack"
+          ],
+          "Randomise": false,
+          "UseProjectedDistance": true,
+          "MaxRange": 2.6,
+          "Timeout": 0.22,
+          "CooldownRange": [
+            0.75,
+            1.1
+          ]
+        },
         "Actions": [
           "RootMelee",
           "ShockwaveStomp"

@@ -215,12 +215,8 @@ public final class GameFlowConfigManager {
     @Nonnull
     private static String resolveHubWorldName(@Nullable String configuredHubWorldName) {
         String normalized = normalizeWorldName(configuredHubWorldName, DEFAULT_HUB_WORLD);
-        World defaultWorld = Universe.get().getDefaultWorld();
-        if ("hub".equalsIgnoreCase(normalized) && defaultWorld != null && defaultWorld.getName() != null && !defaultWorld.getName().isBlank()) {
-            return defaultWorld.getName();
-        }
-        if (normalized.isBlank() && defaultWorld != null && defaultWorld.getName() != null && !defaultWorld.getName().isBlank()) {
-            return defaultWorld.getName();
+        if ("hub".equalsIgnoreCase(normalized) || normalized.isBlank()) {
+            return DEFAULT_HUB_WORLD;
         }
         return normalized;
     }

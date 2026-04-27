@@ -2,7 +2,7 @@
   "Type": "Variant",
   "Reference": "Template_Aggressive_Zombies",
   "Modify": {
-    "DropList": "Drop_Zombie",
+    "DropList": "",
     "Appearance": "Zombie",
     "MaxHealth": 49,
     "IsMemory": true,

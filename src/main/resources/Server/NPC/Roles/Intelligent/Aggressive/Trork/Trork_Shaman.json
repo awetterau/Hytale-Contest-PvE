@@ -3,7 +3,7 @@
   "Reference": "Template_Trork_Mage",
   "Modify": {
     "Appearance": "Trork_Shaman",
-    "DropList": "Drop_Trork_Shaman",
+    "DropList": "",
     "Weapons": [
       "Weapon_Staff_Crystal_Fire_Trork",
       "Weapon_Daggers_Stone_Trork"

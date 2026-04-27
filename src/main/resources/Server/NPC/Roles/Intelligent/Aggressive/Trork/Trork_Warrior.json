@@ -3,7 +3,7 @@
   "Reference": "Template_Trork_Melee",
   "Modify": {
     "Appearance": "Trork_Warrior",
-    "DropList": "Drop_Trork_Warrior",
+    "DropList": "",
     "Weapons": [
       "Weapon_Battleaxe_Stone_Trork",
       "Rubble_Stone_Medium"

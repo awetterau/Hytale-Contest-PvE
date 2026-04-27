@@ -1414,19 +1414,14 @@ public class BlightfallMainPage extends InteractiveCustomUIPage<BlightfallMainPa
         if (universe == null) {
             return null;
         }
-        if (hubWorldName != null && !hubWorldName.isBlank()) {
-            World configuredHub = universe.getWorld(hubWorldName);
-            if (configuredHub != null) {
-                return configuredHub;
-            }
+        // Always try configured name first (which is resolved to 'default' if empty or 'hub')
+        String resolvedName = hubWorldName != null && !hubWorldName.isBlank() ? hubWorldName : GameFlowConfigManager.get().getHubWorldName();
+        World hub = universe.getWorld(resolvedName);
+        if (hub != null) {
+            return hub;
         }
-        UUID playerWorldUuid = this.playerRef.getWorldUuid();
-        if (playerWorldUuid != null) {
-            World playerWorld = universe.getWorld(playerWorldUuid);
-            if (playerWorld != null) {
-                return playerWorld;
-            }
-        }
+
+        // Fallback to whatever is the default world if the above fails
         return universe.getDefaultWorld();
     }
 

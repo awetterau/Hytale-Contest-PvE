@@ -8,7 +8,7 @@
       "Weapon_Shortbow_Doomed",
       "Weapon_Daggers_Fang_Doomed"
     ],
-    "DropList": "Drop_Outlander_Hunter",
+    "DropList": "",
     "Appearance": "Outlander_Hunter",
     "AttackSequence": "Component_Instruction_Attack_Sequence_Outlander_Hunter",
     "TargetGroups": [

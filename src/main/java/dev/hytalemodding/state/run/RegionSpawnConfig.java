@@ -139,6 +139,11 @@ public final class RegionSpawnConfig {
         return this.rooterRegion;
     }
 
+    @Nonnull
+    public Map<String, SpawnTable> getAllTables() {
+        return this.tables;
+    }
+
     @Nullable
     public RegionDefinition getRegion(@Nonnull String regionId) {
         return this.regions.get(regionId);

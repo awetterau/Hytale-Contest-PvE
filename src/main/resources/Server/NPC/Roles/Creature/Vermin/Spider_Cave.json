@@ -3,7 +3,7 @@
   "Reference": "Spider",
   "Modify": {
     "Appearance": "Spider_Cave",
-    "DropList": "Drop_Spider_Cave",
+    "DropList": "",
     "MaxHealth": 74,
     "BlockStepDetectionBlockSet": "Web",
     "BlockStepDetectionRange": 20,

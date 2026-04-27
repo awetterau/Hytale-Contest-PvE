@@ -43,7 +43,7 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
     private static final String WEAK_RUNTIME_CORE_BLOCK_ID = "Crimson_Core_Weak";
     private static final int CHUNK_SIZE_BLOCKS = 32;
     private static final String POTION_BREWER_WITCH_ROLE = "Potion_Brewer_Witch";
-    private static final Vector3d WITCH_SPAWN_POS = new Vector3d(-2, 225, -90);
+    private static final Vector3d WITCH_SPAWN_POS = new Vector3d(-32, 119, -167);
     private final ConcurrentHashMap<UUID, GameTimerHud> timerHuds = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Long> lastShownSecond = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Set<Integer>> executedAutomationByWorld = new ConcurrentHashMap<>();

@@ -11,6 +11,7 @@ import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.modules.entity.damage.Damage;
+import com.hypixel.hytale.server.core.modules.entity.damage.DamageCause;
 import com.hypixel.hytale.server.core.modules.entity.damage.DamageSystems;
 import com.hypixel.hytale.server.core.modules.physics.component.Velocity;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -19,10 +20,10 @@ import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.UUID;
 
-public final class RooterShockwaveDamageSystem extends EntityTickingSystem<EntityStore> {
-    private static final float SHOCKWAVE_DAMAGE = 18.0f;
-    private static final double WAVE_KNOCKBACK_XZ = 0.4;
-    private static final double WAVE_KNOCKBACK_Y = 0.15;
+public final class RooterMeleeDamageSystem extends EntityTickingSystem<EntityStore> {
+    private static final float MELEE_DAMAGE = 22.0f;
+    private static final double MELEE_KNOCKBACK_XZ = 0.35;
+    private static final double MELEE_KNOCKBACK_Y = 0.12;
     private static final ComponentType<EntityStore, Player> PLAYER = Player.getComponentType();
     private static final ComponentType<EntityStore, TransformComponent> TRANSFORM = TransformComponent.getComponentType();
     private final Query<EntityStore> query = Query.and(PLAYER, TRANSFORM);
@@ -48,42 +49,40 @@ public final class RooterShockwaveDamageSystem extends EntityTickingSystem<Entit
 
         UUID worldId = store.getExternalData().getWorld().getWorldConfig().getUuid();
         long now = System.currentTimeMillis();
-        List<RooterShockwaveRuntime.WaveEvent> waves = RooterShockwaveRuntime.getActiveWaves(worldId, now);
-        if (waves.isEmpty()) {
+        List<RooterShockwaveRuntime.MeleeEvent> events = RooterShockwaveRuntime.getActiveMelee(worldId, now);
+        if (events.isEmpty()) {
             return;
         }
 
         Ref<EntityStore> playerRef = archetypeChunk.getReferenceTo(index);
         double px = transform.getPosition().getX();
         double pz = transform.getPosition().getZ();
-        for (RooterShockwaveRuntime.WaveEvent wave : waves) {
-            if (wave.hitPlayers.containsKey(playerRef)) {
+
+        for (RooterShockwaveRuntime.MeleeEvent event : events) {
+            if (now < event.startMillis) {
+                continue;
+            }
+            if (event.hitPlayers.containsKey(playerRef)) {
                 continue;
             }
 
-            double relX = px - wave.originX;
-            double relZ = pz - wave.originZ;
-            double forward = (relX * wave.dirX) + (relZ * wave.dirZ);
-            if (forward < 0 || forward > wave.maxDistance) {
+            double relX = px - event.originX;
+            double relZ = pz - event.originZ;
+            double forward = (relX * event.dirX) + (relZ * event.dirZ);
+            if (forward < 0 || forward > event.range) {
                 continue;
             }
-            double sideX = -wave.dirZ;
-            double sideZ = wave.dirX;
+            double sideX = -event.dirZ;
+            double sideZ = event.dirX;
             double lateral = Math.abs((relX * sideX) + (relZ * sideZ));
-
-            double elapsedSeconds = (now - wave.startMillis) / 1000.0;
-            double ringDistance = 1.0 + (elapsedSeconds * wave.speedBlocksPerSecond);
-            if (Math.abs(forward - ringDistance) > 1.1) {
-                continue;
-            }
-            if (lateral > (1.2 + (forward * 0.12))) {
+            if (lateral > event.lateralWidth) {
                 continue;
             }
 
-            Damage damage = new Damage(Damage.NULL_SOURCE, RootDamageCause.causeIndex(), SHOCKWAVE_DAMAGE);
+            Damage damage = new Damage(Damage.NULL_SOURCE, meleeDamageCauseIndex(), MELEE_DAMAGE);
             DamageSystems.executeDamage(index, archetypeChunk, commandBuffer, damage);
-            applyKnockback(commandBuffer, playerRef, wave.dirX, wave.dirZ, WAVE_KNOCKBACK_XZ, WAVE_KNOCKBACK_Y);
-            wave.hitPlayers.put(playerRef, true);
+            applyKnockback(commandBuffer, playerRef, event.dirX, event.dirZ);
+            event.hitPlayers.put(playerRef, true);
         }
     }
 
@@ -91,36 +90,25 @@ public final class RooterShockwaveDamageSystem extends EntityTickingSystem<Entit
             @Nonnull CommandBuffer<EntityStore> commandBuffer,
             @Nonnull Ref<EntityStore> playerRef,
             double dirX,
-            double dirZ,
-            double horizontalStrength,
-            double verticalStrength
+            double dirZ
     ) {
-        if (playerRef == null || !playerRef.isValid()) {
+        if (!playerRef.isValid()) {
             return;
         }
         Velocity velocity = commandBuffer.getComponent(playerRef, Velocity.getComponentType());
         if (velocity == null) {
             velocity = new Velocity();
         }
-        velocity.addForce(new Vector3d(dirX * horizontalStrength, verticalStrength, dirZ * horizontalStrength));
+        velocity.addForce(new Vector3d(dirX * MELEE_KNOCKBACK_XZ, MELEE_KNOCKBACK_Y, dirZ * MELEE_KNOCKBACK_XZ));
         commandBuffer.putComponent(playerRef, Velocity.getComponentType(), velocity);
     }
 
-    private static final class RootDamageCause {
-        private static int causeIndex = Integer.MIN_VALUE;
-
-        private static int causeIndex() {
-            if (causeIndex != Integer.MIN_VALUE) {
-                return causeIndex;
-            }
-            int command = com.hypixel.hytale.server.core.modules.entity.damage.DamageCause.getAssetMap().getIndex("Command");
-            if (command != Integer.MIN_VALUE) {
-                causeIndex = command;
-                return causeIndex;
-            }
-            int environment = com.hypixel.hytale.server.core.modules.entity.damage.DamageCause.getAssetMap().getIndex("Environment");
-            causeIndex = environment != Integer.MIN_VALUE ? environment : 0;
-            return causeIndex;
+    private static int meleeDamageCauseIndex() {
+        int idx = DamageCause.getAssetMap().getIndex("Command");
+        if (idx != Integer.MIN_VALUE) {
+            return idx;
         }
+        idx = DamageCause.getAssetMap().getIndex("Environment");
+        return idx != Integer.MIN_VALUE ? idx : 0;
     }
 }

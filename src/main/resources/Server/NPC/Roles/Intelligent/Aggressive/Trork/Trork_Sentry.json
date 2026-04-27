@@ -4,7 +4,7 @@
   "Modify": {
     "Appearance": "Trork_Sentry",
     "IdleMotionComponent": "Component_Trork_Instruction_Idle_Motion_Follow_Path",
-    "DropList": "Drop_Trork_Sentry",
+    "DropList": "",
     "Weapons": [
       "Weapon_Spear_Stone_Trork",
       "Weapon_Spear_Stone_Trork"

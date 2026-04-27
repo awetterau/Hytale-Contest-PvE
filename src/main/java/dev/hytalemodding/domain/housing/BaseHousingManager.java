@@ -87,6 +87,7 @@ public final class BaseHousingManager {
     private final ConcurrentHashMap<String, PlotData> plots = new ConcurrentHashMap<>();
     private final HubNpcManager hubNpcManager = HubNpcManager.get();
     private boolean loaded;
+    private boolean hubInitCleanDone = false;
     private final ConcurrentHashMap<String, Long> lastSpawnAttemptByRole = new ConcurrentHashMap<>();
     private static final Set<Ref<EntityStore>> PENDING_NPC_DESPAWNS = ConcurrentHashMap.newKeySet();
 
@@ -353,6 +354,15 @@ public final class BaseHousingManager {
         String worldName = world.getName();
         if (!GameFlowConfigManager.get().getHubWorldName().equalsIgnoreCase(worldName)) {
             return;
+        }
+
+        if (!this.hubInitCleanDone) {
+            this.hubInitCleanDone = true;
+            int removed = despawnAllHubRoleNpcs(world);
+            if (removed > 0) {
+                System.out.println("[BaseHousing] Hub init: cleared " + removed + " stale hub NPCs.");
+                return;
+            }
         }
 
         reconcileInvalidAssignments(worldName);
@@ -794,6 +804,23 @@ public final class BaseHousingManager {
 
     public synchronized int removeAllFixedHubNpcsInWorld(@Nonnull World world) {
         return removeAllBaseBlacksmithsInWorld(world) + removeAllBaseFarmersInWorld(world);
+    }
+
+    private static int despawnAllHubRoleNpcs(@Nonnull World world) {
+        Set<String> roles = new java.util.HashSet<>();
+        roles.add(BLACKSMITH_ROLE);
+        roles.add(FARMER_ROLE);
+        roles.add(DARIUS_ROLE);
+        for (NpcArchetype archetype : NpcDefinitionRegistry.get().getAll()) {
+            if (archetype.hubRole != null && !archetype.hubRole.isBlank()) {
+                roles.add(archetype.hubRole);
+            }
+        }
+        int total = 0;
+        for (String role : roles) {
+            total += removeAllNpcByRoleInWorld(world, role);
+        }
+        return total;
     }
 
     private static int removeAllNpcByRoleInWorld(@Nonnull World world, @Nonnull String roleName) {
@@ -1355,7 +1382,12 @@ public final class BaseHousingManager {
     @Nullable
     private static PlotData readPlot(@Nonnull Properties p, @Nonnull String id) {
         String prefix = "plot." + id + ".";
-        String world = p.getProperty(prefix + "world");
+        String worldRaw = p.getProperty(prefix + "world");
+        if (worldRaw == null) {
+            return null;
+        }
+        String world = "hub".equalsIgnoreCase(worldRaw.trim()) ? "default" : worldRaw.trim();
+
         Integer mx = readInt(p.getProperty(prefix + "marker.x"));
         Integer my = readInt(p.getProperty(prefix + "marker.y"));
         Integer mz = readInt(p.getProperty(prefix + "marker.z"));

@@ -7,7 +7,7 @@
       "Description": "Model to be used."
     },
     "DropList": {
-      "Value": "Drop_Wolf_Black",
+      "Value": "",
       "Description": "Drop Items."
     },
     "MaxHealth": {

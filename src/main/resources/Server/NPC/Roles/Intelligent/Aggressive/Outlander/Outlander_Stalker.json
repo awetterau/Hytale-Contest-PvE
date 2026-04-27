@@ -8,7 +8,7 @@
       "Weapon_Crossbow_Iron",
       "Weapon_Daggers_Doomed"
     ],
-    "DropList": "Drop_Outlander_Stalker",
+    "DropList": "",
     "Appearance": "Outlander_Stalker",
     "AttackSequence": "Component_Instruction_Attack_Sequence_Outlander_Stalker",
     "TargetGroups": [

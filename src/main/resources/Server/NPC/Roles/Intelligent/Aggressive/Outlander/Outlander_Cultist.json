@@ -8,7 +8,7 @@
       "Weapon_Daggers_Doomed",
       "Weapon_Daggers_Doomed"
     ],
-    "DropList": "Drop_Outlander_Cultist",
+    "DropList": "",
     "Appearance": "Outlander_Cultist",
     "AttackSequence": "Component_Instruction_Attack_Sequence_Outlander_Cultist",
     "TargetGroups": [

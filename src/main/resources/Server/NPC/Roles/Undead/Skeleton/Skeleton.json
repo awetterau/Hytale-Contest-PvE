@@ -6,7 +6,7 @@
     "HearingRange": 8,
     "ViewSector": 270,
     "WakingPeriod": [ 0, 24 ],
-    "DropList": "Drop_Skeleton",
+    "DropList": "",
     "Appearance": "Skeleton",
     "Weapons": [ ],
     "OffHand": [ ],

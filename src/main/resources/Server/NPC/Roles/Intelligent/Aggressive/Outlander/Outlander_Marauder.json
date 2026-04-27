@@ -3,7 +3,7 @@
   "Reference": "Template_Trork_Chieftain",
   "Modify": {
     "Appearance": "Outlander_Marauder",
-    "DropList": "Drop_Outlander_Marauder",
+    "DropList": "",
     "Weapons": [
       "Weapon_Sword_Doomed",
       "Weapon_Sword_Doomed"
