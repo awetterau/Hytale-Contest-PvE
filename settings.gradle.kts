@@ -1,4 +1,4 @@
-rootProject.name = "dev.hytalemodding"
+rootProject.name = "Blightfall_Crimson_Veil"
 
 plugins {
     // See documentation on https://scaffoldit.dev
