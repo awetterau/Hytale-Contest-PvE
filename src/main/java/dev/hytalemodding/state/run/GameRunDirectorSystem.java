@@ -43,7 +43,18 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
     private static final String WEAK_RUNTIME_CORE_BLOCK_ID = "Crimson_Core_Weak";
     private static final int CHUNK_SIZE_BLOCKS = 32;
     private static final String POTION_BREWER_WITCH_ROLE = "Potion_Brewer_Witch";
-    private static final Vector3d WITCH_SPAWN_POS = new Vector3d(-32, 119, -167);
+    private static final Vector3d WITCH_SPAWN_POS = new Vector3d(-32, 121, -167);
+
+    // Witch tripwire: crossing south (decreasing Z) through the line at Z=-138
+    // between X=-34..-30, with Y within 4 blocks of 118, spawns the witch.
+    private static final int WITCH_TRIGGER_Z = -138;
+    private static final int WITCH_TRIGGER_X_MIN = -34;
+    private static final int WITCH_TRIGGER_X_MAX = -30;
+    private static final int WITCH_TRIGGER_Y_CENTER = 118;
+    private static final int WITCH_TRIGGER_Y_TOLERANCE = 4;
+    private static final int WITCH_SEAL_Y_MIN = 118;
+    private static final int WITCH_SEAL_Y_MAX = 123;
+    private static final String WITCH_SEAL_BLOCK_ID = "Rock_Stone_Cobble";
     private final ConcurrentHashMap<UUID, GameTimerHud> timerHuds = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Long> lastShownSecond = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Set<Integer>> executedAutomationByWorld = new ConcurrentHashMap<>();
@@ -53,6 +64,7 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
     private final ConcurrentHashMap<UUID, java.util.Set<String>> seededGrowMainCoreHistoryByWorld = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, ConcurrentHashMap<ChunkReachCacheKey, java.util.Set<RunChunkSelectionManager.ChunkPosKey>>> seededGrowChunkCacheByWorld = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Boolean> witchSpawnedInWorld = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Vector3d> previousPlayerPositions = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, String> currentFormattedTime = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, java.util.Set<String>> SEEDED_GROW_SEED_KEYS_BY_WORLD = new ConcurrentHashMap<>();
     private static final long GROWTH_STAGE_INTERVAL_MS = 500L;
@@ -104,6 +116,7 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
             this.seededGrowMainCoreHistoryByWorld.clear();
             this.seededGrowChunkCacheByWorld.clear();
             this.witchSpawnedInWorld.clear();
+            this.previousPlayerPositions.clear();
             SEEDED_GROW_SEED_KEYS_BY_WORLD.clear();
             return;
         }
@@ -117,6 +130,7 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
             this.seededGrowMainCoreHistoryByWorld.clear();
             this.seededGrowChunkCacheByWorld.clear();
             this.witchSpawnedInWorld.remove(snapshot.runWorldUuid());
+            this.previousPlayerPositions.clear();
             clearSeededGrowSeedCores(snapshot.runWorldUuid());
             return;
         }
@@ -153,11 +167,8 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
             return;
         }
 
-        // Spawn Potion Brewer Witch when save_the_farm_animals quest is completed
-        if (!this.witchSpawnedInWorld.getOrDefault(worldId, false) &&
-                QuestProgressManager.get().isCompleted("save_the_farm_animals")) {
-            trySpawnWitch(world, worldId);
-        }
+        // Spawn Potion Brewer Witch when a player crosses the tripwire heading south.
+        checkWitchTripwire(world, worldId);
 
         if (snapshot.crimsonEnabled() && snapshot.phase() == GameSessionManager.RunPhase.EXPLORATION && GameSessionManager.get().shouldActivateCrimson()) {
             if (RedWaveManager.getActiveWave(worldId) == null) {
@@ -202,7 +213,6 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
             }
             int roll = ThreadLocalRandom.current().nextInt(100);
             if (roll >= Math.max(0, Math.min(100, action.probabilityPercent()))) {
-                sendStatusIfEnabled(worldId, "[InfectionAction] Skipped by probability for action #" + i + ".");
                 executed.add(i);
                 continue;
             }
@@ -214,16 +224,12 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
                 default -> false;
             };
             if (performed) {
-                sendStatusIfEnabled(worldId, "[InfectionAction] Executed " + action.actionType() + " (" + action.coreTier() + ") at t=" + elapsedSeconds + "s");
                 executed.add(i);
                 failedCounts.remove(i);
             } else {
                 int failures = failedCounts.merge(i, 1, Integer::sum);
                 if (failures >= 5) {
-                    sendStatusIfEnabled(worldId, "[InfectionAction] Failed " + action.actionType() + " (" + action.coreTier() + ") 5 times. Disabling this action for current run.");
                     executed.add(i);
-                } else {
-                    sendStatusIfEnabled(worldId, "[InfectionAction] Failed " + action.actionType() + " (" + action.coreTier() + ") - no valid targets (" + failures + "/5).");
                 }
             }
         }
@@ -308,7 +314,6 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
         //                 + " ticksPerBlock=" + action.ticksPerBlock()
         //                 + " appliedSeconds=" + targetSeconds
         // );
-        sendStatusIfEnabled(worldId, "[InfectionAction] Grow restarted core at " + target.x + "," + target.y + "," + target.z + " targetRadius=" + growthRadius + ".");
         if (RedWaveManager.isUndoRecordingEnabled()) {
             RedWaveManager.beginUndoSession(worldId, target);
         }
@@ -1254,6 +1259,63 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
         }
     }
 
+    private void checkWitchTripwire(@Nonnull World world, @Nonnull UUID worldId) {
+        boolean alreadySpawned = this.witchSpawnedInWorld.getOrDefault(worldId, false);
+        for (PlayerRef playerRef : Universe.get().getPlayers()) {
+            if (playerRef == null || !playerRef.isValid() || playerRef.getUuid() == null) {
+                continue;
+            }
+            if (playerRef.getWorldUuid() == null || !worldId.equals(playerRef.getWorldUuid())) {
+                continue;
+            }
+            Vector3d curr = playerRef.getTransform().getPosition();
+            if (curr == null) {
+                continue;
+            }
+            UUID playerId = playerRef.getUuid();
+            Vector3d prev = this.previousPlayerPositions.put(playerId, new Vector3d(curr));
+            if (alreadySpawned || prev == null) {
+                continue;
+            }
+            if (crossedSouthThroughTripwire(prev, curr)) {
+                trySpawnWitch(world, worldId);
+                alreadySpawned = this.witchSpawnedInWorld.getOrDefault(worldId, false);
+            }
+        }
+    }
+
+    private static boolean crossedSouthThroughTripwire(@Nonnull Vector3d prev, @Nonnull Vector3d curr) {
+        double planeZ = (double) WITCH_TRIGGER_Z;
+        if (!(prev.getZ() >= planeZ && curr.getZ() < planeZ)) {
+            return false;
+        }
+        if (!withinX(prev.getX()) || !withinX(curr.getX())) {
+            return false;
+        }
+        if (!withinY(prev.getY()) || !withinY(curr.getY())) {
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean withinX(double x) {
+        return x >= (double) WITCH_TRIGGER_X_MIN && x <= ((double) WITCH_TRIGGER_X_MAX + 1.0d);
+    }
+
+    private static boolean withinY(double y) {
+        double minY = (double) (WITCH_TRIGGER_Y_CENTER - WITCH_TRIGGER_Y_TOLERANCE);
+        double maxY = (double) (WITCH_TRIGGER_Y_CENTER + WITCH_TRIGGER_Y_TOLERANCE) + 1.0d;
+        return y >= minY && y <= maxY;
+    }
+
+    private static void sealWitchExit(@Nonnull World world) {
+        for (int x = WITCH_TRIGGER_X_MIN; x <= WITCH_TRIGGER_X_MAX; x++) {
+            for (int y = WITCH_SEAL_Y_MIN; y <= WITCH_SEAL_Y_MAX; y++) {
+                world.setBlock(x, y, WITCH_TRIGGER_Z, WITCH_SEAL_BLOCK_ID);
+            }
+        }
+    }
+
     private void trySpawnWitch(@Nonnull World world, @Nonnull UUID worldId) {
         try {
             int existingWitches = countExistingWitches(world);
@@ -1286,6 +1348,7 @@ public class GameRunDirectorSystem extends TickingSystem<EntityStore> {
 
             if (npcPair != null && npcPair.first() != null && npcPair.first().isValid()) {
                 this.witchSpawnedInWorld.put(worldId, true);
+                sealWitchExit(world);
                 sendRunWorldMessage(worldId, "A Potion Brewer Witch appeared!");
             }
         } catch (Exception e) {

@@ -1,5 +1,6 @@
 package dev.hytalemodding.potion;
 
+import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.RemoveReason;
@@ -8,7 +9,6 @@ import com.hypixel.hytale.component.system.tick.TickingSystem;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.server.core.Message;
-import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
 import com.hypixel.hytale.server.core.asset.type.entityeffect.config.EntityEffect;
 import com.hypixel.hytale.server.core.entity.UUIDComponent;
 import com.hypixel.hytale.server.core.entity.InteractionChain;
@@ -1556,30 +1556,88 @@ public final class PotionBrewerWitchSystem extends TickingSystem<EntityStore> {
             }
             removeActiveCauldron(world, runtime);
         }
-        BlockType existing = world.getBlockType(x, y, z);
-        runtime.cauldronOriginalBlockId = existing == null ? "Empty" : existing.getId();
+        runtime.cauldronOriginalBlockId = null;
         runtime.cauldronX = x;
         runtime.cauldronY = y;
         runtime.cauldronZ = z;
         runtime.cauldronPlaced = true;
-        world.setBlock(x, y, z, CAULDRON_BLOCK_ID);
-        debug(world, runtime.bossId, "placeBrewingCauldron pos=(" + x + ", " + y + ", " + z + ")");
+        scrubBrokenStairs(world, x, y, z);
         Vector3d shockwaveOrigin = new Vector3d(x + 0.5d, y, z + 0.5d);
         PotionBrewerWitchShockwaveSystem.triggerRipple(world, runtime.bossId, shockwaveOrigin);
         debug(world, runtime.bossId, "cauldronShockwave pos=(" + x + ", " + y + ", " + z + ")");
+    }
+
+    private static final int BROKEN_STAIRS_SCRUB_RADIUS_HORIZONTAL = 24;
+    private static final int BROKEN_STAIRS_SCRUB_RADIUS_VERTICAL = 1;
+    private static final String[] BROKEN_STAIRS_ID_FRAGMENTS = {"_Stairs"};
+    private static final String BROKEN_STAIRS_REPLACEMENT_BLOCK_ID = "Rock_Stone_Cobble";
+
+    private static void scrubBrokenStairs(@Nonnull World world, int centerX, int centerY, int centerZ) {
+        int visited = 0;
+        int matched = 0;
+        int replaced = 0;
+        int replaceFailed = 0;
+        java.util.HashSet<String> seenStairsIds = new java.util.HashSet<>();
+        System.out.println("[scrub] start center=(" + centerX + "," + centerY + "," + centerZ + ") radiusH=" + BROKEN_STAIRS_SCRUB_RADIUS_HORIZONTAL + " radiusV=" + BROKEN_STAIRS_SCRUB_RADIUS_VERTICAL);
+        for (int dx = -BROKEN_STAIRS_SCRUB_RADIUS_HORIZONTAL; dx <= BROKEN_STAIRS_SCRUB_RADIUS_HORIZONTAL; dx++) {
+            for (int dy = -BROKEN_STAIRS_SCRUB_RADIUS_VERTICAL; dy <= BROKEN_STAIRS_SCRUB_RADIUS_VERTICAL; dy++) {
+                for (int dz = -BROKEN_STAIRS_SCRUB_RADIUS_HORIZONTAL; dz <= BROKEN_STAIRS_SCRUB_RADIUS_HORIZONTAL; dz++) {
+                    int x = centerX + dx;
+                    int y = centerY + dy;
+                    int z = centerZ + dz;
+                    BlockType existing;
+                    try {
+                        existing = world.getBlockType(x, y, z);
+                    } catch (Exception ex) {
+                        continue;
+                    }
+                    visited++;
+                    if (existing == null) {
+                        continue;
+                    }
+                    String id = existing.getId();
+                    if (id == null) {
+                        continue;
+                    }
+                    boolean match = false;
+                    for (String frag : BROKEN_STAIRS_ID_FRAGMENTS) {
+                        if (id.contains(frag)) {
+                            match = true;
+                            break;
+                        }
+                    }
+                    if (!match) {
+                        continue;
+                    }
+                    matched++;
+                    if (seenStairsIds.add(id)) {
+                        System.out.println("[scrub] match id=" + id + " at (" + x + "," + y + "," + z + ")");
+                    }
+                    try {
+                        world.setBlock(x, y, z, BROKEN_STAIRS_REPLACEMENT_BLOCK_ID);
+                        replaced++;
+                    } catch (Exception ex) {
+                        replaceFailed++;
+                        System.out.println("[scrub] setBlock FAILED at (" + x + "," + y + "," + z + ") id=" + id + " err=" + ex.getMessage());
+                    }
+                    try {
+                        BlockType after = world.getBlockType(x, y, z);
+                        String afterId = after == null ? "null" : after.getId();
+                        if (!BROKEN_STAIRS_REPLACEMENT_BLOCK_ID.equals(afterId)) {
+                            System.out.println("[scrub] verify FAIL at (" + x + "," + y + "," + z + ") expected=" + BROKEN_STAIRS_REPLACEMENT_BLOCK_ID + " actual=" + afterId);
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+        }
+        System.out.println("[scrub] done visited=" + visited + " matched=" + matched + " replaced=" + replaced + " replaceFailed=" + replaceFailed + " uniqueIds=" + seenStairsIds.size());
     }
 
     private static void removeActiveCauldron(@Nonnull World world, @Nonnull Runtime runtime) {
         if (!runtime.cauldronPlaced || runtime.cauldronX == null || runtime.cauldronY == null || runtime.cauldronZ == null) {
             return;
         }
-        world.setBlock(
-                runtime.cauldronX,
-                runtime.cauldronY,
-                runtime.cauldronZ,
-                runtime.cauldronOriginalBlockId == null ? "Empty" : runtime.cauldronOriginalBlockId
-        );
-        debug(world, runtime.bossId, "removeBrewingCauldron pos=(" + runtime.cauldronX + ", " + runtime.cauldronY + ", " + runtime.cauldronZ + ")");
         runtime.cauldronPlaced = false;
         runtime.cauldronX = null;
         runtime.cauldronY = null;
