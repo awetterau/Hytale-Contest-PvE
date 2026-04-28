@@ -1,6 +1,11 @@
 {
-  "Type": "Simple",
+  "Type": "UseBlock",
   "Failed": {
-    "Type": "Simple"
+    "Type": "PlaceBlock",
+    "RunTime": 0.125,
+    "Effects": {
+      "WaitForAnimationToFinish": false,
+      "ItemAnimationId": "Build"
+    }
   }
 }

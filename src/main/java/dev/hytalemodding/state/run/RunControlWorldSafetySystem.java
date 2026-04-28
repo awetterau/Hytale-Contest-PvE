@@ -18,7 +18,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class RunControlWorldSafetySystem extends TickingSystem<EntityStore> {
-    private static final long TICK_INTERVAL_MS = 2000L;
+    private static final long TICK_INTERVAL_MS = 10000L;
     private static final double DEFAULT_WORLD_MIN_SAFE_Y = 95.0d;
     private static final long GAME_WORLD_REDIRECT_DELAY_MS = 9000L;
     private static final ConcurrentHashMap<UUID, Long> GAME_WORLD_REDIRECT_PENDING_SINCE = new ConcurrentHashMap<>();

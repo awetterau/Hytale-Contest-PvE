@@ -1,6 +1,7 @@
 {
   "Type": "Simple",
   "Next": {
-    "Type": "Simple"
+    "Type": "UseBlock",
+    "Failed": "Block_Attack"
   }
 }

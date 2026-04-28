@@ -32,6 +32,7 @@ public final class InfectionCoreDetectionSystem extends RefSystem<ChunkStore> {
     private static final ComponentType<ChunkStore, BlockModule.BlockStateInfo> BLOCK_STATE_INFO = BlockModule.BlockStateInfo.getComponentType();
     private static final int ARENA_ACTIVATION_RADIUS_BLOCKS = 22;
     private static final List<String> CRIMSON_MUSHROOM_FOX_SPAWN_ROLES = List.of(
+            "Crawler_Void",
             "Wolf_Black",
             "Spider_Cave",
             "Crawler_Void"
